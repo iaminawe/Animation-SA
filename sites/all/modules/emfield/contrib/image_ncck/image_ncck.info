@@ -1,0 +1,5 @@
+; $Id: image_ncck.info,v 1.1 2007/06/26 01:15:26 aaron Exp $
+name = Embedded Image Field
+description = Defines a field type for displaying images from third party providers, such as Flickr.
+dependencies = emfield
+package = CCK

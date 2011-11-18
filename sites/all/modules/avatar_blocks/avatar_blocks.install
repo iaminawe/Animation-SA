@@ -1,0 +1,20 @@
+<?php
+// $Id: avatar_blocks.install,v 1.1 2008/07/24 01:53:14 roopletheme Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function avatar_blocks_uninstall() {
+  // Delete variables
+  variable_del('avatar_blocks_ol_seconds_online');
+  variable_del('avatar_blocks_ol_count');
+  variable_del('avatar_blocks_ol_icpreset');
+  variable_del('avatar_blocks_ol_include_text');
+  variable_del('avatar_blocks_ol_display_noavatar');
+  variable_del('avatar_blocks_nu_count');
+  variable_del('avatar_blocks_nu_icpreset');
+  variable_del('avatar_blocks_nu_display_noavatar');
+  variable_del('avatar_blocks_bl_count');
+  variable_del('avatar_blocks_bl_icpreset');
+  variable_del('avatar_blocks_bl_display_noavatar');
+}

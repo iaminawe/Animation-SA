@@ -1,0 +1,285 @@
+# LANGUAGE translation of Drupal (module nodewords)
+# Copyright 2008 Sylvain Moreau <sylvain.moreau@ows.fr>
+# Generated from files:
+#  nodewords.module,v 1.48.4.37 2008/08/12 10:18:04 robrechtj
+#  nodewords.info,v 1.1.4.1 2006/12/19 10:50:51 robrechtj
+#  nodewords.install,v 1.9.4.5 2008/01/08 18:33:37 robrechtj
+#  DC.Title.inc,v 1.1.2.3 2008/08/12 06:50:00 robrechtj
+#  Revisit-After.inc,v 1.1.2.1 2008/07/29 10:14:34 robrechtj
+#  abstract.inc,v 1.1.2.1 2008/01/08 18:48:33 robrechtj
+#  copyright.inc,v 1.1.2.1 2008/01/08 18:48:33 robrechtj
+#  description.inc,v 1.1.2.2 2008/06/18 09:58:13 robrechtj
+#  geourl.inc,v 1.1.2.1 2008/01/08 18:48:33 robrechtj
+#  keywords.inc,v 1.1.2.3 2008/08/12 10:18:04 robrechtj
+#  robots.inc,v 1.1.2.1 2008/01/08 18:48:33 robrechtj
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: French translation for nodewords\n"
+"Last-Translator: Sylvain Moreau <sylvain.moreau@ows.fr>\n"
+"Language-Team: Sylvain Moreau <sylvain.moreau@ows.fr>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: nodewords.module:16;28;97;703 nodewords.info:0
+msgid "Meta tags"
+msgstr "Balises Meta"
+
+#: nodewords.module:42
+msgid "On this page you can enter the meta tags for the front page of your site."
+msgstr "Vous pouvez saisir sur cette page les balises meta de la page d'accueil de votre site"
+
+#: nodewords.module:84
+msgid "The meta keywords"
+msgstr "La meta mots-clés"
+
+#: nodewords.module:85
+msgid "The meta description"
+msgstr "La meta description"
+
+#: nodewords.module:101
+msgid "Configure HTML meta tags for all content."
+msgstr "Configurer les balises HTML meta pout tous les contenus."
+
+#: nodewords.module:106
+msgid "Settings"
+msgstr "Configuration"
+
+#: nodewords.module:113
+msgid "Front page"
+msgstr "Page d'accueil"
+
+#: nodewords.module:168
+msgid "Allow editing of meta tags"
+msgstr "Autoriser a mofification des balises meta"
+
+#: nodewords.module:170
+msgid "Users with the <em>edit meta tags</em> permission will be able to edit the meta tags for this content type."
+msgstr "Les utilisatezurs possédant la permission <em>modifier les balises meta</em> pourront modifier les balises meta pour ce type de contenu"
+
+#: nodewords.module:295
+msgid "Global copyright"
+msgstr "Copyright global"
+
+#: nodewords.module:299
+msgid "Enter a short copyright statement (one line) that will be used on all pages unless specifically set."
+msgstr "Saisissez un court texte de copyright (une ligne) qui sera utilisé sur toutes les pages, sauf configuration spécifique"
+
+#: nodewords.module:304
+msgid "Global GeoURL"
+msgstr "GeoURL globale"
+
+#: nodewords.module:308
+msgid "Enter a GeoURL (latitude, longitude) that will be used on all pages unless specifically set."
+msgstr "Saisissez une GeoURL (latitude, longitude) qui sera utilisée sur toutes les pages, sauf configuration spécifique"
+
+#: nodewords.module:313
+msgid "Global keywords"
+msgstr "Mots-clés globaux"
+
+#: nodewords.module:317
+msgid "Enter a comma separated list of global keywords. These global keywords will be added after the page-specific keywords on all pages."
+msgstr "Saisissez une liste séparée par des virgules de mots-clés globaux. Ces mots-cles globaux seront ajoutés après les mots-clés spécifiques à la page, sur toutes les pages."
+
+#: nodewords.module:328
+msgid "Auto-keywords vocabularies"
+msgstr "Vocabulaires mots-clés automatiques"
+
+#: nodewords.module:331
+msgid "Select the vocabularies which contain terms you want to add to the keywords meta tag for nodes. The terms of these vocabularies are added before the global keywords but after the page-specific keywords."
+msgstr "Sélectionnez les vocabulaires contenant les termes que vous souhaitez ajouter à la balise meta mots-clés pour les noeuds. Les termes de ces vocabulaires sont ajoutés avant les mots-clés globaux, mais après les mots-clés spécifiques à la page."
+
+#: nodewords.module:336
+msgid "Include parent terms of auto-keyword vocabularies in keywords meta tag"
+msgstr "Inclure les termes parents des vocabulaires mots-clés automatiques dans la balise meta mots-clés"
+
+#: nodewords.module:338
+msgid "If you select a vocabulary above, checking this option will include the parent terms of selected terms in the keywords meta tag. If unsure, unselect this option."
+msgstr "Si vous sélectionnez un vocabulaire ci-dessus, cocher cette option incluera les termes parents des termes sélectionnés dans la balise meta mots-clés. Si vous n'êtes pas sûr(e), ne sélectionnez pas cette option."
+
+#: nodewords.module:345
+msgid "Use the teaser of the page if the meta description is not set."
+msgstr "Utiliser l'accroche de cette page si la meta description est vide."
+
+#: nodewords.module:351
+msgid "Default robots meta tag"
+msgstr "Balise meta robots par défaut"
+
+#: nodewords.module:360
+msgid "The ROBOTS meta tag offers a simple mechanism to indicate to web robots and crawlers wether the page should be indexed (INDEX or NOINDEX) and whether links on the page should be followed (FOLLOW or NOFOLLOW). Here you can enter the default robots meta tag to use for all pages. If unsure, select \"ALL=INDEX,FOLLOW\"."
+msgstr "La balise meta ROBOTS met à disposition un mécanisme simple pour indiquer aux robots web et aux butineurs que la page doit être indexée (INDEX ou NOINDEX), et si les liens sur la page doivent être suivis (FOLLOW ou NOFOLLOW). Vous pouvez saisir ici la balise meta robots par défaut à utiliser sur toutes les pages. Si vous n'êtes pas sûr(e), sélectionnez \"ALL=INDEX,FOLLOW\"."
+
+#: nodewords.module:365
+msgid "Text length"
+msgstr "Longueur du texte"
+
+#: nodewords.module:369
+msgid "The maximum number of characters the content of a meta tag can contain."
+msgstr "Le nombre maximal de caractères que le contenu d'une balise meta peut contenir."
+
+#: nodewords.module:374
+msgid "Tags to show on edit form"
+msgstr "Balises à afficher sur le formulaire d'édition"
+
+#: nodewords.module:378
+msgid "Select the meta tags you want to be able to edit on the edit page of nodes, terms and vocabularies."
+msgstr "Sélectionnez les balises meta que vous souahitez être en mesure de modifier sur le formulaire d'édition des noeuds, termes et vocabulaires"
+
+#: nodewords.module:382
+msgid "Tags to output in html head"
+msgstr "Balises à afficher dans l'en-tête html"
+
+#: nodewords.module:386
+msgid "Select the meta tags you want to appear in the HEAD section of the HTML pages."
+msgstr "Sélectionnez les balises meta que vous voulez voir apparaître dans la section HEAD de vos pages HTML"
+
+#: nodewords.module:401
+msgid "Advanced options"
+msgstr "Options Avancées"
+
+#: nodewords.module:406
+msgid "Repeat meta tags for lists"
+msgstr "Répéter les balises meta pour les listes"
+
+#: nodewords.module:408
+msgid "Some search engines punish sites that use the same meta tags on different pages. Uncheck this option if you want to suppress the repetition of the same meta tags on pages that use the pager - if unchecked, Drupal will only display the meta tags for the first page and not for subsequent pages. If unsure, select this option."
+msgstr "Certains moteurs de recherche punissent les sites qui utilisent les mêmes balises meta sur des pages différentes. Décochez cette option si vous souhaitez supprimer la répétition des mêmes balises meta sur des pages utilisant une pagination (si décochée, Drupal affichera les balises meta seulement sur la première page et non les suivantes. Si vous n'êtes pas sûr(e), sélectionnez cette option."
+
+#: nodewords.module:413
+msgid "Use front page meta tags"
+msgstr "Utilsier les balises meta de la page d'accueil"
+
+#: nodewords.module:415
+msgid "Check this option if you want to use the <a href=\"!front-page-url\" title=\"Meta tags for front page\">meta tags for the front page</a> even if the <a href=\"!site-settings-url\" title=\"Site information\">default front page</a> specified is a view, panel or node - in this case, the meta tags specified for the view, panel or node will be ignored. If you want to use the meta tags of the view, panel or node instead, uncheck this option. If unsure, select this option and specify the meta tags you want on the <a href=\"!front-page-url\" title=\"Meta tags for front page\">meta tags for the front page</a>."
+msgstr "Cochez cette option si vous souhaitez utiliser les <a href=\"!front-page-url\" title=\"Balises meta pour la page d'accueil\">balises meta pour la page d'accueil</a>, même si <a href=\"!site-settings-url\" title=\"Informations sur le site\">la page d'accueil par défaut</a> spécifiée est une vue, un panel ou un noeud (dans ce cas, les balises meta spécifiées pour la vue, le panel ou le noeud seront ignorées). Si vous souhaitez utiliser les balises meta de la vue, du panel ou du noeud à la place, décochez cette option. Si vous n'êtes pas sûr(e), sélectionnez cette option et spécifiez les balises meta que vous voulez pour <a href=\"!front-page-url\" title=\"Balises meta pour la page d'accueil\">balises meta pour la page d'accueil</a>."
+
+#: nodewords.module:433
+msgid "Currently no meta tags can be assigned to the front page because you have disabled all tags to show on the edit forms. <a href=\"!nodewords-settings-url\" title=\"meta tags settings\">Enable some meta tags to show on edit forms</a> first."
+msgstr "Actuellement, aucne balise meta ne peut être assignée à la page d'accueil parce que vous avez désactivé toutes les balises s'affichant sur le formulaire d'édition. Veuillez d'abord <a href=\"!nodewords-settings-url\" title=\"Configuration des balises meta\">Autoriser n'affichage de balises meta sur les formulaires d'édition</a>."
+
+#: nodewords.module:436
+msgid "You can not assign meta tags for the front page here because you have disabled them at the <a href=\"!nodewords-settings-url\" title=\"Meta tags settings\">meta tags settings page</a>. Instead, the meta tags for the view, panel or node you have set as front page will be used."
+msgstr "Vous ne pouvez pas assigner des balises meta à la page d'accueil ici, parce que vous les avez désactivées à la <a href=\"!nodewords-settings-url\" title=\"Configuration des balises meta\">page de configuration des balises meta</a>. Les balises meta que vous avez définies pour la vue, le panel ou le noeud seront utilisées à la place."
+
+#: nodewords.module:441;450
+msgid "Submit"
+msgstr "Soumettre"
+
+#: nodewords.module:452
+msgid "The meta tags for the front page have been saved."
+msgstr "Les balises meta pour la page d'accueil ont été enregistrées"
+
+#: nodewords.module:461;480;499
+msgid "Save"
+msgstr "Enregitrer"
+
+#: nodewords.module:467;486;511
+msgid "Delete"
+msgstr "Supprimer"
+
+#: nodewords.module:500
+msgid "Save and edit"
+msgstr "Soumettre et Editer"
+
+#: nodewords.module:246
+msgid "administer meta tags"
+msgstr "administrer les balises meta"
+
+#: nodewords.module:246
+msgid "edit meta tags"
+msgstr "modifier les balises meta"
+
+#: nodewords.module:0
+msgid "nodewords"
+msgstr "nodewords"
+
+#: nodewords.install:32
+msgid "Meta tags module installed succesfully."
+msgstr "Le module Balises Meta a été installé avec succès"
+
+#: nodewords.install:35
+msgid "Meta tags module installation was unsuccesfull. The necessary database table may be created by hand. See the \"README.txt\" file in the \"nodewords/\" modules directory for instructions."
+msgstr "L'installation du module Balises meta a été infructueuse. La table nécessaire de la base de données peut être créée à la main. Ceuillez consuler le fichier \"README.txt\" dans le répertoire du module \"nodewords/\" pour des instructions détaillées."
+
+#: nodewords.info:0
+msgid "Allows users to add meta tags, eg keywords or description."
+msgstr "Permet aux utilisateurs d'ajouter des balises meta, par exemple mots-clés ou description"
+
+#: metatags/DC.Title.inc:46
+msgid "DC.Title"
+msgstr ""
+
+#: metatags/DC.Title.inc:48
+msgid "Enter a value to be used as DC.Title meta tag."
+msgstr "Saisissez une valeur à utiliser en tant que balise meta DC.Title"
+
+#: metatags/Revisit-After.inc:18
+msgid "Revisit after"
+msgstr ""
+
+#: metatags/Revisit-After.inc:19
+msgid " days"
+msgstr " jours"
+
+#: metatags/Revisit-After.inc:22
+msgid "The Revisit-After META tag defines how often a search engine or spider should come to your website for re-indexing. Often this tag is used for websites that change their content often and on a regular basis. This tag can also be beneficial in boosting your rankings if search engines display results based on the most recent submissions."
+msgstr "La balise META Revisit-After féfinit la fréquence à laquelle un moteur de recherche ou un butineur doit venir sur votre site web pour le ré-indexer. Cette balise est souvent utilisée par les sites web qui modifient leur contenu sur une base régulière. Cette balise peut être aussi bénéfique à l'amélioration de vos classements dans les afichages des résultats de recherche sur la base des soumissions les plus récentes"
+
+#: metatags/abstract.inc:12
+msgid "Abstract"
+msgstr "Résumé"
+
+#: metatags/abstract.inc:16
+msgid "Enter a short abstract for this page. Typically it is one sentence."
+msgstr "Saisissez un résumé court pour cette page. Typiquement, une phrase"
+
+#: metatags/copyright.inc:19
+msgid "Copyright"
+msgstr "Copyright"
+
+#: metatags/copyright.inc:23
+msgid "Enter a short copyright statement for this page."
+msgstr "Saisissez une bref phrase de copyright pour cette page."
+
+#: metatags/description.inc:54
+msgid "Description"
+msgstr "Description"
+
+#: metatags/description.inc:58
+msgid "Enter a description for this page. Limit your description to about 20 words, with a maximum of %count characters. It should not contain any HTML tags or other formatting."
+msgstr "Saisissez une description pour cette page. Limitez votre description à environ 20 mots, avec un maximum de %count caractères. Elle ne doit pas contenir de balises HTML ou d'autres formatages."
+
+#: metatags/description.inc:58
+msgid "When you leave this field empty, the teaser will be used as description."
+msgstr "Lorsque vous laissez ce champ vide, l'accroche sera utilisée en tant que description."
+
+#: metatags/geourl.inc:19
+msgid "GeoURL"
+msgstr "GeoURL"
+
+#: metatags/geourl.inc:23
+msgid "Enter a GeoURL (latitude, longitude) for this page."
+msgstr "Saisissez une GeoURL (latitude, longitude) pour cette page."
+
+#: metatags/keywords.inc:34
+msgid "Keywords"
+msgstr "Mots-clés"
+
+#: metatags/keywords.inc:38
+msgid "Enter a comma separated list of keywords for this page. Avoid duplication of words as this will lower your search engine ranking."
+msgstr "Saisissez une liste séparée par des virgules de mots-clés pour cette page. Evitez la duplication de mots car cela pourrait faire baisser votre classement dans les moteurs de recherche"
+
+#: metatags/robots.inc:18
+msgid "Use default setting"
+msgstr "Utiliser la configuration par défaut"
+
+#: metatags/robots.inc:26
+msgid "Robots meta tag"
+msgstr "Balise meta Robots"
+
+#: metatags/robots.inc:30
+msgid "The ROBOTS meta tag offers a simple mechanisme to indicate to web robots and crawlers wether the page should be indexed (INDEX or NOINDEX) and whether links on the page should be followed (FOLLOW or NOFOLLOW). The default setting is @default."
+msgstr "La balise meta ROBOTS met à disposition un mécanisme simple pour indiquer aux robots web et aux butineurs que la page doit être indexée (INDEX ou NOINDEX), et si les liens sur la page doivent être suivis (FOLLOW ou NOFOLLOW). La configuration par défaut est @default"
+

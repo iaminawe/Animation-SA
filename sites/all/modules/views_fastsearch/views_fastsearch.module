@@ -1,0 +1,780 @@
+<?php
+// $Id: views_fastsearch.module,v 1.2.2.46 2008/01/16 12:36:33 douggreen Exp $
+
+/** @file
+ * Add a views filter that allows nodes to be filtered quickly
+ * using part of the search module indexes.
+ *
+ * This module was originally based on http://drupal.org/node/70884,
+ * however, it extends this with support for AND/OR, exception terms,
+ * quoted terms, and sorting by score.
+ *
+ * However, that method was found to be flawed.  It uses multiple joins to find
+ * matching AND terms.  It works reasonably well, but is prone to slowness on
+ * large sites, especially when 5 or more terms were used.  It is also flawed
+ * because MySQL has a 21 term join limit, and thus this wouldn't work at all
+ * with that many terms.
+ *
+ * A newer faster method was discovered (credit to Moshe Weitzman) that uses
+ * GROUP BY and HAVING to find matching terms.  The query relies on unique
+ * values in the search_index table, and since this is not always the case,
+ * use of this method requires a unique index be created.  I hope that this
+ * becomes the Drupal default soon, however, until such time, you must first
+ * created this index yourself:
+ *
+ * ALTER IGNORE TABLE search_index ADD UNIQUE INDEX (sid, word, type, fromsid);
+ *
+ * See also http://drupal.org/node/143160.
+ */ 
+
+/**
+ * Implementation of views hook_views_tables()
+ */
+function views_fastsearch_views_tables() {
+  $tables['search_index'] = array(
+    'name' => 'search_index',
+    'provider' => 'internal',
+    'fields' => array(
+      'score' => array(
+        'name' => t('Search: Score'),
+        'sortable' => FALSE,
+        'query_handler' => 'views_fastsearch_views_query_handler_field_score',
+        'help' => t('Return the search score relevance value.'),
+        'option' => 'string',
+        'notafield' => TRUE,
+      ),
+    ),
+    'join' => array(
+      'left' => array(
+        'table' => 'node',
+        'field' => 'nid'
+      ),
+      'right' => array(
+        'field' => 'sid'
+      ),
+    ),
+    'filters' => array(
+      'word' => array(
+        'name' => t('Search: Fast Index'),
+        'operator' => array('=' => 'AND', 'AND+' => 'AND (empty all)', 'OR' => 'OR'),
+        'handler' => 'views_fastsearch_views_handler_search_index',
+        'option' => 'string',
+        'help' => t('replacement search filter that is faster than the default search.'),
+      ),
+    ),
+    'sorts' => array(
+      'score' => array(
+        'name' => t('Search: Score'),
+        'handler' => 'views_fastsearch_views_handler_sort_score',
+        'help' => t('Sort by the search word\'s score relevance.'),
+      ),
+    ),
+  );
+  $tables['search_dataset'] = array(
+    'name' => 'search_dataset',
+    'provider' => 'internal',
+    'join' => array(
+      'left' => array(
+        'table' => 'node',
+        'field' => 'nid'
+      ),
+      'right' => array(
+        'field' => 'sid'
+      ),
+    ),
+  );
+  if (_views_fastsearch_is_search_node_links()) {
+    $tables['search_node_links'] = array(
+      'name' => 'search_node_links',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'node',
+          'field' => 'nid'
+        ),
+        'right' => array(
+          'field' => 'sid'
+        ),
+      ),
+    );
+    $tables['search_node_links_from'] = array(
+      'name' => 'search_node_links',
+      'provider' => 'internal',
+      'join' => array(
+        'left' => array(
+          'table' => 'node',
+          'field' => 'nid'
+        ),
+        'right' => array(
+          'field' => 'nid'
+        ),
+      ),
+    );
+  }
+  return $tables;
+}
+
+function views_fastsearch_views_arguments() {
+  if (_views_fastsearch_is_search_node_links()) {
+    return array(
+      'search_node_linked_to' => array(
+        'name' => t('Node: Links To'),
+        'handler' => 'views_handler_arg_node_linked_to',
+        'option' => 'integer',
+        'help' => t('Filters by nodes that link to the argument node'),
+      ),
+      'search_node_linked_from' => array(
+        'name' => t('Node: Linked From'),
+        'handler' => 'views_handler_arg_node_linked_from',
+        'option' => 'integer',
+        'help' => t('filters by nodes that are linked from the argument node'),
+      ),
+    );
+  }
+}
+
+/*
+ * Handle the node links argument.
+ */
+function views_handler_arg_node_linked_to($op, &$query, $argtype, $arg = '') {
+  switch ($op) {
+    case 'filter':
+      $query->ensure_table('search_node_links', true);
+      $query->add_where("search_node_links.nid = %d", _views_fastsearch_linked_arg($arg));
+      break;
+  }
+}
+
+function views_handler_arg_node_linked_from($op, &$query, $argtype, $arg = '') {
+  switch ($op) {
+    case 'filter':
+      $query->ensure_table('search_node_links_from', true);
+      $query->add_where("search_node_links_from.sid = %d", _views_fastsearch_linked_arg($arg));
+      break;
+  }
+}
+
+function _views_fastsearch_linked_arg($arg) {
+  if (!empty($arg) && $arg != -1) {
+    return db_escape_string($arg);
+  }
+  return (arg(0) == 'node' && is_numeric($nid = arg(1))) ? $nid : 0;
+}
+
+/**
+ * Custom filter for SEARCH operations
+ */
+function views_fastsearch_views_handler_search_index($op, $filter, $filterinfo, &$query) {
+  switch ($op) {
+    case 'handler':
+      $word_count = 0;
+      if (!empty($filter['value'])) {
+        // use the newer fast search if the Dup indexes have been repaired
+        $search_index_unique = variable_get('search_index_unique', 0);
+
+        // walk through each of the values
+        // building the AND, OR, and exclusion terms
+        foreach (explode(' ', search_simplify($filter['value'])) as $value) {
+          // OR applies to the next value only
+          $upper_value = strtoupper($value);
+          if ($upper_value == 'OR') {
+            // the initial AND assumption was wrong,
+            // convert the leading term to an OR term
+            if (isset($values['AND']) && count($values['AND']) == 1) {
+              $values['OR'] = $values['AND'];
+              unset($values['AND']);
+            }
+            $sqlop = ' OR ';
+            continue;
+          }
+
+          // throw out too small words
+          if (drupal_strlen($value) < variable_get('minimum_word_size', 3)) {
+            continue;
+          }
+
+          // we've got something to search on!
+          $word_count ++;
+
+          if ($sqlop == ' OR ' || ($filter['operator'] == 'OR' && $word_count > 1)) {
+            $values['OR'][] = $value;
+          }
+          else { // implied AND
+            // look for an end to a quoted phrase
+            if (isset($in_quote)) {
+              if (substr($value, -1) != $in_quote) {
+                $quote_value .= ' '. $value;
+              }
+              else {
+                if (!$search_index_unique) {
+                  $tnc = $query->add_table('search_dataset', TRUE);
+                  $tablename = $query->get_table_name('search_dataset', $tnc);
+                  $and_clause[] = "$tablename.data like '%%%s%%'";
+                }
+                $values['AND'][] = $quote_value .' '. drupal_substr($value, 0, -1);
+                unset($in_quote);
+              }
+              continue;
+            }
+
+            $first_char = drupal_substr($value, 0, 1);
+            switch ($first_char) {
+              case '-': // values starting with a - are exlusion terms
+                $values['EXCLUDE'][] = drupal_substr($value, 1);
+                break;
+              case '"': // begin quoted phrase
+              case '\'':
+                if (substr($value, -1) == $first_char) {
+                  $value = drupal_substr($value, 1, -2);
+                }
+                else {
+                  $in_quote = $first_char;
+                  $quote_value = drupal_substr($value, 1);
+                  break;
+                }
+                // FALLTHROUGH
+              default:
+                if (!$search_index_unique) {
+                  $tnc = $query->add_table('search_index', TRUE);
+                  $tablename = $query->get_table_name('search_index', $tnc);
+                  $extra['AND'][] = "$tablename.word='%s'";
+                  if ($filter['options']) {
+                    $tablename = $query->get_table_name('search_index', $tnc);
+                    $query->add_where("$tablename.type='%s'", $filter['options']);
+                  }
+                }
+                $values['AND'][] = $value;
+                break;
+            }
+          }
+          $sqlop = ' AND ';
+        }
+      }
+
+      // if there aren't any words
+      if ($word_count == 0) {
+        $query->add_where($filter['operator'] == 'AND+' ? '1' : '0');
+        return;
+      }
+
+      // 'simplify' the search terms, which calls the preprocess
+      //
+      // also, the Drupal search engine doesn't index quote characters,
+      // so remove them
+      foreach ($values as $op => $value) {
+        foreach ($values[$op] as $index => $word) {
+          $values[$op][$index] = str_replace('"', '', search_simplify($word));
+        }
+      }
+
+      // NOTE: using global to pass values to theme_views_fastsearch_display
+      global $_vfs_search_keys;
+      $_vfs_search_keys = $values;
+
+      // modify the query
+      if ($search_index_unique) {
+        _views_fastsearch_query_unique($query, $values, $extra);
+      }
+      else {
+        _views_fastsearch_query($query, $values, $extra);
+      }
+
+      // Log the search keys:
+      $type = 'views_fastsearch';
+      if ($filter['operator'] != '=') {
+        $type .= ' '. $filter['operator'];
+      }
+      watchdog('search', t('%keys (%type).', array('%keys' => $filter['value'], '%type' => $type)), WATCHDOG_NOTICE);
+  }
+}
+
+function _views_fastsearch_query_unique(&$query, $values, $extra) {
+  /**
+   * merge all of the terms into a single array
+   *
+   * NOTE: our syntax isn't really good enough to support AND and OR terms.
+   * We really should have just one or the other.
+   *
+   * But in order to support the older query method, the parsing has not been
+   * cleaned up yet, and we have to merge the two terms here
+   */
+  $and = isset($values['AND']) ? $values['AND'] : array();
+  $or = isset($values['OR']) ? $values['OR'] : array();
+  $terms = array_merge($and, $or);
+
+  // get the node rankings
+  $rankings = _views_fastsearch_get_rankings();
+
+  // create the SQL that joins everything above and queries for the terms
+  $score = isset($rankings['score']) ? 'SUM('. implode(' + ', $rankings['score']) .')' : '1';
+  $sql = 'SELECT n.nid, '. $score .' AS score FROM {node} n LEFT JOIN {search_index} i ON n.nid=i.sid';
+  if (isset($rankings['join'])) {
+    $sql .= ' '. implode(' ', $rankings['join']);
+  }
+  $sql .= ' WHERE ';
+  if (!_views_fastsearch_is_search_node_links()) {
+    $sql .= 'i.fromsid=0 AND ';
+  }
+  $sql .=
+    'i.word IN ('.
+    implode(',', array_fill(0, count($terms), "'%s'")) .')'.
+    ' GROUP BY n.nid';
+  // NOTE: no HAVING clause is needed for OR's and AND's with 1 term
+  // because we using an INNER JOIN above - HAVING COUNT(*) >= 1 is implied
+  if (!isset($values['OR']) || count($values['AND']) > 1) {
+    $sql .= ' HAVING COUNT(*)='. count($terms);
+  }
+  if (isset($rankings['terms'])) {
+    $terms = array_merge($rankings['terms'], $terms);
+  }
+  $join = array(
+    'type' => 'inner',
+    'left' => array('table' => 'node', 'field' => 'nid'),
+    'right' => array('field' => 'nid'),
+  );
+  if (method_exists($query, 'add_subquery')) {
+    $query->add_subquery($sql, $terms, $join, 'temp_vfs');
+    $query->add_field('score', 'temp_vfs');
+  }
+  elseif (db_query_temporary($sql, $terms, 'temp_vfs')) {
+    $query->add_table('temp_vfs', FALSE, 1, $join);
+    $query->add_field('score', 'temp_vfs');
+  }
+
+  // add the exclusion clause
+  if (isset($values['EXCLUDE'])) {
+    // use a JOIN instead of the sub-SELECT, when possible
+    $extra['EXCLUDE'] = array_fill(0, count($values['EXCLUDE']), "vfsxe.word = '%s'");
+    $sql = "(SELECT vfsne.nid FROM node vfsne LEFT join search_index vfsxe on vfsne.nid=vfsxe.sid WHERE ";
+    if (!_views_fastsearch_is_search_node_links()) {
+      $sql .= 'vfsxe.fromsid = 0 AND ';
+    }
+    $sql .= "(". implode(' OR ', $extra['EXCLUDE']) .") GROUP BY vfsne.nid HAVING COUNT(*) = ". count($exclude_clause) .")";
+    $join = array(
+      'left' => array('table' => 'node', 'field' => 'nid'),
+      'right' => array('field' => 'nid'),
+    );
+    if (method_exists($query, 'add_subquery')) {
+      $query->add_subquery($sql, array(), $join, 'temp_vfs_exclude');
+    }
+    elseif (db_query_temporary($sql, $values['EXCLUDE'], 'temp_vfs_exclude')) {
+      $query->add_table('temp_vfs_exclude', FALSE, 1, $join);
+    }
+    $query->add_where('temp_vfs_exclude.nid IS NULL');
+  }
+}
+
+function _views_fastsearch_get_rankings() {
+  $rankings = array();
+  if ($ranking = module_invoke_all('search_ranking')) {
+    $used_ranking = array();
+    foreach ($ranking as $rank => $values) {
+      if ($weight = variable_get($rank, 5)) {
+        $used_ranking["$rank|$weight"] = $values;
+      }
+    }
+    foreach ($used_ranking as $index => $values) {
+      list(, $weight) = explode('|', $index);
+
+      // if the join doesn't already exist, add it
+      if (!isset($rankings['join'][$values['join']])) {
+        $rankings['join'][$values['join']] = $values['join'];
+      }
+
+      // add the weighted score multiplier value, handle NULL gracefully
+      $rankings['score'][] = '%f * COALESCE(('. $values['score'] .'), 0)';
+
+      // add the the weighted score multiplier value
+      $rankings['terms'][] = $weight / count($used_ranking);
+
+      // add the other terms
+      if (isset($values['terms'])) {
+        $rankings['terms'] = array_merge($rankings['terms'], $values['terms']);
+      }
+    }
+  }
+  return $rankings;
+}
+
+/**
+ * Implement the search_ranking callback
+ *
+ * NOTE: this is a first draft
+ * - these might be better in include files, one per module
+ * - the array definition could be cleaned up
+ */
+function views_fastsearch_search_ranking() {
+  $ranking = array();
+
+  // get the word relevance weight
+  $ranking['node_rank_relevance'] = array(
+    'join' => 'LEFT JOIN {search_total} t ON i.word=t.word',
+    'score' => 'i.score * t.count',
+  );
+
+  // get the recent weight
+  if ($node_cron_last = variable_get('node_cron_last', 0)) {
+    if (module_exists('statistics')) {
+      $ranking['node_rank_recent'] = array(
+        'join' => 'LEFT JOIN {node_comment_statistics} c ON c.nid = i.sid',
+        'score' => 'POW(2, GREATEST(n.created, n.changed, COALESCE(c.last_comment_timestamp, 0) - %d) * 6.43e-8)',
+        'terms' => array($node_cron_last),
+      );
+    }
+    else {
+      $ranking['node_rank_recent'] = array(
+        'score' => 'POW(2, GREATEST(n.created, n.changed) - %d) * 6.43e-8',
+        'terms' => array($node_cron_last),
+      );
+    }
+  }
+
+  // get the comment weight
+  if (module_exists('comment')) {
+    $ranking['node_rank_comments'] = array(
+      'join' => 'LEFT JOIN {node_comment_statistics} c ON c.nid = i.sid',
+      'score' => '2.0 - 2.0 / (1.0 + c.comment_count * %f)',
+      'terms' => array(variable_get('node_cron_comments_scale', 0)),
+    );
+  }
+
+  // get the statistics weight
+  if (module_exists('statistics') && variable_get('statistics_count_content_views', 0)) {
+    $ranking['node_rank_views'] = array(
+      'join' => 'LEFT JOIN {node_counter} nc ON nc.nid = i.sid',
+      'score' => '2.0 - 2.0 / (1.0 + nc.totalcount * %f)',
+      'terms' => array(variable_get('node_cron_views_scale', 0)),
+    );
+  }
+
+  return $ranking;
+}
+
+/**
+ * This is the original views_fastsearch that used multiple joins to find
+ * matching AND terms.  It worked reasonably well, but is prone to slowness on
+ * large sites, especially when 5 or more terms were used.  It is also flawed
+ * because MySQL has a 21 term join limit, and thus this wouldn't work at all
+ * with that many terms.
+ *
+ * This option will be removed as soon as Drupal adopts the unique search_index
+ * - see http://drupal.org/node/143160
+ */
+function _views_fastsearch_query(&$query, $values, $extra) {
+  // add the AND terms
+  if (isset($extra['AND'])) {
+    $conditions[] = '('. implode(' AND ', $extra['AND']) .')';
+  }
+  $arguments = $values['AND'];
+
+  // add the OR terms
+  if (isset($values['OR'])) {
+    foreach ($values['OR'] as $value) {
+      $conditions[] = '('. implode(' AND ', $extra['AND']) .')';
+      $arguments = array_merge($arguments, array_fill(0, count($values['AND']), $value));
+    }
+  }
+  if (isset($conditions)) {
+    $query->add_where(implode(' OR ', $conditions), $arguments);
+  }
+
+  // add the exclusion clause
+  if (isset($values['EXCLUDE'])) {
+    /**
+     * NOTE: that this should be done with a join instead of a subselect,
+     * but given that this code is being phased out in favor of the unique
+     * index, this is what we're left with.
+     */
+    $exclude_clause = implode(', ', array_fill(0, count($values['EXCLUDE']), "'%s'"));
+    $query->add_where("node.nid NOT IN (SELECT sid FROM search_index WHERE word in (". $exclude_clause ."))", $values['EXCLUDE']);
+  }
+
+  // there are dups in the index so we need distinct results
+  $query->set_distinct();
+}
+
+/**
+ * Custom field query handler to generate the score field
+ */
+function views_fastsearch_views_query_handler_field_score($field, $fieldinfo, &$query) {
+  if (variable_get('search_index_unique', 0)) {
+    if ($score_field = _views_fastsearch_score($query)) {
+      $query->add_field($score_field, NULL, 'score');
+    }
+  }
+}
+
+function _views_fastsearch_score($query) {
+  if (isset($query->subquery['temp_vfs']) || isset($query->joins['temp_vfs'])) {
+    $orderby[] = 'temp_vfs.score';
+  }
+  foreach ($query->joins as $table => $tinfo) {
+    if ($table == 'search_index') {
+      $orderby[] = 'search_index.score';
+    }
+  }
+  if (isset($orderby)) {
+    if (count($orderby) > 1) {
+      $orderby_clause = 'COALESCE('. implode(',', $orderby) .')';
+    }
+    else {
+      $orderby_clause = $orderby[0];
+    }
+    return $orderby_clause;
+  }
+}
+
+/**
+ * Custom sort for SEARCH operations
+ */
+function views_fastsearch_views_handler_sort_score($op, &$query, $sortinfo, $sort) {
+  if (variable_get('search_index_unique', 0)) {
+    if ($score_field = _views_fastsearch_score($query)) {
+      $query->add_field($score_field, NULL, 'score');
+      $query->orderby[] = 'score '. $sort['sortorder'];
+    }
+  }
+  else {
+    if (isset($query->tables['search_index'])) {
+      for ($i = 1; $i <= $query->tables['search_index']; $i ++) {
+        $tnc = $i;
+        $tnc = intval($tnc) > 1 ? $tnc: "";
+        $scores[] = "search_index$tnc.score";
+      }
+      $score = implode('+', $scores);
+      $query->orderby[] = "$score $sort[sortorder]";
+    }
+  }
+}
+
+/**
+ * Implementation of hook_views_default_views()
+ */
+function views_fastsearch_views_default_views() {
+  $view = new stdClass();
+  $view->name = 'views_fastsearch';
+  $view->description = 'Search';
+  $view->access = array(
+);
+  $view->view_args_php = '';
+  $view->page = TRUE;
+  $view->page_title = 'Search';
+  $view->page_header = '';
+  $view->page_header_format = '1';
+  $view->page_footer = '';
+  $view->page_footer_format = '1';
+  $view->page_empty = t('Your search yielded no results.');
+  $view->page_empty = '';
+  $view->page_empty_format = '1';
+  $view->page_type = 'search';
+  $view->url = 'search/fast';
+  $view->use_pager = TRUE;
+  $view->nodes_per_page = '10';
+  $view->sort = array(
+    array(
+      'tablename' => 'search_index',
+      'field' => 'score',
+      'sortorder' => 'DESC',
+      'options' => '',
+    ),
+  );
+  $view->argument = array(
+  );
+  $view->field = array(
+    array(
+      'tablename' => 'search_index',
+      'field' => 'score',
+      'label' => '',
+    ),
+  );
+  $view->filter = array(
+    array(
+      'tablename' => 'search_index',
+      'field' => 'word',
+      'operator' => '=',
+      'options' => '',
+      'value' => '',
+    ),
+  );
+  $view->exposed_filter = array(
+    array(
+      'tablename' => 'search_index',
+      'field' => 'word',
+      'label' => '',
+      'optional' => '0',
+      'is_default' => '0',
+      'operator' => '1',
+      'single' => '0',
+    ),
+  );
+  $view->requires = array(search_index);
+  $views[$view->name] = $view;
+  return $views;
+}
+
+/**
+ * Implement hook_form_alter.
+ */
+function views_fastsearch_form_alter($form_id, &$form) {
+  if ($form_id == 'search_theme_form') {
+    if ($view = views_get_view('views_fastsearch')) {
+      $views_status = variable_get('views_defaults', array());
+      if ($views_status[$view->name] == 'enabled' || (!$view->disabled && $views_status[$view->name] != 'disabled')) {
+/* @TODO: this isn't quite working yet
+        $form['filter0'] = $form[$form_id .'_keys'];
+        $form['filter0']['#weight'] = -1;
+        unset($form[$form_id .'_keys']);
+        unset($form['#base']);
+        unset($form['#submit']['search_box_form_submit']);
+        $form['#action'] = url($view->url);
+*/
+      }
+    }
+  }
+  elseif ($form_id == 'search_admin_settings') {
+    global $db_type;
+    if ($db_type == 'mysql') {
+      $result = db_fetch_array(db_query("SHOW TABLE STATUS LIKE 'search_index'"));
+      if ($result['Engine'] == 'InnoDB') {
+        $table = db_prefix_tables("{search_index}");
+        drupal_set_message('The '. $table .' table should not use innodb for performance reasons -- execute "ALTER TABLE '. $table .' ENGINE=MyISAM".  On production sites, the search.module should be disabled while the table is being altered and re-enabled when the alter is complete.', 'error');
+      }
+    }
+
+    // add any additional node ranking
+    if ($ranking = module_invoke_all('search_ranking')) {
+      // ignore the standard node_rankings
+      foreach (views_fastsearch_search_ranking() as $rank => $values) {
+        unset($ranking[$rank]);
+      }
+
+      foreach ($ranking as $rank => $values) {
+        $form['content_ranking']['factors'][$rank] = array(
+          '#type' => 'select',
+          '#title' => $values['description'],
+          '#options' => range(0, 10),
+          '#default_value' => variable_get($rank, 5),
+        );
+      }
+    }
+
+    $newform = array(
+      'views_fastsearch' => array(
+        '#type' => 'fieldset',
+        '#title' => t('views_fastsearch'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+
+        'search_index_unique' => array(
+          '#type' => 'select',
+          '#title' => t('search_index'),
+          '#options' => array(0 => t('Default Drupal Installation'), 1 => t('No duplicates (Unique Index Exists)')),
+          '#default_value' => variable_get('search_index_unique', 0),
+          '#description' => t('The {search_index} table may have duplicate entries caused by overlapping cron runs.  This happens less frequently since Drupal 5.x, but still can occur.  The best solution is to create a UNIQUE index using "ALTER IGNORE TABLE search_index ADD UNIQUE INDEX (sid, word, type, fromsid)".  If you have created this index or if you know your site does not have duplicates, select UNIQUE so that the faster views_fastsearch algorithm may be used.  See <a href="@url">%nid</a>', array('@url' => 'http://drupal.org/node/143160', '%nid' => '#143160')),
+        ),
+        'search_node_links' => array(
+          '#type' => 'select',
+          '#title' => t('search_node_links'),
+          '#options' => array(-1 => 'Auto Detect', 0 => t('Not Installed'), 1 => t('Installed')),
+          '#default_value' => variable_get('search_node_links', db_table_exists('search_node_links')),
+          '#description' => t('The {search_node_links} table exists if you\'ve applied <a href="@url">%nid</a>.  Set the value here to avoid an extra query on every search', array('@url' => 'http://drupal.org/node/146466', '%nid' => '#146466')),
+        ),
+      ),
+    );
+
+    // add the option before the buttons
+    $pos = array_search('buttons', array_keys($form));
+    $form = array_merge(array_slice($form, 0, $pos), $newform, array_slice($form, $pos));
+  }
+}
+
+/**
+ *  Implementation of hook_views_style_plugins()
+ */
+function views_fastsearch_views_style_plugins() {
+  $plugins = array(
+    'search' => array(
+      'name' => t('Search Results'),
+      'theme' => 'views_fastsearch_display',
+      'summary_theme' => 'views_fastsearch_display',
+      'validate' => 'views_fastsearch_validate',
+      'needs_fields' => TRUE,
+    ),
+  );
+  return $plugins;
+}
+
+function views_fastsearch_validate($type, $view, $form) {
+  if (isset($view['field']['count'])) {
+    for ($i = 0; $i < $view['field']['count']; $i ++) {
+      if ($view['field'][$i]['id'] == 'search_index.score') {
+        return;
+      }
+    }
+  }
+  form_error($form[$type .'-info'][$type .'_type'], t('Search Results requires the search score field.'));
+}
+
+function theme_views_fastsearch_display(&$view, &$items, $type) {
+  drupal_add_css(drupal_get_path('module', 'search') .'/search.css', 'module', 'all', FALSE);
+
+  if (isset($items) && is_array($items) && count($items)) {
+    // NOTE: using global to pass values from
+    // views_fastsearch_views_handler_search_index
+    global $_vfs_search_keys;
+    if (isset($_vfs_search_keys)) {
+      $keys = array();
+      foreach ($_vfs_search_keys as $value) {
+        $keys = array_merge($keys, $value);
+      }
+      $excerpt_keys = implode(' ', $keys);
+    }
+
+    $output = '<h2>'. t('Search Results') .'</h2>';
+    $output .= '<dl class="search-results">';
+    foreach ($items as $item) {
+      // Build the node body.
+      $node = node_load($item->nid);
+      $node = node_build_content($node, FALSE, FALSE);
+      $node->body = drupal_render($node->content);
+
+      // Fetch comments for snippet
+      $node->body .= module_invoke('comment', 'nodeapi', $node, 'update index');
+
+      // Fetch terms for snippet
+      $node->body .= module_invoke('taxonomy', 'nodeapi', $node, 'update index');
+
+      $extra = node_invoke_nodeapi($node, 'search result');
+      $entry = array(
+        'link' => url('node/'. $item->nid, NULL, NULL, TRUE),
+        'type' => node_get_types('name', $node),
+        'title' => $node->title,
+        'user' => theme('username', $node),
+        'date' => $node->changed,
+        'node' => $node,
+        'view' => $view,
+        'extra' => $extra,
+        'score' => $item->score,
+        'snippet' => search_excerpt($excerpt_keys, $node->body)
+      );
+      $output .= theme('views_fastsearch_item', $entry, $type);
+    }
+    $output .= '</dl>';
+    return $output;
+  }
+}
+
+function theme_views_fastsearch_item($entry, $type) {
+  if (!empty($entry['score'])) {
+    $entry['extra'][] = 'score: '. round($entry['score'], 4);
+  }
+  return theme('search_item', $entry, $type);
+}
+
+function _views_fastsearch_is_search_node_links() {
+  $search_node_links =  variable_get('search_node_links', -1);
+  if ($search_node_links == -1) {
+    return db_table_exists('search_node_links');
+  }
+  return $search_node_links;
+}

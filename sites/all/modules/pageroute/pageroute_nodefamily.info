@@ -1,0 +1,11 @@
+; $Id: pageroute_nodefamily.info,v 1.2.2.2 2007/03/27 17:00:24 fago Exp $
+name = Pageroute Nodefamilies
+description = Lets you associate pageroutes with content types. Read the README before activating it.
+package = Pageroute
+dependencies = pageroute nodefamily
+
+; Information added by drupal.org packaging script on 2008-11-14
+version = "5.x-1.1"
+project = "pageroute"
+datestamp = "1226665217"
+

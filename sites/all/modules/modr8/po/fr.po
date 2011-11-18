@@ -1,0 +1,349 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: French translation of Modr8\n"
+"POT-Creation-Date: 2007-12-15 11:48+0100\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Simon Robillard <robillard.simon@tic.unilim.fr>\n"
+"Language-Team: French translation team\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: French\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+
+#: modr8_admin.inc:8
+msgid "Default action"
+msgstr "Action par défaut"
+
+#: modr8_admin.inc:10
+msgid "approve"
+msgstr "approuver"
+
+#: modr8_admin.inc:11
+msgid "delete"
+msgstr "supprimer"
+
+#: modr8_admin.inc:12
+msgid "no action"
+msgstr "ne rien faire"
+
+#: modr8_admin.inc:19
+msgid "Number of moderated posts to display per page"
+msgstr "Nombre de soumissions à modérer affichées par page"
+
+#: modr8_admin.inc:24
+msgid "Never"
+msgstr "Jamais"
+
+#: modr8_admin.inc:27
+msgid "Discard log entries older than"
+msgstr "Supprimer les entrées plus anciennes que"
+
+#: modr8_admin.inc:30
+msgid "The time log entries should be kept. Older entries will be automatically discarded. Requires crontab."
+msgstr "Les entrées du journal devraient être gardées. Les entrées plus vieilles seront automatiquement supprimées. Requiert crontab."
+
+#: modr8_admin.inc:34
+msgid "E-mail"
+msgstr "Courriel"
+
+#: modr8_admin.inc:39
+msgid "Moderator email adress"
+msgstr "Adresse courriel du modérateur"
+
+#: modr8_admin.inc:40
+msgid "E-mail notices sent by modr8 will have this as the \"From\" address. Leave empty to use same \"From\" address  as is used for user registration other administrative notices as set at <a href=\"@site-info\">Site information</a>."
+msgstr "Les courriels de notification de Modr8 auront cette adresse de provenance. Laissez vide pour utiliser la même adresse de provenance que celle du site indiquée dans la page <a href=\"@site-info\">Informations du site</a>."
+
+#: modr8_admin.inc:46
+msgid "Send approval messages"
+msgstr "Envoyer des messages d'approbation"
+
+#: modr8_admin.inc:52
+msgid "Acceptance e-mail subject"
+msgstr "Sujet du courriel d'acceptation"
+
+#: modr8_admin.inc:62
+msgid "Acceptance e-mail"
+msgstr "Courriel d'acceptation"
+
+#: modr8_admin.inc:64;85;106
+msgid "Replacement strings are: %macros"
+msgstr ""
+
+#: modr8_admin.inc:69
+msgid "Send denial messages"
+msgstr "Envoyer des message de refus"
+
+#: modr8_admin.inc:75
+msgid "Denial e-mail subject"
+msgstr "Sujet du courriel de refus"
+
+#: modr8_admin.inc:83
+msgid "Denial e-mail"
+msgstr "Courriel de refus"
+
+#: modr8_admin.inc:90
+msgid "Send a message when taking no action, but only if the moderator enters a \"Note to author\"."
+msgstr "Envoyer un message si le modérateur ne fait rien, mais seulement s'il entre une \"Note à l'auteur\"."
+
+#: modr8_admin.inc:96
+msgid "No action e-mail subject"
+msgstr "Sujet du courriel de notification de non-action"
+
+#: modr8_admin.inc:104
+msgid "No action e-mail note"
+msgstr "Courriel de notification de non-action"
+
+#: modr8_admin.inc:115
+msgid "You must either enter a valid e-mail address, or leave the moderator e-mail field empty."
+msgstr "Vous devez soit entrer une adresse courriel valide, soit laisser le champ \"Adresse courriel du modérateur\" vide."
+
+#: modr8_admin.inc:138
+msgid "Approve"
+msgstr "Approuver"
+
+#: modr8_admin.inc:139
+msgid "Delete"
+msgstr "Supprimer"
+
+#: modr8_admin.inc:140
+msgid "No action"
+msgstr "Ne rien faire"
+
+#: modr8_admin.inc:147
+msgid "Note to author"
+msgstr "Note à l'auteur"
+
+#: modr8_admin.inc:188
+msgid "Submit"
+msgstr "Soummettre"
+
+#: modr8_admin.inc:199
+msgid "Operations"
+msgstr "Opérations"
+
+#: modr8_admin.inc:200
+msgid "Content"
+msgstr "Contenu"
+
+#: modr8_admin.inc:247
+msgid "The %type with title %title has been approved."
+msgstr "Le %type ayant pour titre %title has been approved."
+
+#: modr8_admin.inc:284
+msgid "approval"
+msgstr "approbation"
+
+#: modr8_admin.inc:289
+msgid "denial"
+msgstr "refus"
+
+#: modr8_admin.inc:294
+msgid "note (no action)"
+msgstr "note (pas d'action)"
+
+#: modr8_admin.inc:319
+msgid "You should create an administrator mail address for your site! <a href=\"@url\">Do it here</a>."
+msgstr "Vous devriez créer une adresse courriel administrateur pour votre site! <a href=\"@url\">Faîtes le ici</a>."
+
+#: modr8_admin.inc:323
+msgid "%type message was sent to %username"
+msgstr "un message %type a été envoyé à %username"
+
+#: modr8_admin.inc:327
+msgid "There was a problem sending the %type message to %username"
+msgstr "Il y a eut un problème lors de l'envoi du message %type à %username"
+
+#: modr8_admin.inc:332
+msgid "An error occurred when trying to load this content."
+msgstr "Une erreur est survenue lors du chargement de ce contenu."
+
+#: modr8_admin.inc:340
+msgid ""
+"Note:\n"
+"  @note"
+msgstr ""
+
+#: modr8_admin.inc:365
+msgid ""
+"Your %type entry entitled \"%title\" has been approved by our content moderator! Other visitors to %site will now be able to view it.\n"
+"\n"
+"You can visit %node_url to view it yourself.\n"
+"\n"
+"%note\n"
+"\n"
+"Regards,\n"
+"The %site team"
+msgstr ""
+"Votre %type intitulée \"%title\" a été approuvé par notre modérateur! Les autres visiteurs de %site Pourrons désormais le voir.\n"
+"\n"
+"Vous pouvez vister %node_url pour le voir vous-même.\n"
+"\n"
+"%note\n"
+"\n"
+"Merci de votre participation,\n"
+"L'équipe de %site"
+
+#: modr8_admin.inc:377
+msgid ""
+"Your %type entry entitled \"%title\" has been denied by our content moderator. The content has been deleted from our site.\n"
+"\n"
+"%note\n"
+"\n"
+"Regards,\n"
+"The %site team"
+msgstr ""
+"Votre %type intitulée \"%title\" a été refusé par notre modérateur! Le contenu a été supprimé de notre site.\n"
+"\n"
+"%note\n"
+"\n"
+"Merci de votre participation,\n"
+"L'équipe de %site"
+
+#: modr8_admin.inc:387
+msgid ""
+"Your %type entry entitled \"%title\" has been reviewed by our content moderator, but not yet approved.\n"
+"\n"
+"%note\n"
+"\n"
+"You can visit %node_url to view it yourself, but is is not yet visible to other site visitors.\n"
+"\n"
+"Regards,\n"
+"The %site team"
+msgstr ""
+"Votre %type intitulée \"%title\" a été vu par notre modérateur, mais pas encore approuvé.\n"
+"\n"
+"Vous pouvez vister %node_url pour le voir vous-même, mais il n'est pas encore visible aux autres visiteurs.\n"
+"\n"
+"%note\n"
+"\n"
+"Merci de votre participation,\n"
+"L'équipe de %site"
+
+#: modr8_admin.inc:402
+msgid "Action"
+msgstr "Action"
+
+#: modr8_admin.inc:403
+msgid "Moderator"
+msgstr "Modérateur"
+
+#: modr8_admin.inc:404
+msgid "Date"
+msgstr "Date"
+
+#: modr8_admin.inc:405
+msgid "Title (view event)"
+msgstr "Titre (voir l'évènement)"
+
+#: modr8_admin.inc:428
+msgid "No log messages available."
+msgstr "Pas d'entrée visible dans le journal."
+
+#: modr8_admin.inc:453
+msgid "Overview of all moderation log events for this post"
+msgstr "Vue de toutes les entrées du journal de modération pour cette soumission."
+
+#: modr8_admin.inc:454
+msgid "Action:"
+msgstr "Action:"
+
+#: modr8_admin.inc:455
+msgid "Date:"
+msgstr "Date:"
+
+#: modr8_admin.inc:456
+msgid "Moderator:"
+msgstr "Modérateur:"
+
+#: modr8_admin.inc:457
+msgid "E-mail message:"
+msgstr "Courriel:"
+
+#: modr8_admin.inc:458
+msgid "Author:"
+msgstr "Auteur:"
+
+#: modr8_admin.inc:459
+msgid "Teaser (as reviewed):"
+msgstr "Extrait (tel qu'il est vu):"
+
+#: modr8_admin.inc:166
+msgid "See the 1 moderation log event for this post"
+msgid_plural "Overview of the @count moderation log events for this post"
+msgstr[0] "Voir l'entrée du journal de modération pour cette soumission."
+msgstr[1] "Voir les @count entrées du journal de modération pour cette soumission."
+
+#: modr8.module:15
+msgid "Easy, dedicated moderation of content.  Assign the 'moderate content' permission to one or mode user roles.  Set up the default moderation option for each node type."
+msgstr "Modération de contenu facile et dédiée. Assignez la permission \"Modérer le contenu\" à un ou plusieurs rôles d'utilisateurs. Réglez la modération par défaut pour chaque type de noeud."
+
+#: modr8.module:30
+msgid "Moderated content"
+msgstr "Modérer le contenu"
+
+#: modr8.module:31
+msgid "Approve or delete moderated content."
+msgstr "Approuver ou suppriver le contenu à modérer."
+
+#: modr8.module:37
+msgid "Content moderation log"
+msgstr "Voir le journal de modération"
+
+#: modr8.module:38;202
+msgid "Show log of all actions on moderated content."
+msgstr "Montre le journal de toutes les actions sur le contenu à modérer."
+
+#: modr8.module:44
+msgid "Modr8 settings"
+msgstr "Configuration de Modr8"
+
+#: modr8.module:45
+msgid "Configure content moderation."
+msgstr "Configurer la modération de contenu."
+
+#: modr8.module:53
+msgid "Moderation"
+msgstr "Modération"
+
+#: modr8.module:84
+msgid "Moderation log event"
+msgstr "Évènement du journal de modération"
+
+#: modr8.module:158;161;183
+msgid "In moderation queue"
+msgstr "À modérer"
+
+#: modr8.module:161
+msgid "This %type will be placed in moderation if the %moderate checkbox is selected."
+msgstr "Ce %type sera placer dans la liste des contenus à modérer si la case %moderate est cochée."
+
+#: modr8.module:208;268
+msgid "@items in moderation"
+msgstr "@items à modérer"
+
+#: modr8.module:256
+msgid "Modr8 moderator's block"
+msgstr "Bloc de modérateur Modr8"
+
+#: modr8.module:261
+msgid "Moderation queue"
+msgstr "Contenu à modérer"
+
+#: modr8.module:272
+msgid "Recent additions:"
+msgstr "Additions récentes:"
+
+#: modr8.module:282
+msgid "Pending moderation"
+msgstr "Modération en attente"
+
+#: modr8.module:287
+msgid "The post has been submitted for moderation and won't be listed publicly until it has been approved."
+msgstr "Le contenu a été soumis à modération et ne sera pas affiché publiquement avant d'avoir été approuvé."
+
+#: modr8.module:290
+msgid "This %type will be submitted for moderation and will not be accessible to other users until it has been approved."
+msgstr "Ce %type sera soumis à modération et ne sera pas accesible publiquement avant d'avoir été approuvé."
+

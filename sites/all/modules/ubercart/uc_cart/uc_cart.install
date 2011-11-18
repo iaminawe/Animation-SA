@@ -1,0 +1,69 @@
+<?php
+// $Id: uc_cart.install,v 1.6.2.4 2008/07/29 22:22:42 rszrama Exp $
+
+/**
+ * Ubercart uc_cart.module schema
+ */
+function uc_cart_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {uc_cart_products} (
+        cart_id varchar(32) NOT NULL default '0',
+        nid int(10) NOT NULL default '0',
+        qty int(10) NOT NULL default '0',
+        changed int(11) NOT NULL default '0',
+        data text,
+        KEY cart_id (cart_id)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {uc_cart_products} (
+        cart_id varchar(32) NOT NULL default 0,
+        nid integer NOT NULL default 0,
+        qty integer NOT NULL default 0,
+        changed integer NOT NULL default 0,
+        data text
+      )");
+      db_query("CREATE INDEX {uc_cart_products}_cart_id ON {uc_cart_products} (cart_id)");
+      break;
+  }
+}
+
+function uc_cart_uninstall() {
+  db_query("DROP TABLE {uc_cart_products}");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_pane_%%'");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_cap_%%'");
+  variable_del('uc_cart_empty_hide');
+  variable_del('uc_cart_expanded');
+  variable_del('uc_cart_show_help_text');
+  variable_del('uc_cart_help_text');
+  variable_del('uc_cart_anon_duration');
+  variable_del('uc_cart_anon_unit');
+  variable_del('uc_cart_auth_duration');
+  variable_del('uc_cart_auth_unit');
+  variable_del('uc_minimum_subtotal');
+  variable_del('uc_add_item_redirect');
+  variable_del('uc_continue_shopping_url');
+  variable_del('uc_continue_shopping_text');
+  variable_del('uc_continue_shopping_type');
+  variable_del('uc_cart_breadcrumb_url');
+  variable_del('uc_cart_breadcrumb_text');
+  variable_del('uc_checkout_enabled');
+  variable_del('uc_checkout_next_button');
+  variable_del('uc_checkout_review_button');
+  variable_del('uc_checkout_submit_button');
+  variable_del('uc_use_next_buttons');
+  variable_del('uc_collapse_current_pane');
+  variable_del('uc_cart_delivery_not_shippable');
+  variable_del('uc_new_customer_email');
+  variable_del('uc_checkout_anonymous');
+  variable_del('uc_cart_checkout_complete_page');
+  variable_del('uc_checkout_instructions');
+  variable_del('uc_checkout_review_instructions');
+  variable_del('uc_msg_order_submit');
+  variable_del('uc_msg_order_logged_in');
+  variable_del('uc_msg_order_existing_user');
+  variable_del('uc_msg_order_new_user');
+  variable_del('uc_msg_continue_shopping');
+}

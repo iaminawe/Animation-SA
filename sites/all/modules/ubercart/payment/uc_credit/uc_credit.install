@@ -1,0 +1,80 @@
+<?php
+// $Id: uc_credit.install,v 1.3.2.6 2008/07/29 22:22:39 rszrama Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_credit_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {uc_payment_credit} (
+        credit_id mediumint(9) NOT NULL auto_increment,
+        order_id mediumint(9) NOT NULL,
+        cc_type varchar(255) NOT NULL,
+        cc_owner varchar(255) NOT NULL,
+        cc_number varchar(255) NOT NULL,
+        cc_exp_month varchar(255) NOT NULL,
+        cc_exp_year varchar(255) NOT NULL,
+        cc_cvv varchar(255) NOT NULL,
+        cc_bank varchar(255) NOT NULL,
+        PRIMARY KEY  (credit_id),
+        KEY order_id (order_id)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {uc_payment_credit} (
+        credit_id serial NOT NULL,
+        order_id integer NOT NULL,
+        cc_type varchar(255) NOT NULL,
+        cc_owner varchar(255) NOT NULL,
+        cc_number varchar(255) NOT NULL,
+        cc_exp_month varchar(255) NOT NULL,
+        cc_exp_year varchar(255) NOT NULL,
+        cc_cvv varchar(255) NOT NULL,
+        cc_bank varchar(255) NOT NULL,
+        PRIMARY KEY (credit_id)
+      );");
+      db_query("CREATE INDEX {uc_payment_credit}_order_id ON {uc_payment_credit} (order_id)");
+      break;
+  }
+}
+
+function uc_credit_uninstall() {
+  db_query("DROP TABLE {uc_payment_credit}");
+  variable_del('uc_credit_checkout_process');
+  variable_del('uc_credit_checkout_no_store');
+  variable_del('uc_credit_fail_message');
+  variable_del('uc_credit_visa');
+  variable_del('uc_credit_mastercard');
+  variable_del('uc_credit_discover');
+  variable_del('uc_credit_amex');
+  variable_del('uc_credit_cvv_enabled');
+  variable_del('uc_credit_owner_enabled');
+  variable_del('uc_credit_validate_numbers');
+  variable_del('uc_credit_policy');
+  variable_del('uc_credit_clear_status');
+  variable_del('uc_credit_number_duration');
+  variable_del('uc_credit_number_unit');
+}
+
+function uc_credit_update_1() {
+  $ret[] = update_sql("ALTER TABLE {uc_payment_credit} ADD cc_bank VARCHAR(255) NOT NULL, ADD cc_type VARCHAR(255) NOT NULL");
+
+  $max = db_result(db_query("SELECT MAX(credit_id) FROM {uc_payment_credit}"));
+  if (is_numeric($max)) {
+    $ret[] = update_sql("INSERT INTO {sequences} VALUES ('{uc_payment_credit}_credit_id', $max)");
+  }
+
+  return $ret;
+}
+
+function uc_credit_update_2() {
+  $ret[] = update_sql("ALTER TABLE {uc_payment_credit} CHANGE `cc_owner` `cc_owner` VARCHAR(255) NOT NULL, "
+                     ."CHANGE `cc_number` `cc_number` VARCHAR(255) NOT NULL, "
+                     ."CHANGE `cc_exp_month` `cc_exp_month` VARCHAR(255) NOT NULL, "
+                     ."CHANGE `cc_exp_year` `cc_exp_year` VARCHAR(255) NOT NULL, "
+                     ."CHANGE `cc_cvv` `cc_cvv` VARCHAR(255) NOT NULL");
+
+  return $ret;
+}

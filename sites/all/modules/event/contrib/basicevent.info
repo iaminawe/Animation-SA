@@ -1,0 +1,7 @@
+; $Id: basicevent.info,v 1.1.2.1 2007/03/29 21:23:18 killes Exp $
+
+name = "Basic event"
+description = "A story-like node that implements the event API automatically."
+version = "$Name: DRUPAL-5--1-0 $"
+package = "Event"
+dependencies = event

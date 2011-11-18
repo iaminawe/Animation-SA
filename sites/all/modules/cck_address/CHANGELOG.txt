@@ -1,0 +1,7 @@
+Made activeselect callback available for all access as per issue: http://drupal.org/node/332671
+Added admin setting to remove address validation as per issue: http://drupal.org/node/270950 and http://drupal.org/node/348351
+Added translation support for field names as per issue: http://drupal.org/node/300045
+Added provision for display of country_select country in theme_cck_address
+Added diff patch from issue: http://drupal.org/node/240647
+Added token support patch from issue: http://drupal.org/node/206843
+

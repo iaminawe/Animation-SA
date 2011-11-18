@@ -1,0 +1,5 @@
+; $Id: imagecache.info,v 1.4.2.2 2009/08/19 21:02:50 drewish Exp $
+name = ImageCache
+description = Dynamic image manipulator and cache.
+package = ImageCache
+dependencies = imageapi

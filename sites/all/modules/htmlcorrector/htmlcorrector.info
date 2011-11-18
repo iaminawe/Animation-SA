@@ -1,0 +1,9 @@
+; $Id: htmlcorrector.info,v 1.1 2007/01/27 01:01:34 unconed Exp $
+name = HTML Corrector
+description = Ensures all HTML in user-submitted content is valid when output on the page.
+
+; Information added by drupal.org packaging script on 2010-07-11
+version = "5.x-1.x-dev"
+project = "htmlcorrector"
+datestamp = "1278834498"
+

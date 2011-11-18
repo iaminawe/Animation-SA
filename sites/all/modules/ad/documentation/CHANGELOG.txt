@@ -1,0 +1,1242 @@
+$Id: CHANGELOG.txt,v 1.2.2.40.2.211 2009/01/29 06:26:03 jeremy Exp $
+
+August 11th 2008
+ - adserve.inc
+    o bug #220817: support installations using symbolic links
+    o feature #177885: optionally apply filters when displaying ads
+ - ad.module
+    o feature #177885: allow configurable filtering of ads
+ - ad_cache_file.module
+    o feature #177885: optionally apply filters when displaying ads
+ - ad_cache_memcache.module
+    o feature #177885: optionally apply filters when displaying ads
+ - ad_external.module
+    o feature #177885: optionally apply filters when displaying ads
+ - ad_html.module
+    o feature #177885: optionally apply filters when displaying ads
+    o remove unnecessary database query.
+ - ad_image.module
+    o feature #177885: optionally apply filters when displaying ads
+    o remove unnecessary database query.
+ - ad_text.module
+    o feature #177885: optionally apply filters when displaying ads
+    o remove unnecessary database query.
+
+August 10th 2008
+ - ad.module
+    o feature #250289: add jQuery method for displaying advertisements
+    o feature #233568: add support for per-ad-type default permissions
+ - ad_cache_memcache.module
+    o bug #271912: gracefully report when memcache is not installed
+ - adserve.inc
+    o bug #271477: id can't start with a number
+    o feature #250289: support jQuery method to display advertisements
+ - ad.install
+    o feature #233568: flush menu cache to support per-ad-type default perms
+ - ad_image.module
+    o feature #233568: new settings page format for per-ad-type permissions
+ - ad_text.module
+    o feature #233568: new settings page format for per-ad-type permissions
+
+August 9th 2008
+ - adserve.inc
+    o bug #288489: add missing argument 2 for variable_get()
+    o feature #274297: allow modules to define their own ad display variables
+
+July 24th 2008
+ - ad_cache_memcache.inc
+    o implement adserve_exit_text hook
+
+July 11th 2008
+ - adserve.inc
+    o allow module using adserve_select to report when there are no more ads
+ - ad_cache_memcache.module
+    o asynchronously process changed nodes during cron runs
+    o now support multiple hooks, so rename ad-cache-init to ad-cache-hook
+ - ad_cache_memcache.inc
+    o simplify code by using _debug_echo() when possible
+    o preface debug calls with 'Memcache:' to make tracing more clear
+    o replace ad_cache_memcache_init() with generic ad_cache_memcache_hook()
+    o implement adserve_select hook
+
+July 10th 2008
+ - adserve.inc
+    o support multiple arguments when invoking function in file
+    o simplify code by using _debug_echo() when possible
+    o support caches with adserve hooks
+ - ad_cache_file.inc
+    o simplify code by using _debug_echo() when possible
+    o preface debug calls with 'File cache:' to make tracing more clear
+    o make cache data re-usable without having to reload it
+    o introduce adserve_select hook
+    o set sane file cache defaults
+
+July 9th 2008
+ - adserve.inc
+    o adserve hooks: if include file defined and necessary, include file
+    o adserve hooks: if function defined and existing, call function
+
+June 27th 2008
+ - ad.module
+    o support adserve actions, allowing external modules to execute functions
+      from adserve.inc, without bootstrapping Drupal or connecting to the db.
+ - adserve.inc
+    o rename adserve_invoke() function to adserve_invoke_file()
+    o introduce adserve_invoke_action() function
+    o simplify ad selection when not using a cache, using the standard
+      adserve_select_ad function that's used by caches
+    o remove considerable amount of no longer needed code
+    o replace clunky _exit hook with adserve action
+    o remove clunky _invoke_weight hook, to be replaced as adserve action
+    o new actions: 'adserve_init_text', 'adserve_exit_text', 'adserve_select'
+
+June 20th 2008
+ - ad.module
+    o bug #270808: set default value when calling variable_get()
+    o bug #242738: XHTML-Strict compliance, use onclick handler instead of 
+                   target (patch thanks to Daniel Kudwien, aka 'sun')
+
+June 12th 2008
+ - ad.module
+    o bug #269808: be sure variable is an array before walking with foreach
+
+May 31st 2008 (1.5)
+ - ad_cache_memcache.info
+    o plugin doesn't actually depend on Drupal memcache module
+ - ad.module
+    o remove ad_init, no longer include ad_views.inc (it has been moved to 
+      an external project where it will hopefully receive more attention by
+      those that depend on it)
+ - documentation
+    o minor edits keeping things in sync with latest codebase
+ - ad_views.inc
+    o deleted, moving views support into external project where it will
+      hopefully find a new, ambitious maintainer.
+
+May 11th 2008
+ - ad.module
+    o bug #255997: update online documention to reflect that ad views are
+                   properly tracked regardless of the display method.
+
+May 10th 2008
+ - ad_cache_file.inc
+    o bug #246257: avoid error if no ads are selected
+
+April 21st 2008 (1.5-rc2)
+ - ad_views.inc
+    o bug #141539: fix current user filter
+
+April 19th 2008
+ - ad.install
+    o bug #248670: add missing commas
+ - ad_weight_percent.install
+    o bug #248663: remove trailing ?>
+ - ad_weight.info
+    o bug #248663: add missing Id tag
+ - ad_image.module
+    o bug #248663: remove packaging info accidently included in info file
+   
+April 17th 2008
+ - ad.module
+    o  bug #248423: auto-fix when ad vocabulary information gets corrupted
+                    (unfortunately we haven't tracked down how this happens)
+
+April 17th 2008 (1.5-rc1)
+ - ad.module
+    o feature #221648: provide filtering on administrative ad overview page
+ - ad_image.module
+    o bug #242738: add missing alt tags
+    o feature #142864: make destination URL optional
+    o validate that an image is attached before inserting/updating image ad
+ - ad_views.inc
+    o bug #172807: fix default group views (patch by malaussene)
+    o bug #141539: only display "my ads" link when appropriate
+ - ad.install
+    o bug #248016: add missing breaks that resulted in both mysql and 
+      postgresql updates being run
+
+April 15th 2008
+ - ad.module
+    o merge ad_clicks code that somehow didn't make it in the last merge
+    o bug #246458: load cached versions of the node
+    o bug #233073: allow other modules and themese to over ride page title
+    o bug #183085: remove closing ?>
+ - ad.install
+    o bug #227967: fix install updates to work with PostgreSQL
+ - ad_image.module
+    o bug #183085: remove closing ?>
+    o bug #237833: proprely record fid when first uploading image ad
+ - ad_cache_file.module
+ - ad_cache_memcache.module
+ - ad_external.module
+ - ad_notify.module
+ - ad_report.module
+ - ad_text.module
+ - ad_weight_percent.module
+    o bug #183085: remove closing ?>
+
+April 3rd 2008
+ - ad.install
+    o introduce adgroup into ad_statistics and ad_clicks
+ - ad.module
+    o track ad group on redirect
+    o track ad group in statistics, when applicable
+    o validate aid, group and hostid on redirect
+ - serve.php
+    o track ad group
+    o support passing in url where ads are displayed
+ - ad_cache_memcache.module
+    o sync ads not in any group along with ads in groups
+    o track ad group in statistics
+ - ad_cache_memcache.inc
+    o track ad group in statistics
+    o add additional debug
+
+March 27th 2008
+ - ad.module
+    o Bug #239260, #222518 Remove query on nonexistent field that made it 
+      impossible to publish an unpublished ad.
+    o Bug #233538, revert 'manage advertisements' back to 'edit own 
+      advertisements'
+
+March 23rd 2008
+ - ad.module
+    o Introduce click [details] page
+    o Allow url to be passed in on redirect
+
+March 14th 2008
+ - ad_weight_percent.module
+    o remove various infinite loops
+
+March 13th 2008
+ - adserve.inc
+    o no need to pass an adserve variable to exit (as exit as access to all
+      adserve variables)
+
+March 12th 2008
+ - ad_cache_memcache.module
+    o invoke ad_build_cache hook
+ - ad_cache_memcache.inc
+    o allow override from ad_build_cache hook
+ - click_filter.module
+ - click_filter.install
+    o filter out clicks from search engine bots
+
+March 11th 2008
+ - ad_cache_memcache.module
+    o wrap ad syncronization in a lock
+ - ad_cache_memcache.inc
+    o remove unecessary duplicate get from memcache for ad structure
+    o repopulate ad information in memcache on error (throttled)
+
+March 10th 2008
+ - ad_cache_file.module
+    o properly return ad configuration to not conflict with other cache types
+ - ad_cache_file.inc
+    o add additional debug output
+ - adserve.inc
+    o rename remaining instances of 'cache' to 'adcache' to avoid conflicts
+ - ad_cache_memcache.module
+ - ad_cache_memcache.inc
+    o introduce new high-performance ad caching mechanism utilizing memcached
+
+March 6th 2008
+ - adserve.inc
+    o rename adserve variable 'cache' to 'adcache' to not conflict with Drupal's
+      core page cache functionality if hard coding values in settings.php
+    o bug #228650: properly check if DRUPAL_ROOT is defined
+
+February 5th 2008
+ - ad_views.inc
+    o bug #141539: fix Views "my ads" link (fix thanks to Wade Fitzpatrick)
+
+January 30th 2008
+  - ad_report.module
+     o make statistics functions a little more generic, making it possible to
+       display per-user reports in addition to per-ad reports.  Also provide
+       hook allowing externally defined reports.
+
+January 24th 2008
+  - ad_cache_file.inc
+     o introduce 'include_file_init' and 'include_func_init' for over-riding
+       initilization for serving ads from the file cache
+  - adserve.inc
+     o when calling ad_exit hook, indicate whether or not there were errors
+
+January 23rd 2008
+ - ad.install
+    o bug #213163, add missing comma during ad_clicks table creation
+ - ad_image.module
+    o bug #190938, use proper encoding to display special characters properly
+
+January 17th 2008
+ - click_filter.info
+    o new module for filtering clicks
+ - click_filter.install
+    o parse existing clicks, updating status
+ - click_filter.module
+    o new module for filtering clicks, currently filters clicks by ad owners
+      and duplicate clicks by same IP or UID
+ - ad.module
+    o support new click_filter module
+ - ad.install
+    o add new status column for ad clicks
+ - ad_cache_file.inc
+    o sync (make counting of actions generic, dropped from earlier merge)
+
+January 16th 2008
+ - ad.module
+    o internally switch adserve variable name 'method' to 'ad_display' to match
+      the variable name used in ad.module.
+ - adserve.inc
+    o perform partial drupal bootstrap to allow variable overloading
+    o rename 'method' to 'ad_display' to ease overloading of variable
+    o new logic for allowing adserve variable overrides from settings.php
+    o allow adserve_bootstrap to be called multiple times at different levels
+    o introduce 'ad_exit' hook
+    o add cache support to adserve_increment
+    o make counting of actions generic, not limited to 'view' and 'count'
+ - imageserve.inc
+    o perform partial drupal bootstrap to allow variable overloading
+    o remove adserve_increment special logic
+ - ad_cache_file.module
+    o make counting of actions generic, not limited to 'view' and 'count'
+
+January 14th 2008
+ - ad.module
+    o bug #209751: alt missing when displaying counter image (thanks to attiks)
+
+January 13th 2008
+ - ad_cache_file.module
+    o cache and enable all hostids, not just those associated with active ads
+
+January 11th 2008 (1.4.1)
+ - ad.module
+    o fix URL to properly count views when displaying ads with raw mode
+ - imageserve.inc
+    o replace adserve_increment_view() with adserve_increment()
+ - ad_image.info
+    o refer to module as "Image Ad"
+
+January 11th 2008 (1.4)
+ - ad.module
+    o bug #165355, allow editing of ads with CCK
+    o bug #208421, naming convention for id attribute doesn't allow commas
+    o bug #162197, verify that cached advertisement vid is valid
+    o bug #207677, be sure "show advertisements" permission is assigned to at 
+      least one role
+    o don't display ad status in ad overview
+ - ad_text.module
+    o bug #197357, allow full 255 characters for url field defined in schema
+    o bug #202934, wrap "Links to" text in div for themability
+ - ad.install
+    o bug #193094, no need to specify UNIQUE for PRIMARY KEY
+ - ad_text.install
+    o bug #193094, no need to specify UNIQUE for PRIMARY KEY
+ - ad_image.module
+    o bug #202934, wrap "Links to" text in div for themability
+    o bug #208180, verify that attachements are enabled for ad content type
+    o bug #193934, don't lose image ad data if image isn't validated
+    o bug #207677, if using private download method, be sure "view uploaded 
+      files" permission is assigned to roles that should see ads
+ - ad_html.module
+    o don't display "Links to:", as html ads don't have internal links
+
+January 9th 2008
+ - ad.install
+    o introduce "status" column into ad_host table
+
+January 8th 2008
+ - ad.module
+    o add imageserve support for tracking traffic without ads
+ - ad_cache_file.module
+    o add support for tracking traffic without ads
+ - ad_cache_file.inc
+    o add support for tracking traffic without ads
+ - imageserve.inc
+    o add support for tracking traffic without ads
+ - adserve.inc
+    o add support for tracking traffic without ads
+    o don't choke if DRUPAL_ROOT global isn't set
+
+January 6th 2008
+ - ad_remote.module
+    o general cleanup
+
+January 5th 2008
+ - adserve.inc
+    o remove superfluous quotes accidentally added in bugfix #206177
+ - ad.module
+    o bug #196431: wrap ad status in "access statistics" permission, and in
+      "adstatus" div class
+
+January 4th 2008
+ - adserve.inc
+    o bug #206177: properly escape text before displaying with JavaScript
+
+December 4th 2007
+ - adserve.inc
+    o add optional DRUPAL_ROOT configuration option to support installations
+      utilizing a symbolic link
+
+October 22nd 2007
+ - adserve.inc
+    o uncomment out debug dump of advertisement
+ - ad.module
+    o introduce global variable 'ad_link_nofollow'
+    o new helper functin 'ad_link_nofollow' for adding link when global enabled
+      (Sponsored by Connie at WebsitesForTheArts.com)
+ - ad_image.module
+    o add ad_link_nofollow support
+      (Sponsored by Connie at WebsitesForTheArts.com)
+ - ad_text.module
+    o add ad_link_nofollow support
+      (Sponsored by Connie at WebsitesForTheArts.com)
+ - ad_html.module
+    o new simple html ad type with no click-through tracking
+      (Sponsored by Connie at WebsitesForTheArts.com)
+
+October 18th 2007
+ - ad_external.module
+    o new ad type for serving remotely hosted ads via an iframe
+    o if ad_cache_file is enabled, cache remote page in file cache
+ - adserve.php
+    o renamed to serve.php
+ - serve.php
+    o add hooks so external modules can utilize serve.php for serving data
+      without bootstrapping Drupal
+ - adserve.inc
+    o add new 'iframe' method, along with 'raw' and 'javascript'
+    o add initial support for external weighting modules
+    o make adserve_invoke_cache() generic, adserve_invoke()
+ - ad.module
+    o look for 'serve.php', not 'adserve.php'
+    o add new IFrame display method
+ - ad_cache_file.module
+    o add new "ad_build_cache" hook, to be used by external ad modules
+ - ad_cache_file.inc
+    o build full path to cache files to allow calling from any path
+ - ad_weight_percent.inc
+    o initial implementation of percentage based weighting module
+ - imageserve.inc
+    o change call from adserve_invoke_cache() to adserve_invoke()
+
+September 26th 2007
+ - ad_install.module
+    o bug #175687: set db prefix for Postgres installations
+    o bug #175683: Postgres doesn't support 'AFTER' when altering table
+
+September 7th 2007
+ - ad_image.module
+    o put more information about the image ad into the $node array
+    o feature #170667: only perform url validation if enabled
+ - ad_text.module
+    o put more information about the text ad into the $node array
+    o feature #170667: only perform url validation if enabled
+ - ad.module
+    o track the HTTP_USER_AGENT on ad clicks (to allow filtering clicks 
+      generated by bots that report themselves as bots)
+    o bug #166097: fix "only variables can be passed by reference" error
+    o feature #170667: provide option to disable url validation
+ - ad.install
+    o add user_agent column to ad_clicks table for tracking user agents
+    o bug #173850: call variable_del(), not variable_delete()
+    o update uninstall to delete new 'ad_validate_url' variable
+
+September 6th 2007
+ - ad_weight_percent.inc
+ - ad_weight_percent.info
+ - ad_weight_percent.install
+ - ad_weight_percent.module
+    o implemented GUI and schema for weighting how often ads within each ad 
+      group are displayed as a percentage of 100%.  actual logic to display
+      ads per these settings is not yet implemented.
+
+August 31st 2007
+ - adserve.inc
+    o add simple default logic for randomly selecting ads.
+ - ad_cache_file.inc
+    o remove random ad selection logic, now done in adserve.inc.
+
+August 7th 2007
+ - ad.module
+    o improve usability of ad overview page (order by status, link to ad node)
+
+August 3rd 2007 (1.3.2 Release)
+ - ad.module
+    o bug #164217: restore ability to set global click-through target
+ - imageserve.inc
+    o tell web browsers not to cache images used for counting ad views
+
+July 30th 2007
+ - adserve.inc
+    o bug #163058: simplify query filter, join not necessary
+ - ad_report.module
+    o add views for hourly, weekly and monthly, in addition to daily
+
+July 29th 2007 (1.3.1 Release)
+ - ad_cache_file.inc
+    o fixed a typo that prevented ads from being displayed with the file cache
+
+July 29th 2007 (1.3 Release)
+ - ad_module
+    o Allow displaying of image counters without CSS (useful if displaying on
+      RSS pages)
+
+July 25th 2007
+ - ad_cache_file.inc
+    o move logic for obtaining a lock on a cache file into a function for reuse
+    o track file descriptor as static in function for easily passing around
+ - adserve.inc
+    o move cache invocation into function for reuse
+    o make it possible to unset an adserve_variable()
+ - imageserve.inc
+    o functions to display blank images for counting ad views
+
+July 24th 2007
+ - adserve.php
+    o remove all logic, only used to display ads
+    o add path for displaying counter images
+ - adserve.inc
+    o initial support for calling adserve() multiple times
+    o initial support for displaying ads without using javascript
+    o move code into functions to share with imageserve()
+    o use images to count views if displaying raw ads
+ - ad_cache_file.inc
+    o initial support for calling adserve() multiple times
+ - ad.module
+    o initial support for displaying ads without using javascript
+    o make ad display method configurable
+    o new function to display an image for counting ad views
+ - ad.install
+    o remove ad_display variable on uninstall
+
+July 18th 2007 (1.2 Release)
+ - adserve.php
+    o bug #152610: call addslashes() to escape quotes
+    o simplify javascript output path
+ - ad_cache_file.inc
+    o bug #152610: escape ' in JavaScript
+ - ad.module
+    o bug #153901: fix translation of ad permissions
+ - ad_text.module
+    o bug #153901: fix translation of ad permissions
+ - ad_image.module
+    o bug #153901: fix translation of ad permissions
+
+July 16th 2007
+ - ad.info
+    o bug #148533: ad module depends on taxonomy module
+ - ad_cache_file.inc
+    o bug #159239: be sure variables exist before we test their contents
+    o bug #159237: be sure variables exist before we test their contents
+ - ad.module
+    o don't display error unnecessarily first time ad() is called
+    o cleanup adserve.php-doesn't-exist-error to properly display link
+ - ad_image.module
+    o bug #153319: fix issues with enabling Image ads when no ad groups have 
+      been created - patch thanks to Grugnog2, problem isolated by yodersj
+
+June 8th 2007
+ - ad.module
+    o bug #150069: set unique id when displaying ads
+ - ad_image.module
+    o bug #150141: properly update ad_image_format table
+ - ad_embed.module
+    o bug #150142: don't display auto-embedded ads in teasers
+ - ad.install
+    o feature #150236: add _uninstall hook
+ - ad_image.install
+    o feature #150236: add _uninstall hook
+ - ad_notify.install
+    o feature #150236: add _uninstall hook
+ - ad_text.install
+    o feature #150236: add _uninstall hook
+
+-------------
+June 7th 2007
+ 1.1 Release
+-------------
+
+June 6th 2007 (-RC3)
+ - ad_cache_file.module
+    o bug #147575: load user before calling user_access().
+ - ad.install
+    o bug #148623: update block deltas during upgrade from 1.0 -> 1.1.
+    o bug #149770: don't display ads twice when 'always display ads' is checked
+ - ad_embed.module
+    o bug #149770: don't display ads twice when 'always display ads' is checked
+ - ad_image.module
+    o bug #146147: don't allow image ads to be enabled if they have a 0 size.
+
+June 5th 2007
+ - ad.module
+    o bug #148756: the ad group description is no longer optional.
+
+June 1st 2007
+ - ad.module
+    o bug #148160: properly set tid so groups can be updated
+
+May 31st 2007
+ - ad.install
+    o bug #147733: properly convert ads to new groups during upgrade
+
+May 28th 2007
+ - ad.module
+    o hard code tid 0 (ie, ad is assigned to no groups) as "default" group.
+    o restore global administrative statistics
+    o clean up per-ad statistics.
+ - adserve.php
+    o fix query to properly display ads without any taxonomy term.
+
+May 27th 2007 (1.1-rc1)
+ - adserve.php
+    o bug: add missing space to debug text.
+
+May 25th 2007
+ - ad_notify.module
+    o bug #142648: remove unused settings page
+    o use AD_NOTIFY_DISABLED and AD_NOTIFY_ENABLED instead of 1 and 0
+ - adserve.php
+    o bug #146361: set headers to prevent javascript from being cached by
+      browser.  Thanks to Joep Hendrix.
+ - ad.module
+    o bug #146785: be sure $groups is an array() to prevent errors when no
+      groups are defined.
+    o bug #136004: add support for PostgreSQL
+ - ad.install
+    o bug #136004: add support for PostgreSQL
+ - ad_image.install
+    o bug #136004: add support for PostgreSQL
+ - ad_text.install
+    o bug #136004: add support for PostgreSQL
+ - ad_notify.install
+    o bug #136004: add support for PostgreSQL
+
+May 24th 2007
+ - ad.module
+    o enhance ad_groups_list() to return either a specified group or all groups,
+      also enhanced to return just the group name or the full group object
+ - ad_image.module
+    o bug #143251: do not query nonexistent ad_groups table
+    o fix logic to use taxonomy terms tid instead of nonexistent group gid
+
+May 23rd 2007
+ - adserve.php
+    o bug #144436: replace hard coded <br /> between ads with <div>
+    o add support for displaying ads without any taxonomy term
+ - adserve.php
+    o bug #144436: replace hard coded <br /> between ads with <div>
+
+May 11th 2007
+ - ad.install
+    o bug #143207: separate {} and $variable
+ - ad_image.install
+    o bug #143207: separate {} and $variable
+ - ad.module
+    o bug #142874: fix typos
+
+May 9th 2007
+ - ad.modlue
+   o bug #142562: add missing calls to t()
+   o bug #142583: in adserve url convert "&" to "&amp;" so it validates
+ - ad_cache_file.module
+   o bug #142583: in adserve url convert "&" to "&amp;" so it validates
+
+May 8th 2007
+ - adserve.php
+    o removed groups (replaced by taxonomy tids)
+ - ad_cache_file.module
+    o remove groups cache
+    o include in cache ads that aren't assigned to a taxonomy
+ - ad_cache_file.inc
+    o remove references to group cache
+    o check for ads that are not assigned to a taxonomy
+ - ad.module
+    o replace custom groups code with taxonomy functions
+ - ad_embed.module
+    o use tids instead of group name
+ - ad_notify.module
+    o remove references to group
+ - ad_remote.module
+    o use taxonomy tids rather than group name when building remote snippet
+ - ad.install
+    o convert ad_group table entries to taxonomy
+    o remove ad_group table
+    o remove gid calumn from ads table
+    o bug #129749: default to utf8 character set for all table types
+    o bug #142183: TEXT columns can't set DEFAULT
+ - ad_views.inc
+    o remove most groups logic
+    o update group blocks to use taxonomy
+ - ad_text.install
+    o bug #129749: default to utf8 character set for all table types
+    o bug #142183: TEXT columns can't set DEFAULT
+ - ad_image.install
+    o bug #129749: default to utf8 character set for all table types
+ - ad_notify.install
+    o bug #129749: default to utf8 character set for all table types
+    o bug #142183: TEXT columns can't set DEFAULT
+
+May 7th 2007
+ - adserve.php
+    o support displaying ads based on taxonomy tids
+ - ad_cache_file.module
+    o build cache for taxonomy tids
+ - ad_cache_file.inc
+    o support displaying ads based on taxonomy tids
+ - ad.module
+    o support setting term list from ad() function
+
+May 6th 2007
+ - adserve.php
+    o make 'error' variable accessible to cache plugins
+ - ad_cache_file.module
+    o added support for hostid
+    o redesigned cache struct to support additional lookups
+    o make cache lifetime configurable
+ - ad_cache_file.inc
+    o added support for hostid
+    o utilize new cache struct
+    o improved debug output
+    o make cache lifetime configurable
+
+May 5th 2007
+ - ad.module
+    o make hostid accessible
+    o set absolute path in the redirect url
+ - ad.install
+    o convert redirect urls to absolute paths
+ - ad_remote.module
+    o simple proof-of-concept for hosting ads on remote websites
+ - adserve.php
+    o add hostid to redirect URL
+    o bug #141630: don't print visible message when no ads exist
+ - ad_image.module
+    o use @HOSTID___ token so hostid can be set in cached content
+ - ad_text.module
+    o use @HOSTID___ token so hostid can be set in cached content
+
+May 4th 2007
+ - ad_text.module
+    o stop stripping the letter 'v' from all text ads
+
+------------
+May 4th 2007
+1.0 Release
+------------
+
+May 3rd 2007 (beta9)
+ - ad.module
+    o remove all file cache logic
+    o implement hooks for externally defining ad caches
+    o cleanup ad() to only display url variables that are actually used
+    o implement hook for upcoming event notifications (activate and expire)
+ - adserve.php
+    o remove all file cache logic
+    o implement hooks for externally defining ad caches
+ - ad_cache_file.module
+    o implement file cache as plug-in module
+ - ad_cache_file.inc
+    o implement file cache as plug-in module
+ - ad_cache_file.info
+    o implement file cache as plug-in module
+ - ad_notify.module
+    o implement hook to support upcoming event notifications
+ - ad_image.module
+    o bug #140804: support private download method
+
+May 2nd 2007
+ - ad.module
+    o bug #134889: don't display statistics and click history in teaser
+    o when no ads are displayed due to permissions display a helpful html 
+      comment noting the need to grant 'show advertisements' permissions.
+ - ad_text.module
+    o bug #132525: validate destination URL
+ - ad_image.module
+    o bug #132525: validate destination URL
+
+May 1st 2007
+ - ad.module
+    o translate adtype on display
+ - ad_image.module
+    o bug #139068: do not translate $adtype
+    o encode with UTF-8 charset
+ - ad_text.module
+    o bug #139068: do not translate $adtype
+    o bug #129749: encode with UTF-8 charset
+ - ad_embed.module
+    o bug #139167: don't try to replace tags with ads if there's no text
+ - adserve.php
+    o don't test $nids if isn't set (for E_ALL compat)
+
+May 1st 2007 (beta8)
+ - ad.module
+    o convert '%' to '@' to prevent <em> from showing up in emails
+    o add default text for notification emails
+    o remove duplicate code
+ - ad_notify.install
+    o add aid column to ad_notify table
+ - ad_notify.module
+    o add default text for notification emails
+    o display help text for notification email variables
+    o perform proper substitions on variables in notification mails
+    o prevent editing and deletion of locked notifications by non-privileged 
+      users
+    o support notification deletion
+    o support editing of notification email text
+    o use drupal_mail function instead of nonexistant drupal_mail function
+    o convert '%' to '@' to prevent <em> from showing up in emails
+
+April 30th 2007
+ - adserve.php
+    o bug #140173: add missing ";" at end of javascript.
+
+April 29th 2007
+ - ad_image.module
+    o bug #131028: reference $file structure as an object
+
+April 28th 2007
+ - ad_image.module
+    o add ability to set mouseover (tooltip) text when hovering a mouse over
+      the ad image.
+ - ad_image.install
+    o schema change to add field for mousever text.
+
+April 27th 2007
+ - ad_notify.module
+    o allow editing of notifications and the message text
+    o preliminary support for deleting notifications
+
+April 26th 2007
+ - adserve.php
+    o remove debug output preventing ads from displaying
+
+April 24th 2007
+ - adserve.php
+    o bug #131035: move path variables from global to local statics, move
+      adserve logic into function out of global space.
+    o include extra debug information showing version of all ad files
+
+April 21st 2007
+ - ad_image.info
+    o add dependency on upload module
+ - ad_notify.module
+    o don't show 'my notifications' tab unless viewing an ad you own
+
+April 17th 2007
+ - adserve.php
+     o bug #131035: move adserve variables from global into local statics
+       (the Drupal bootstrap was wiping the globals depending on the PHP
+        configuration.)
+
+April 13th 2007
+ - ad.module
+    o bug #135144: don't translate ad status when storing in database, only
+      when displaying to screen
+ - adserve.php
+    o be sure variables are set before accessing them to allow running PHP in
+      E_ALL mode
+
+April 4th 2007
+ - ad_image.module
+    o bug #127944: build path to image file using file_create_url()
+    o bug #131022: put all settings under settings tab
+ - ad.module
+    o bug #131023: don't wrap block title in <em>
+ - ad.install
+    o bug #130968: add missing prefix
+ - ad_text.install
+    o bug #129469: add missing prefix
+
+February 27th 2007
+ - ad.module
+    o reorder logic so we only return once
+ - ad_notify.install
+    o rename table from ad_notifications to ad_notify
+    o rename "time" to "delay" to make clode more clear
+    o introduce "queued" row for tracking notification delays
+    o add additional indexes for better performance
+ - ad_notify.module
+    o introduce _cron hook for sending and tracking scheduled notifications
+    o introduce send_mail function for sending email notifications
+    o introduce "mail_text" hook for setting email text
+    o validate notifications before saving them
+    o rename references to old ad_notifications table to new ad_notify table
+
+February 25th 2007
+ - ad.install
+    o fix bug #122289: restore missing parenthesis.
+
+February 22nd 2007
+ - ad.module
+    o re-arrange ad notifications, add additional notification events
+ - ad_notify.install
+    o add field for one time use notifications (auto-expiring)
+    o add field for counting
+    o add field for disabling notifications
+ - ad_notify.module
+    o replace 'manage all notifications' with already existing permission 
+      'manage owners'
+    o add 'my notifications' tab for users to manage their own notifications
+    o add GUI option for one-time notifications (auto-expiring)
+    o add GUI option for locking notifications (ie, those created by admins that
+      users can't disable).
+
+February 21st 2007
+ - ad.module
+    o implement initial ad notification hooks
+ - ad_notify.install
+    o implement database schema for managing notifications
+ - ad_notify.module
+    o implement GUI for creating ad email notifications
+    o implement api for registering notification events
+      (NOTE:  notifications themselves are not yet implemented, I'm just
+       checking in a work-in-progress.  If you choose to test this now, you'll
+       likely need to manually dump your ad_notifications table later and 
+       re-create it once the ad_notify module is actually released.)
+
+February 19th 2007 (beta7)
+ - ad_image.module
+    o make it possible for someone with 'create advertisement' permission to
+      be able to upload an image for their advertisement.
+ - ad_text.module
+    o make it possible for someone with 'create advertisement' permission to
+      be able to enter text for their advertisement.
+
+February 17th 2007 (beta6)
+ - ad.module
+    o display 'edit' tab for all ad owners, not just node owner
+    o automatically give user with UID of 1 all ad permissions
+    o log in watchdog if ad redirect fails
+    o be sure all fieldsets and contents are collapsible on the edit form
+    o don't require ad description as it's not used anywhere important
+    o call theme functions properly
+    o remove ad notifications logic, add hooks to allow notifications and other
+      per-ad/per-owner functionality to be implemented in plug-in modules
+ - ad.install
+    o remove ad_notifications table and ad table notifcation columns
+ - ad_image.module
+    o new 'manage active ad' permission, don't allow ad owner to change the 
+      active ad unless they have been granted this permission
+    o fix image fieldset contents to properly collapse
+ - ad_text.module
+    o new 'manage ad text' permission, don't allow ad owner to change the
+      ad text unless they have been granted this permission
+ - ad_report.module
+    o make it possible for users other than that with a UID of 1 to see the
+      report images
+
+February 5th 2007 (beta5)
+ - ad_view.inc
+    o add filter for owned ads so "my ads" default view can use ad_owners table
+    o order pages by last updated timestamp
+ - ad.module
+    o feature #114638: configuration option for specifying the link target,
+      i.e. open in same window when clicking ad, open in new window, etc.
+ - ad_image.module
+    o feature #114638: open link in configured link target
+ - ad_text.module
+    o feature #114638: open link in configured link target
+ - ad_embed.module
+    o pass proper user array to user_access()
+
+February 4th 2007
+ - ad.module
+    o be sure <div> wrapping ads has proper group, specifying nids if not using
+      a group.
+    o modify ad_groups_list to support listing just group names.
+ - ad_embed.module
+    o implement automatically embedded ads, allowing per-content-type 
+      configuration.  Specify after which paragraph to insert one or more 
+      randomly selected ads from the chosen ad group.
+    o introduce configuration options to disable scanning for manual tags (to  
+      reduce overhead if this functionality is not being used).
+
+February 3rd 2007
+ - ad_embed.module
+    o introduce 'embed ads in content' permission - only filter nodes owned by
+      users with this permission. (which could have funky implications that
+      we'll ignore for now).
+    o add help text to module.
+    o cleanup to make it simple to add additional tag styles if desired.
+    o when replacing tags with ads in content adjust scan position for 
+      differences of length between what is being replaced and what is 
+      replacing.
+
+February 2nd 2007
+ - ad_embed.module
+    o initial support for embedding ads within content. (ie, replaces [[ad]] or
+      <!--ad--> with javascript for ad, supports parameters.)
+
+January 31st 2007
+ - ad.module
+    o issue #114535: call _ad_check_install() if failing to display ads, 
+      properly set "adserve" variable.
+    o issue #114651: be sure cache file has contents before trying to loop
+      through it.
+
+January 29th 2007
+ - ad_image.module
+    o detect clean urls and display ad images appropriately
+ - adserve.php
+    o add additional debug to filecache when displaying ads from a list of nids
+    o use default ad quantity of 1 if no quantity is specified
+
+January 28th 2007 (beta4)
+ - ad.module
+    o support for displaying ads based on taxonomy and role with views (and
+      much more)
+    o if views module enabled, offer pages to ad owners listing all their ads,
+      optionally filtered by adstatus.
+ - ad_views.inc
+    o add quantity field for specifying how many ads to display in view
+    o add filter for ad type
+    o improve filters to allow selection of multiple types, status or groups
+    o default block views: all active ads, all active ads of each type, and all
+      active ads of each group.
+    o default page views: all active ads, all owner's ads, and views for each 
+      all owner's ads of a given adstatus.
+ - adserve.php
+    o fix to support multiple ads when displaying by nid
+
+January 27th 2007
+ - ad_views.inc
+    o initial field definitions for base ad module.
+    o filter by: group, adstatus
+    o add advertisement view type.
+ - ad_image_views.inc
+    o display image ad, incrementing view counter
+ - ad_text_views.inc
+    o display text ad, incrementing view counter
+ - ad.module
+    o include ad_views.inc if the view.module is enabled.
+    o don't search for adserve.php, require it to be in ad folder with ad module
+    o update ad() to allow specifying list of nids to display ads from
+ - ad_image.module
+    o include ad_views.inc if the view.module is enabled.
+ - ad_text.module
+    o include ad_views.inc if the view.module is enabled.
+ - adserve.php
+    o support displaying ads from list of nids instead of from group.
+
+January 26th 2007
+ - ad_image.module
+    o use file_create_path() to generate proper path to image.
+ - ad.module
+    o be smarter when looking for adserve.php, derive path from ad.module path
+      in system table.
+    o if enabled, update file cache when ads are updated.
+    o cleanup when changing number of ad files, or disabling file cache.
+ - adserve.php
+    o noncached display requires full bootstrap.
+
+January 26th 2007 (beta3)
+ - ad.install
+    o updated_1: introduce new fields in {ads} table for tracking when ads were
+      activated and expired, and for limiting the maximum number of views or
+      clicks.
+ - ad.module
+    o feature #109688: support for scheduling based on views or clicks.
+    o track when ad was last activated or expired.
+    o improve status messages when viewing advertisement.
+ - adserver.php
+    o feature #109688: support for scheduling based on views or clicks
+
+January 24th 2007
+ - ad.module
+    o add support for automatically enabling and disabling advertisements at
+      specified times and dates.
+
+January 23rd 2007
+ - ad.module
+    o add support for displaying multiple unqiue ads.  The automatically
+      created ad blocks include a configuration option supporting this new 
+      feature.
+    o rename "database cache" to "none", as it's not a cache at all.  This
+      paves the way for later adding support for an actual database level
+      ad cache.
+ - adserve.php
+    o add support for displaying multiple unique ads.
+ - ad_image.module
+    o fix paths to work when hosting Drupal from a subdirectory.
+
+January 20th 2007
+ - ad_image.php
+    o bugfix #111130: Must pass $node when calling adapi (for pre-PHP5 support)
+
+January 15th 2007
+ - ad.module 
+    o add support for filter types with ads
+    o manually invoke ad_ modules to support pre-PHP5 installations
+    o move 'my ads' to main menu, not under user name
+    o only display 'ad owners' tab for ad content
+ - adserve.php
+    o allow periods (.) in ad path
+ - ad_image.php
+    o update adapi to support pre-PHP5 installations
+ - ad_text.php
+    o update adapi to support pre-PHP5 installations
+
+January 3rd 2007
+ - adserve.php
+    o strip all but allowed characters input from $_GET to prevent XSS attacks 
+
+January 1st 2007 (beta2)
+ - ad.module
+    o add support for externally defined ad caching methods
+    o provide new administrative screen with statistics overview
+    o cleanup permissions:
+       - if have 'administer advertisements' automatically have all ad perms
+       - introduce new 'manage owners' permission
+       - remove redundant permission tests
+ - adserve.php
+    o add support for externally defined ad caching methods
+
+December 31'st 2006 (beta1)
+ - ad.module
+    o implement file cache
+    o pass in path to files directory, abbreviate all url variables
+    o properly display ad status even with limited permissions
+    o give primary ad owner 'modify status' permission by default
+ - adserve.php
+    o implement file cache
+
+December 30'th 2006
+ - ad.module
+    o fix logic that locates adserve.php, cleanup associated error messages
+    o replace 'edit own advertisements' with 'manage advertisements'
+    o add page for displaying all advertisements owned by specific user
+    o add interface for removing ad owners from an ad
+    o don't allow user to be added as ad owner unless is has 'manage
+      advertisements' or 'administer advertisements' premissision
+    o by default only add 'access statistics' and 'access click history' to new
+      ad owners.
+    o when using filecache, default to using 3 files for better performance
+    o pass number of files to use for filecache to adserve.php
+ - adserve.php
+    o retrieve number of files to use for filecache from $_GET variable
+ - ad_image.module
+    o display actual ad in node teaser
+ - ad_text.module
+    o display actual ad in node teaser
+
+December 30'th 2006 (0.6)
+ - ad.module
+    o implement granular advertisement permission system with the following
+      default permissions:  access statistics, access click history, modify
+                            group, modify status
+    o add default ad owner and permissions when creating new ads
+
+December 28'th 2006
+ - ad.module
+    o track hostid when clicking an ad
+    o implement form for adding multiple owners to an ad
+    o implement form for granting per-user permissions to each ad
+ - ad_image.module
+    o include hostid when displaying ad so clicks can be tracked to host
+ - ad_text.module
+    o include hostid when displaying ad so clicks can be tracked to host
+
+December 27'th 2006 (0.5)
+ - ad.module
+    o search for adserve.php from top level directory to support multi-site
+      installations (module may not live in /modules)
+    o no longer try specifying how many dirs above adserve.php index.php is
+ - adserve.php
+    o improve debugging output
+    o search for bootstrap.inc
+ - ad_image.module
+    o specify absolute path to ad image so can display from non-front pages
+ - ad_text.module
+    o define 'redirect' adapi hook so clicking text ads takes you to proper url
+
+December 25'th 2006
+ - ad.install
+    o define ad_permissions table
+    o define ad_owners table
+    o define ad_notifications table
+    o define ad_hosts table
+ - ad.module
+    o fix ad statistics to display even if none for current hour
+    o implement statistics for current week
+    o register unique hostid for each add owner for displaying ads remotely
+    o enforce matching ad status and node status
+    o only display clicks and statistics for ads, not all ad types
+    o stub in support for ad owners, ad owner permissions and add owner 
+      notifications
+    o display group name instead of just group id when listing ads
+    o add regex in search for adserve.php to not match ie .swp files
+ - adserve.php
+    o implement cache types in switch statement
+    o track hostid when viewing ads for displaying on remote sites
+ - ad_text.module
+    o use htmlentities() to encode ad text
+
+December 11'th 2006 (0.3.1)
+ - ad.install
+    o ad missing comma
+    o remove isdefault column from ad_groups table
+ - ad.module
+    o always display all_time statistics for ads, even if 0
+    o for simplicity, hard code 'default' group to be gid 1
+    o do not allow editing or deleting of 'default' group
+    o auto-select ad type if only one type available
+ - ad_image.module
+    o perform check_install when displaying node form
+
+December 10'th 2006 (0.3.0)
+ - ad.module
+    o support submenu under module settings
+    o require ad type be selected before show node form
+    o only display image upload error after preview or submit
+ - ad_image.module
+    o when displaying ad, wrap in appropriate <div>'s.
+ - ad_text.module
+    o implement function to display text ads
+    o simplify ads to be just header and body
+    o single global settings for min and max header and body lengths
+    o implement adapi for text ads
+    o display form for creating and editing text ads
+ - ad_text.install
+    o new table for storing text ads.
+
+December 9'th 2006 (0.2.4)
+ - ad.module
+    o fix ad creation to work when using multiple ad_type modules
+    o only display click history when there is one
+ - ad_image.module
+    o display images during preview
+    o set error if no image is uploaded
+ - ad_text.module
+    o save ad_text group settings
+    o begin to stub in adapi
+    o stub in node_form
+
+November 30'th 2006 (0.2.3)
+ - adserve.php
+    o move redundant javascript logic from ad_type modules into adserve.php
+ - ad_text.install
+    o clean up ad_text schema
+ - ad_text.module
+    o initial support for ad group configuration
+ - ad_image.install
+    o remove extra id from ad_image_format table
+ - ad_image.module
+    o remove javascript logic
+
+November 29'th 2006 (0.2.2)
+ - ad.module
+    o auto-generate advertisemnt blocks for each ad group
+    o fix block management after menu restructuring
+ - ad_image.module
+    o merge in version 0.2.1 that was missed in previous tarball
+
+November 29'th 2006 (0.2.1)
+ - ad.module
+ - ad_image.module
+    o Implemented basic functionality
+
+April 17, 2006
+ - ad.module
+    o Remove calls to tablesort_pager(), removed during Drupal 4.7 development

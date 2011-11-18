@@ -1,0 +1,3 @@
+; $Id: video_filter.info,v 1.4.2.1 2009/03/15 17:21:56 blackdog Exp $
+name = Video Filter
+description = Filter to include videos from Youtube, Google video etc

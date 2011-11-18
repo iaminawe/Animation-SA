@@ -1,0 +1,6 @@
+; $Id: date_facets.info,v 1.2 2008/04/23 14:58:40 davidlesieur Exp $
+name = CCK Date Facets
+description = "Exposes CCK Date fields as facets."
+dependencies = content cck_facets faceted_search search
+package = Faceted Search
+

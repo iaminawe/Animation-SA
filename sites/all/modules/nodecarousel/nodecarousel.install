@@ -1,0 +1,108 @@
+<?php
+// $Id: nodecarousel.install,v 1.4.2.4 2008/04/19 23:10:04 jcfiala Exp $
+
+/**
+ * Implmentation of hook_install().
+ */
+function nodecarousel_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {nodecarousel} (
+        ncid int unsigned NOT NULL default '0',
+        name varchar(32) NOT NULL,
+        title varchar(255) default NULL,
+        description varchar(255) default NULL,
+        access varchar(255) default NULL,
+        dynamic int(1) NOT NULL default '0',
+        horizontal int(1) NOT NULL default '1',
+        wrap varchar(8) NOT NULL default '0',
+        autoscroll int(2) NOT NULL default '0',
+        index_control char(3) NOT NULL default '',
+        number_fetch int(10) NOT NULL default '1',
+        number_scroll int(10) NOT NULL default '1',
+        number_visible int(10) NOT NULL default '3',
+        start_position int(10) NOT NULL default '1',
+        animation_speed varchar(5) NOT NULL default 'slow',
+        prev_text varchar(255) default NULL,
+        next_text varchar(255) default NULL,
+        first_text varchar(255) default NULL,
+        last_text varchar(255) default NULL,
+        node_source int(4) NOT NULL default '0',
+        node_types varchar(255) default NULL,
+        taxonomy_tids varchar(255) default NULL,
+        nodequeue_qid int(10) unsigned NULL,
+        sort varchar(255) default NULL,
+        sort_ascending int(1) NOT NULL default '0',
+        js_scroll_function longtext default NULL,
+        view_vid int(10) NOT NULL default '0',
+        autoload tinyint NOT NULL default '0',
+        PRIMARY KEY (ncid),
+        KEY name (name)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {nodecarousel} (
+        ncid int_unsigned NOT NULL default '0',
+        name varchar(32) NOT NULL,
+        title varchar(255) default NULL,
+        description varchar(255) default NULL,
+        access varchar(255) default NULL,
+        dynamic smallint NOT NULL default '0',
+        horizontal smallint NOT NULL default '1',
+        wrap varchar(8) NOT NULL default '0',
+        autoscroll smallint NOT NULL default '0',
+        index_control char(3) NOT NULL default '',
+        number_fetch int(10) NOT NULL default '1',
+        number_scroll int(10) NOT NULL default '1',
+        number_visible int(10) NOT NULL default '3',
+        start_position int(10) NOT NULL default '1',
+        animation_speed varchar(5) NOT NULL default 'slow',
+        prev_text varchar(255) default NULL,
+        next_text varchar(255) default NULL,
+        first_text varchar(255) default NULL,
+        last_text varchar(255) default NULL,
+        node_source int NOT NULL default '0',
+        node_types varchar(255) default NULL,
+        taxonomy_vids varchar(255) default NULL,
+        nodequeue_qid integer unsigned default NULL,
+        sort varchar(255) default NULL,
+        sort_ascending NOT NULL smallint default '0',
+        js_scroll_function text default NULL,
+        view_vid int(10) NOT NULL default '0',
+        autoload smallint NOT NULL default '1'
+        PRIMARY KEY (ncid),
+      ");
+      db_query("CREATE INDEX {nodecarousel}_name_idx ON {nodecarousel} (name)");
+      break;
+  }
+}
+
+function nodecarousel_uninstall() {
+  db_query("DROP TABLE {nodecarousel}");
+}
+
+function nodecarousel_update_1() {
+  $items = array();
+  $items[] = update_sql("ALTER TABLE {nodecarousel} ADD view_vid INT(10) NOT NULL default '0'");
+  return $items;
+}
+
+/**
+ * Adding the new autoload field.
+ *
+ * @return unknown
+ */
+function nodecarousel_update_5001() {
+  $items = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $items[] = update_sql("ALTER TABLE {nodecarousel} ADD autoload tinyint NOT NULL default '1'");
+      break;
+    case 'pgsql':
+      $items[] = update_sql("ALTER TABLE {nodecarousel} ADD autoload smallint NOT NULL default '1'");
+      break;
+  }
+  return $items;
+}

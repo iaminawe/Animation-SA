@@ -1,0 +1,6 @@
+; $Id: uc_order.info,v 1.5.2.2 2008/07/29 22:22:44 rszrama Exp $
+name = Order
+description = REQUIRED. Receive and manage orders through your website.
+dependencies = token workflow_ng ubrowser
+package = Ubercart - core
+

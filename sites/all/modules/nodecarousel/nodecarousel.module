@@ -1,0 +1,1684 @@
+<?php
+// $Id: nodecarousel.module,v 1.4.2.5 2008/04/19 23:10:04 jcfiala Exp $
+
+/**
+ * @file
+ * Displays a series of nodes side-by-side with the user able to scroll the series left to right or up or down.
+ *
+ * The general structure of this module was copied out of views, which had a UI and usefullness that we wanted to
+ * emulate.
+ */
+DEFINE("NC_SOURCE_NODE_AND_TAXONOMY", 1);
+DEFINE("NC_SOURCE_NODEQUEUE", 2);
+DEFINE("NC_SOURCE_HOOK", 3);
+DEFINE("NC_SOURCE_VIEW", 4);
+DEFINE("NC_INDEX_TITLE", 'ttl');
+DEFINE("NC_INDEX_NUMBER", 'num');
+DEFINE("NC_INDEX_THEME", 'thm');
+
+/**
+ * Implementation of hook_perm()
+ *
+ * @return array
+ *   Returns an array of permissions strings.
+ *
+ */
+function nodecarousel_perm() {
+  return array('administer nodecarousel', 'access all nodecarousels');
+}
+
+/**
+ * Implementation of hook_simpletest().
+ *
+ * @return array
+ *   Returns an array containing the names of the .test files in the tests directory.
+ */
+function nodecarousel_simpletest() {
+  $dir = drupal_get_path('module', 'nodecarousel') .'/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
+}
+
+/**
+ * Implmements hook_menu
+ *
+ * @param boolean $may_cache
+ *
+ * @return array
+ *   array of menu items
+ */
+function nodecarousel_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array('path' => 'admin/build/nodecarousel',
+      'title' => t('NodeCarousel'),
+      'callback' => '_nodecarousel_admin_page',
+      'access' => user_access('administer nodecarousel'),
+      'description' => t('Nodecarousels are blocks of scrollable content.'),
+      'type' => MENU_NORMAL_ITEM);
+    $items[] = array('path' => 'admin/build/nodecarousel/list',
+      'title' => t('List'),
+      'callback' => '_nodecarousel_admin_page',
+      'access' => user_access('administer nodecarousel'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => '-1');
+    $items[] = array('path' => 'admin/build/nodecarousel/add',
+      'title' => t('Add'),
+      'callback' => '_nodecarousel_admin_add_page',
+      'access' => user_access('administer nodecarousel'),
+      'type' => MENU_LOCAL_TASK);
+    $items[] = array('path' => 'admin/build/nodecarousel/delete',
+      'title' => t('Delete'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('nodecarousel_admin_delete_confirm'),
+      'access' => user_access('administer nodecarousel'),
+      'type' => MENU_CALLBACK);
+
+    $items[] = array(
+      'title' => t('Get More Carousel'),
+      'path' => 'nodecarousel/fetch',
+      'callback' => 'nodecarousel_fetch',
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+  }
+  else {
+    if (user_access('administer nodecarousel') &&
+        arg(0) == 'admin' &&
+        arg(1) == 'build' &&
+        arg(2) == 'nodecarousel') {
+      $nc = nodecarousel_load(arg(3));
+      if ($nc) {
+        nodecarousel_add_menu_items($items, $nc, 'admin/build/nodecarousel/'. arg(3), TRUE);
+      }
+    }
+
+  }
+  return $items;
+}
+/**
+ * Add menu items for the node carousel.
+ *
+ * @param array $items
+ *   Array contain menu items.
+ * @param object $nc
+ *   Node Carousel object.
+ * @param string $url
+ *   Contains the base url.
+ */
+function nodecarousel_add_menu_items(&$items, $nc, $url, $base = TRUE, $args = array()) {
+  if (user_access('administer nodecarousel')) {
+    $items[] = array('path' => "$url/edit",
+      'title' => t('Edit'),
+      'callback' => 'nodecarousel_admin_edit_page',
+      'callback arguments' => array($nc->name),
+      'access' => user_access('administer nodecarousel'),
+      'weight' => -5,
+      'type' => MENU_LOCAL_TASK);
+
+    $items[] = array('path' => "$url/clone",
+      'title' => t('Clone'),
+      'callback' => 'nodecarousel_admin_clone_page',
+      'callback arguments' => array($nc->name),
+      'access' => user_access('administer nodecarousel'),
+      'type' => MENU_CALLBACK);
+  }
+}
+
+/**
+ * Implements hook_block().
+ *
+ * @param string $op
+ *   Block operation to respond to.
+ * @param mixed $delta
+ *   Block identifier or name.
+ * @param array $edit
+ *   Values to deal with for editing block options.
+ * @return array
+ *   Array describing block information
+ */
+function nodecarousel_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      $query = "SELECT name, description FROM {nodecarousel} ";
+      $result = db_query($query);
+      while ($row = db_fetch_object($result)) {
+        $blocks['nc_'. $row->name] = array('info' => $row->description ? $row->description : $row->name );
+      }
+      return $blocks;
+    break;
+    case 'view':
+      return _nodecarousel_write_block($delta);
+    break;
+  }
+}
+
+/**
+ * Loads a nodecarousel as an object.
+ *
+ * @param mixed $carousel_name
+ *   Either the ncid index, or the name of the nodecarousel
+ * @return stdClass
+ *   A stdClass with all of the fields in nodecarousel represented, or FALSE.
+ */
+function nodecarousel_load($carousel_name) {
+  if (is_numeric($carousel_name)) {
+    $query = "SELECT * FROM {nodecarousel} where ncid = %d";
+  }
+  else {
+    $query = "SELECT * FROM {nodecarousel} where name = '%s'";
+  }
+  $result = db_query($query, $carousel_name);
+
+  if ($nc = db_fetch_object($result)) {
+    $nc->access = unserialize($nc->access);
+    $nc->node_types = unserialize($nc->node_types);
+    $nc->taxonomy_tids = unserialize($nc->taxonomy_tids);
+    return $nc;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Displays a confirmation form when deleting a nodecarousel.
+ *
+ * @param int $ncid
+ *   The ncid of the nodecarousel row to confirm.
+ * @return string
+ *   Form array information for drupal to display.
+ */
+function nodecarousel_admin_delete_confirm($ncid = '') {
+  $nc = nodecarousel_load($ncid);
+
+  if (!$nc) {
+    return drupal_goto('admin/build/nodecarousel');
+  }
+
+  $form['ncid'] = array('#type' => 'value', '#value' => $nc->ncid);
+
+  $form = confirm_form($form,
+    t('Are you sure you want to delete %title?', array('%title' => $nc->name)),
+    $_GET['destination'] ? $_GET['destination'] : 'admin/build/nodecarousel',
+    t('This action cannot be undone.'),
+    t('Delete'), t('Cancel')
+  );
+  return $form;
+}
+
+/**
+ * Handle the submit button to delete a nodecarousel.
+ *
+ * @param string $form_id
+ *   Standard form_id for submit functions in formapi.
+ * @param array $form_values
+ *   Array of form values for deletion.
+ */
+function nodecarousel_admin_delete_confirm_submit($form_id, $form_values) {
+  _nodecarousel_delete((object) $form_values);
+  menu_rebuild();
+}
+
+/**
+ * Deletes a nodecarousel.
+ *
+ * @param array $form_values
+ *   Array of form values from deletion confirmation - only important value is ncid.
+ */
+function _nodecarousel_delete($form_values) {
+  $form_values->ncid = intval($form_values->ncid);
+
+  if (!$form_values->ncid) {
+    return;
+  }
+
+  db_query("DELETE FROM {nodecarousel} where ncid = %d", $form_values->ncid);
+}
+
+/**
+ * Displays a page which lists defined nodecarousel blocks for updating or deleting, and allows user to create new ones.
+ *
+ * @return
+ *  mixed returns the added/deleted/updated nodecarousel block
+ */
+function _nodecarousel_admin_page() {
+  $num_rows = 25;
+
+  drupal_set_title(t('Administer Node Carousels'));
+
+  $result = pager_query("SELECT ncid, name, description, title FROM {nodecarousel} ORDER BY name", $num_rows);
+
+  $table_items = array();
+  while ($row = db_fetch_object($result)) {
+    $table_items[] = array(
+      $row->name,
+      $row->title,
+      $row->description,
+      theme('links', array(
+        array('title' => t('Edit'), 'href' => "admin/build/nodecarousel/$row->name/edit"),
+        array('title' => t('Delete'), 'href' => "admin/build/nodecarousel/delete/$row->ncid"),
+        array('title' => t('Clone'), 'href' => "admin/build/nodecarousel/$row->name/clone"),
+      ))
+    );
+  }
+
+  if ($table_items) {
+    $output = theme('table', array(t('Name'), t('Title'), t('Description'), t('Actions')), $table_items, array("cellpadding" => "4"), t('Existing Node Carousels'));
+    $output .= theme('pager', NULL, $num_rows);
+  }
+  else {
+    $output .= t('<p>No Node Carousel blocks have currently been defined.</p>');
+  }
+
+  return $output;
+}
+
+/**
+ * Displays the administration form for a nodecarousel block, allowing the user to either create or update one.
+ *
+ * @return string
+ *   Returns the Add/Edit form for administering a nodecarousel.
+ */
+function _nodecarousel_admin_add_page() {
+  $op = $_POST['op'];
+  if ($op == t('Cancel')) {
+    drupal_goto('admin/build/nodecarousel');
+  }
+
+  $node_carousel = _nodecarousel_get_default();
+
+  drupal_set_title(t('Add a Node Carousel Block'));
+
+  return drupal_get_form('nodecarousel_edit_form', $node_carousel, $op);
+}
+
+/**
+ * Displays the administration form for editing an existing nodecarousel block.
+ *
+ * @param string $nc_name
+ *   The name of the nodecarousel.  If blank, then loads the add page.
+ * @return string
+ *   Returns the Edit form for administering a nodecarousel.
+ */
+function nodecarousel_admin_edit_page($nc_name = '') {
+  $node_carousel = nodecarousel_load($nc_name);
+  if (!$node_carousel) {
+    return _nodecarousel_admin_add_page();
+  }
+
+  drupal_set_title(t('Edit a Node Carousel Block'));
+
+  return drupal_get_form('nodecarousel_edit_form', $node_carousel);
+}
+
+/**
+ * Displays the administration form for cloning an existing nodecarousel block.
+ *
+ * @param string $nc_name
+ *  The name of the nodecarousel.  If Blank, then loads the add page.
+ * @return string
+ *   Returns the Add form for a nodecarousel, pre-loaded with the data from the source nodecarousel.
+ */
+function nodecarousel_admin_clone_page($nc_name = '') {
+  $node_carousel = nodecarousel_load($nc_name);
+  if (!$node_carousel) {
+    return _nodecarousel_admin_add_page();
+  }
+  $node_carousel->ncid = 0;
+
+  drupal_set_title(t('Add a Node Carousel Block'));
+
+  return drupal_get_form('nodecarousel_edit_form', $node_carousel);
+}
+
+/**
+ * Creates a blank, but valid, nodecarousel object.  This is where the defaults come from.
+ *
+ * @return stdClass
+ *   Object containing defaults for nodecarousel object.
+ */
+function _nodecarousel_get_default() {
+  $nc = new stdClass();
+
+  $nc->ncid = 0;
+  $nc->autoscroll = 0;
+  $nc->number_visible = 5;
+  $nc->number_fetch = 5;
+  $nc->number_scroll = 5;
+  $nc->start_position = 1;
+  $nc->access = array();
+  $nc->horizontal = 1;
+  $nc->dynamic = 0;
+  $nc->animation_speed = "fast";
+  $nc->sort_ascending = 0;
+  $nc->autoload = 1;
+
+  return $nc;
+}
+
+/**
+ * Form generation function for the nodecarousel administration form.
+ *
+ * @param stdClass $node_carousel
+ *   NodeCarousel object, either blank/default or an existing one.
+ * @param string $op
+ *   The operation being performed.
+ * @return array
+ *   Array of form elements as per Form API.
+ */
+function nodecarousel_edit_form($node_carousel, $op = '') {
+  $form = array();
+
+  //drupal_set_message(print_r($node_carousel, true));
+
+  $form['ncid'] = array('#type' => 'value', '#value' => $node_carousel->ncid);
+
+  $form['basic-info'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => true,
+    '#collapsed' => false,
+    '#title' => t('Basic Information'),
+  );
+
+  $form['basic-info']['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#default_value' => $node_carousel->name,
+    '#size' => 20,
+    '#maxlength' => 32,
+    '#description' => t('The unique identifier of the nodecarousel block; it is only important for nodecarousel blocks that modules or themes will need to use. Only alphanumeric and _ allowed here'),
+    '#required' => true,
+  );
+
+  $form['basic-info']['access'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Access'),
+    '#default_value' => $node_carousel->access,
+    '#options' => nodecarousel_filter_role(),
+    '#description' => t('Only the checked roles will be able to see this nodecarousel block in any form; if no roles are checked, access will not be restricted.'),
+  );
+
+  $form['basic-info']['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#default_value' => $node_carousel->description,
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#description' => t('A description of the nodecarousel block for the admin list.'),
+  );
+
+  $form['basic-info']['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#default_value' => $node_carousel->title,
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#description' => t('The title to display with the nodecarousel block.'),
+  );
+
+  $form['node-source'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => true,
+    '#collapsed' => false,
+    '#title' => t('Node Source'),
+    '#required' => true,
+  );
+
+  $sources = array();
+  if (module_exists('nodequeue')) {
+    $sources = array(NC_SOURCE_NODE_AND_TAXONOMY => t('Node type / Taxonomy'),
+      NC_SOURCE_NODEQUEUE => t('Node Queue'),
+      NC_SOURCE_HOOK => t('hook_nodecarousel()'));
+  }
+  else {
+    $sources = array(NC_SOURCE_NODE_AND_TAXONOMY => t('Node type / Taxonomy'),
+      NC_SOURCE_HOOK => t('hook_nodecarousel()'));
+  }
+  if (module_exists('views')) {
+    $sources[NC_SOURCE_VIEW] = t('View');
+  }
+
+  $form['node-source']['node_source'] = array(
+    '#type' => 'radios',
+    '#title' => t('Node Source'),
+    '#default_value' => $node_carousel->node_source,
+    '#options' => $sources,
+  );
+
+  foreach (node_get_types() as $type => $info) {
+    $nodes[$type] = $info->name;
+  }
+
+  $form['node-source']['node_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Node Types'),
+    '#default_value' => $node_carousel->node_types,
+    '#options' => $nodes,
+    '#description' => t('Check each node type to display in the carousel.  If you do not want to restrict based on node type, leave them all unchecked.'),
+  );
+
+  $terms = array();
+  $query = 'SELECT v.vid, v.name, td.tid, td.name as term_name FROM {vocabulary} v INNER JOIN {term_data} td ON (v.vid = td.vid) ORDER BY v.weight, v.name, td.weight, td.name';
+  $result = db_query(db_rewrite_sql($query, 'v', 'vid'));
+  while ($term_row = db_fetch_object($result)) {
+    $terms[$term_row->tid] = $term_row->name .': '. $term_row->term_name;
+  }
+
+  $form['node-source']['taxonomy_tids'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy terms'),
+    '#default_value' => $node_carousel->taxonomy_tids,
+    '#options' => $terms,
+    '#multiple' => TRUE,
+    '#size' => 8,
+    '#description' => t('Select any taxonomies which the nodes to display should be restricted by.  If you do not want to restrict based on taxonomy, select nothing'),
+  );
+
+  if (module_exists('views')) {
+    $views = array();
+    $query = 'SELECT vid, name FROM {view_view} ORDER BY name';
+    $result = db_query($query);
+    while ($view = db_fetch_object($result)) {
+      $views[$view->vid] = $view->name;
+    }
+    $form['node-source']['view_vid'] = array(
+      '#type' => 'select',
+      '#title' => t('View'),
+      '#default_value' => $node_carousel->view_vid,
+      '#options' => $views,
+      '#multiple' => FALSE,
+      '#size' => 8,
+      '#description' => t('Choose which view to display in the node carousel.'),
+    );
+  }
+  
+  $sources = array('date_created' => t('Date Created'),
+      'date_updated' => t('Date Updated'),
+      'title' => t('Title'),
+      'node_id' => t('Node ID'),
+      'random' => t('Random'),
+      'author_name' => t('Author Name'),
+      );
+
+  if (module_exists('nodequeue')) {
+    $nodequeues = array();
+    $query = 'SELECT nq.qid, nq.title FROM {nodequeue_queue} nq ORDER BY title';
+    $result = db_query($query);
+    $nodequeues[0] = 'Select One';
+    while ($nq_row = db_fetch_object($result)) {
+      $nodequeues[$nq_row->qid] = $nq_row->title;
+    }
+
+    $form['node-source']['nodequeue_qid'] = array(
+      '#type' => 'select',
+      '#title' => t('Nodequeue Source'),
+      '#default_value' => $node_carousel->nodequeue_qid,
+      '#options' => $nodequeues,
+      '#multiple' => FALSE,
+      '#description' => t('Select the nodequeue whose contents you want to display in the carousel.'),
+    );
+    
+    $sources['node_queue_order'] = t('Node Queue Order');
+  }
+  
+  $form['node-source']['sort'] = array(
+    '#type' => 'select',
+    '#title' => t('Sort Order'),
+    '#default_value' => $node_carousel->sort,
+    '#options' => $sources,
+    '#description' => 'The order to display nodes in.  Do not choose Node Queue order unless that is the source you chose above.',
+  );
+
+  $form['node-source']['sort_ascending'] = array(
+    '#type' => 'radios',
+    '#title' => t('Sort Order'),
+    '#default_value' => $node_carousel->sort_ascending,
+    '#options' => array(t('Ascending'), t('Descending')),
+  );
+
+  $form['display'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => true,
+    '#collapsed' => false,
+    '#title' => t('Display Options'),
+  );
+
+  $form['display']['dynamic'] = array(
+    '#type' => 'radios',
+    '#title' => t('Data Collection'),
+    '#default_value' => $node_carousel->dynamic,
+    '#options' => array(t('Static'), t('Dynamic')),
+    '#description' => t('If Static, then all nodes that will be displayed will be fetched on the page load.  If using a Dynamic data collection, then additional nodes will be fetced via AJAX when the last node is displayed'),
+    '#required' => true,
+  );
+
+  $form['display']['number_fetch'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number to Fetch'),
+    '#default_value' => $node_carousel->number_fetch,
+    '#description' => t('If static, this is the total number of items to have in the carousel.  If Dynamic, then initially, and each time the user reaches the end, this number of nodes will be added to the carousel'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['horizontal'] = array(
+    '#type' => 'radios',
+    '#title' => t('Carousel Orientation'),
+    '#default_value' => $node_carousel->horizontal,
+    '#options' => array(t('Vertical'), t('Horizontal')),
+    '#description' => t('The orientation (or scroll direction) of the carousel'),
+  );
+
+  $form['display']['wrap'] = array(
+    '#type' => 'select',
+    '#title' => t('Wrap Style of Carousel'),
+    '#options' => array(
+      '' => t('None'),
+      'first' => t('From First, proceed to Last'),
+      'last'  => t('From Last, return to First'),
+      'both'  => t('Both First and Last'),
+      'circular' => t('Circular'),
+    ),
+    '#default_value' => $node_carousel->wrap,
+    '#description' => t('The wrap style indicates what happens when the user gets to one end, or the other, of the carousel.  If \'None\', nothing happens.  If \'From Last, return to First\', then when the user gets to the end and tries to go further, they are sped back to the beginning.  If \'From First, proceed to Last\', then if they are the first item and use the Previous button, they will advance to the end.  \'Both\' activates both of those.  \'Circular\' means that after viewing the last and proceeding to the next, the first one is shown as the next item.'),
+  );
+
+  $form['display']['autoscroll'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Autoscroll'),
+    '#default_value' => $node_carousel->autoscroll,
+    '#description' => t('The number of seconds that the carousel will wait before scrolling automatically.  If set to 0, then autoscrolling is turned off.'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['index_control'] = array(
+    '#type' => 'select',
+    '#title' => t('Index Display'),
+    '#default_value' => $node_carousel->index_control,
+    '#options' => array(
+      '' => t('No Index'),
+      NC_INDEX_NUMBER => t('Numeric Index'),
+      NC_INDEX_TITLE => t('Title Index'),
+      NC_INDEX_THEME => t('Index written in theme'),
+    ),
+    '#description' => t('Unless set to \'No Index\', this causes a list of elements to be displayed which the user can click on to go to a particular item.  If \'Numeric Index\' is chosen, the elements are numbered to 1 to the number displayed.  If \'Title Index\' is chosen, then the title of each node displayed is listed for the user.  If \'Index written in theme\' is chosen, then the index will be an element written to the theme with class \'node-carousel-index\'.  (We suggest theming it with the class \'hidden\' as well.)'),
+  );
+
+  $form['display']['number_visible'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number visible'),
+    '#default_value' => $node_carousel->number_visible,
+    '#description' => t('The number of nodes to display at any time.  If set to 0, then it will display as many as fits, and the last one will only partially be in view.  Set it to 0 if you intend to use css to display your items properly'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['start_position'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Start Position'),
+    '#default_value' => $node_carousel->start_position,
+    '#description' => t('Which node, starting from #1, to display in the first visible position.  IE, if there are 5 nodes and the start position is 3, then the 3rd node would show up first in view.'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['number_scroll'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number to Scroll by'),
+    '#default_value' => $node_carousel->number_scroll,
+    '#description' => t('The number of nodes to scroll by each time the user scrolls forward or back.'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['animation_speed'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Animation Speed'),
+    '#default_value' => $node_carousel->animation_speed,
+    '#description' => t('The speed of the scroll animation as in jQuery terms ("slow"  or "fast" as string) or milliseconds as integer (See jQuery Documentation). If set to 0, animation is turned off.'),
+    '#size' => 5,
+    '#maxlength' => 5,
+    '#required' => true,
+  );
+
+  $form['display']['prev_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Previous button text'),
+    '#default_value' => $node_carousel->prev_text,
+    '#description' => t('The text to display on the button for scrolling to view previous nodes.  Can be decorated with html, or leave blank if your theme decorates these with images.'),
+    '#size' => 60,
+    '#maxlength' => 255,
+  );
+
+  $form['display']['next_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Next button text'),
+    '#default_value' => $node_carousel->next_text,
+    '#description' => t('The text to display on the button for scrolling to view the next nodes.  Can be decorated with html, or leave blank if your theme decorates these with images.'),
+    '#size' => 60,
+    '#maxlength' => 255,
+  );
+
+    $form['display']['first_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First button text'),
+    '#default_value' => $node_carousel->first_text,
+    '#description' => t('The text to display on the button for scrolling to view the first node.  Can be decorated with html, or leave blank if your theme decorates these with images.'),
+    '#size' => 60,
+    '#maxlength' => 255,
+  );
+
+    $form['display']['last_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Last button text'),
+    '#default_value' => $node_carousel->last_text,
+    '#description' => t('The text to display on the button for scrolling to view the last nodes.  Can be decorated with html, or leave blank if your theme decorates these with images.  Note that if you\'re using a dynamic carousel, the user will go to see the last node, and then new nodes will be loaded which the user will not see yet.'),
+    '#size' => 60,
+    '#maxlength' => 255,
+  );
+
+  $form['other'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => true,
+    '#collapsed' => false,
+    '#title' => t('Other Options'),
+  );
+
+  $form['other']['js_scroll_function'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Javascript Scroll Event Handler'),
+    '#default_value' => $node_carousel->js_scroll_function,
+    '#description' => t('If you want your custom javascript to react to the nodecarousel scrolling, then create a function that takes arguments blah, and put the name here.  If you don\'t know what this does, leave it blank.'),
+    '#size' => 60,
+    '#maxlength' => 100,
+  );
+  
+  $form['other']['autoload'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Automatically Load Node Carousel on Page Load'),
+    '#default_value' => $node_carousel->autoload,
+    '#description' => t('Turn off if you want to load the node carousel via custom javascript by calling nc_load_<name>.  If you\'re not sure, best to leave this checked.'),
+  );
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Submit'));
+
+  return $form;
+}
+
+/**
+ * Verifies the data entered into the add/edit form.
+ *
+ * @param string $form_id
+ *   Form identifier.
+ * @param array $form_values
+ *   Array of form values that were selected
+ * @param array $form
+ *   The original form array.
+ * @return boolean returns true when everything validates.
+ */
+function nodecarousel_edit_form_validate($form_id, $form_values, $form) {
+  //drupal_set_message('Form Values: '. print_r($form_values, true));
+  //drupal_set_message('Form array: '. print_r($form, true));
+
+  if (preg_match('![^a-z0-9_]!i', $form_values['name'])) {
+    form_set_error('name', t('Node Carousel Names can only contain the letters a-z, numbers, and the underscore character.'));
+  }
+  elseif (!_nodecarousel_validate_length($form_values['name'], $form['basic-info']['name']['#maxlength'])) {
+    form_set_error('name', t('The name cannot be more than %d characters long.', $form['basic-info']['name']['#maxlength']));
+  }
+  elseif (_nodecarousel_name_exists($form_values['name'], $form_values['ncid'])) {
+    form_set_error('name', t('The name you have chosen, @name, already exists as a nodecarousel name.  Please use a different one.', array('@name' => $form_values['name'])));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['description'], $form['basic-info']['description']['#maxlength'])) {
+    form_set_error('description', t('The description cannot be more than %d characters long.', $form['basic-info']['description']['#maxlength']));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['title'], $form['basic-info']['title']['#maxlength'])) {
+    form_set_error('title', t('The title cannot be more than %d characters long.', $form['basic-info']['title']['#maxlength']));
+  }
+
+  foreach ($form_values['access'] as $key => $value) {
+    if ($value !== 0) {
+      if (!isset($form['basic-info']['access']['#options'][$key])) {
+        form_set_error('access', t('Somehow you\'ve selected an access option which does not exist for access.  Stop fooling around.'));
+      }
+    }
+  }
+
+  // Validation for selection boxes are already done by Drupal's Form API.
+  switch ($form_values['node_source']) {
+    case NC_SOURCE_NODE_AND_TAXONOMY:
+      // Verify nodes are nodes and taxonomies are taxonomies.
+      //drupal_set_message('node_types: '. print_r($form_values['node_types'], true));
+      $problem_nodes = _nodecarousel_validate_node_types($form_values['node_types']);
+      if (count($problem_nodes)) {
+        form_set_error('node_types', t('Node type(s) %s does not exist.', implode(',', $problem_nodes)));
+      }
+
+      if (!_nodecarousel_validate_taxonomy($form_values['taxonomy_tids'])) {
+        form_set_error('taxonomy_tids', t('You have selected taxonomy terms that do not exist.'));
+      }
+      break;
+    case NC_SOURCE_NODEQUEUE:
+      if (module_exists('nodequeue')) {
+        // Verify selected nodequeue is a nodequeue.
+        $query = "SELECT qid FROM {nodequeue_queue} WHERE qid = %d";
+        $result = db_query($query, $form_values['nodequeue_qid']);
+        if (!db_fetch_object($result)) {
+          form_set_error('nodequeue_qid', t('You must select a nodequeue if the Data Source is nodequeue.'));
+        }
+      }
+      break;
+    case NC_SOURCE_HOOK:
+      // No verification needed.
+      break;
+  }
+
+  if (!_nodecarousel_validate_on_off($form_values['dynamic'])) {
+    form_set_error('dynamic', t('You must choose either a Static or Dynamic data colllection.'));
+  }
+
+  if (!_nodecarousel_validate_numeric($form_values['number_fetch'])) {
+    form_set_error('number_fetch', t('You must enter the number of nodes to fetch.'));
+  }
+  elseif ($form_values['number_fetch'] == '0') {
+    form_set_error('number_fetch', t('The number of nodes to fetch must be larger than zero.'));
+  }
+
+  if (!_nodecarousel_validate_on_off($form_values['horizontal'])) {
+    form_set_error('horizontal', t('You must choose either Horizontal or Vertical orientation.'));
+  }
+
+  if (!_nodecarousel_validate_numeric($form_values['autoscroll'])) {
+    form_set_error('autoscroll', t('You must enter the number of seconds for autoscroll.  (If you don\'t want Autoscroll, then set it to zero.)'));
+  }
+
+  if (!_nodecarousel_validate_numeric($form_values['number_visible'])) {
+    form_set_error('number_visible', t('You must enter the number visible.'));
+  }
+
+  if (!_nodecarousel_validate_numeric($form_values['start_position'])) {
+    form_set_error('start_position', t('You must enter the Start Position.'));
+  }
+  elseif ($form_values['start_position'] == '0') {
+    form_set_error('start_position', t('The Start Position must be larger than zero.'));
+  }
+
+  if (!_nodecarousel_validate_numeric($form_values['number_scroll'])) {
+    form_set_error('number_scroll', t('You must enter the Number to Scroll by.'));
+  }
+  elseif ($form_values['number_scroll'] == '0') {
+    form_set_error('number_scroll', t('The Number to Scroll by must be larger than zero.'));
+  }
+
+  if (!_nodecarousel_validate_animation_speed(trim($form_values['animation_speed']))) {
+    form_set_error('animation_speed', t('You must enter an animation speed, either a number of milliseconds or the values \'fast\' or \'slow\'.'));
+  }
+  else {
+    form_set_value($form['display']['animation_speed'], trim($form_values['animation_speed']));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['prev_text'], $form['display']['prev_text']['#maxlength'])) {
+    form_set_error('prev_text', t('You cannot enter more than %d characters in the Previous button text.', $form['display']['prev_text']['#maxlength']));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['next_text'], $form['display']['next_text']['#maxlength'])) {
+    form_set_error('next_text', t('You cannot enter more than %d characters in the Next button text.', $form['display']['next_text']['#maxlength']));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['first_text'], $form['display']['first_text']['#maxlength'])) {
+    form_set_error('first_text', t('You cannot enter more than %d characters in the First button text.', $form['display']['first_text']['#maxlength']));
+  }
+
+  if (!_nodecarousel_validate_length($form_values['last_text'], $form['display']['last_text']['#maxlength'])) {
+    form_set_error('last_text', t('You cannot enter more than %d characters in the Last button text.', $form['display']['last_text']['#maxlength']));
+  }
+
+  if (!_nodecarousel_validate_on_off($form_values['sort_ascending'])) {
+    form_set_error('sort_ascending', 'You must choose either Ascending or Descending order for Sort Order.');
+  }
+
+  if (!_nodecarousel_validate_length($form_values['js_scroll_function'], $form['other']['js_scroll_function']['#maxlength'])) {
+    form_set_error('js_scroll_function', t('The Javascript Event Handler cannot be more than %d characters long.', $form['other']['js_scroll_function']['#maxlength']));
+  }
+}
+
+/**
+ * Confirms that a given value is not larger than a given length.
+ *
+ * @param string $value
+ *   An input value to measure
+ * @param integer $length
+ *   The maximum length.
+ * @return boolean
+ *   True if the value is of a correct length.
+ */
+function _nodecarousel_validate_length($value, $length) {
+  return (strlen($value) <= $length);
+}
+
+/**
+ * Confirms that the keys of $node_types that have a non-zero value are valid types.
+ *
+ * @param array $node_types
+ *   Array where the keys are node types and the values may be zero.
+ * @return array
+ *   Array of keys which were not found in node_get_types() - if empty, all keys are valid.
+ */
+function _nodecarousel_validate_node_types($node_types) {
+  $problem_keys = array();
+  $available_types = node_get_types();
+  foreach ($node_types as $key => $value) {
+    if ($value !== 0 && !$available_types[$key]) {
+      $problem_keys[] = $key;
+    }
+  }
+  return $problem_keys;
+}
+
+/**
+ * Confirms that the value array given are all valid taxonomy terms.
+ *
+ * @param array $value
+ *   Array of taxonomy term ids
+ * @return boolean
+ *   True if tids are all valid.
+ */
+function _nodecarousel_validate_taxonomy($value) {
+  if (count($value) == 0) {
+    return true;
+  }
+  $query = 'SELECT count(*) as term_count FROM {term_data} WHERE tid IN (%s)';
+  $list = implode(',', $value);
+  $result = db_query($query, $list);
+  if ($row = db_fetch_object($result)) {
+    if (count($value) != $row->term_count) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Validates that a given value is either one or zero.
+ *
+ * @param int $value
+ *   The value of a checkbox from the form api.
+ * @return boolean
+ *   True if $value is one or zero.
+ */
+function _nodecarousel_validate_on_off($value) {
+  return ($value == 0 || $value == 1 );
+}
+
+/**
+ * Validates that a given value is a whole number between 0 and 99999
+ *
+ * @param string $value
+ *   The value to check
+ * @return boolean
+ *   True if the value is an integer between 0 and 99999.
+ */
+function _nodecarousel_validate_numeric($value) {
+  return (is_numeric($value) && $value >= 0 && $value <= 99999 && $value == (int)$value );
+}
+
+/**
+ * Validation for animation speed, which is either a number or the values 'fast' or 'slow'.
+ *
+ * @param string $value
+ *   Value to check
+ * @return boolean
+ *   True if value is what we're expecting
+ */
+function _nodecarousel_validate_animation_speed($value) {
+  if ($value == 'fast' || $value == 'slow') {
+    return true;
+  }
+  else {
+    return _nodecarousel_validate_numeric($value);
+  }
+}
+
+/**
+ * Checks to see if a given name for a nodecarousel already exists, ignoring the current ncid.
+ *
+ * @param string $name
+ *   Name to search for
+ * @param integer $ncid
+ *   ncid of the row to not search in nodecarousel.
+ * @return boolean
+ *   True if the name was found in nodecarousel.
+ */
+function _nodecarousel_name_exists($name, $ncid) {
+  $query = "SELECT count(*) as name_count FROM {nodecarousel} WHERE name = '%s' AND ncid <> %d";
+
+  $result = db_query($query, $name, $ncid);
+  if ($row = db_fetch_object($result)) {
+    if ($row->name_count > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Submit function for the administration form - only called if Validation succeeds.
+ *
+ * @param string $form_id
+ *   ID of the form.
+ * @param array $form_values
+ *   Array of values that were entered
+ * @return string
+ *   Path of page to go to after submit is done.
+ */
+function nodecarousel_edit_form_submit($form_id, $form_values) {
+
+  //drupal_set_message('Form Values: '. print_r($form_values, true));
+  //drupal_set_message('Nodes: '. print_r(serialize($form_values['taxonomy_tids']), true));
+  if ($form_values['ncid'] == 0) {
+    $form_values['ncid'] = db_next_id('{nodecarousel}_ncid');
+  }
+
+  $access = array();
+  foreach ($form_values['access'] as $key => $value) {
+    if ($value) {
+      $access[] = $key;
+    }
+  }
+
+  $node_types = array();
+  foreach ($form_values['node_types'] as $key => $value) {
+    if ($value) {
+      $node_types[] = $key;
+    }
+  }
+
+  if ($form_values['ncid'] != 0) {
+    _nodecarousel_delete((object) $form_values);
+  }
+
+  if (!module_exists('nodequeue')) {
+    $form_values['nodequeue_qid'] = 0;
+  }
+
+  $query = "INSERT INTO {nodecarousel} (ncid, name, title, description, access,
+    dynamic, horizontal, wrap, autoscroll, index_control, number_fetch, number_scroll, number_visible, start_position,
+    animation_speed, prev_text, next_text, first_text, last_text, node_source, node_types, taxonomy_tids, nodequeue_qid,
+    sort, sort_ascending, js_scroll_function, view_vid, autoload)
+  VALUES (%d, '%s', '%s', '%s', '%s',
+    %d, %d, '%s', %d, '%s', %d, %d, %d, %d,
+    '%s', '%s', '%s', '%s', '%s', %d, '%s', '%s', %d,
+    '%s', %d, '%s', %d, %d)";
+
+  //drupal_set_message('queue: '. print_r($form_values['nodequeue_qid'], true));
+  $result = db_query($query, $form_values['ncid'], $form_values['name'], $form_values['title'], $form_values['description'], serialize($access),
+    $form_values['dynamic'], $form_values['horizontal'], $form_values['wrap'], $form_values['autoscroll'], $form_values['index_control'], $form_values['number_fetch'], $form_values['number_scroll'], $form_values['number_visible'], $form_values['start_position'],
+    $form_values['animation_speed'], $form_values['prev_text'], $form_values['next_text'], $form_values['first_text'], $form_values['last_text'], $form_values['node_source'], serialize($node_types), serialize(array_keys($form_values['taxonomy_tids'])), $form_values['nodequeue_qid'],
+    $form_values['sort'], $form_values['sort_ascending'], $form_values['js_scroll_function'], $form_values['view_vid'], $form_values['autoload'] );
+  return 'admin/build/nodecarousel';
+}
+
+/**
+ * Create a list of roles.
+ *
+ * @return array
+ *   Returns an array containing and object fromt the database.
+ */
+function nodecarousel_filter_role() {
+  $rids = array();
+  $result = db_query("SELECT r.rid, r.name FROM {role} r ORDER BY r.name");
+  while ($obj = db_fetch_object($result)) {
+    $rids[$obj->rid] = $obj->name;
+  }
+  return $rids;
+}
+
+/**
+ * Writes the given node-carousel out as a block and returns it.
+ *
+ * @param string $nc_name
+ *   The nodecarousel name, prefixed by 'nc_'.
+ * @return array
+ *   The standard block array.
+ */
+function _nodecarousel_write_block($nc_name) {
+  $nc = nodecarousel_load(substr($nc_name, 3));
+
+  if (!$nc) {
+    return NULL;
+  }
+
+  global $user;
+  if (!$user->roles) {
+    return NULL;
+  }
+
+  if (!nodecarousel_access($nc)) {
+    return NULL;
+  }
+
+  jcarousel_add(FALSE);
+  drupal_add_css(drupal_get_path('module', 'nodecarousel') .'/nodecarousel.css');
+
+  $node_array = _nodecarousel_get_nodes($nc);
+
+  if (count($node_array) > 0) {
+    drupal_add_js(get_jcarousel_initialization_block($nc), 'inline');
+
+    $themed_carousel = theme('nodecarousel', $nc, $node_array);
+  }
+  else {
+    $themed_carousel = "No items found.";
+  }
+
+  $block = array();
+  $block['subject'] = $nc->title;
+
+  $block['content'] = $themed_carousel;
+
+  return $block;
+}
+
+/**
+ * Checks to see if the given user can access the given nodecarousel.  If $account is not provided, the global $user is used.
+ *
+ * @param stdClass $nc
+ *   NodeCarousel object
+ * @param stdClass $account
+ *   User to check access of.
+ * @return boolean
+ *   True if user can access/view this nodecarousel.
+ */
+function nodecarousel_access($nc, $account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = $user;
+  }
+
+  // Administrator privileges
+  if (user_access('access all nodecarousels', $account)) {
+    return TRUE;
+  }
+
+  // All nodecarousel blocks with an empty access setting are available to all roles.
+  if (!$nc->access) {
+    return TRUE;
+  }
+
+  // Otherwise, check roles
+  static $roles = array();
+  if (!isset($roles[$account->uid])) {
+    $roles[$account->uid] = array_keys($account->roles);
+    $roles[$account->uid][] = $account->uid ? DRUPAL_AUTHENTICATED_RID : DRUPAL_ANONYMOUS_RID;
+  }
+
+  return array_intersect($nc->access, $roles[$account->uid]);
+}
+
+/**
+ * This function gets a number of nodes for display, either directly from the nodes table, from a nodequeue, or from calling hook_nodecarousel.
+ *
+ * @param stdClass $nc
+ *   NodeCarousel object
+ * @param int $start_position
+ *   Position to read nodes from
+ * @return array
+ *   Array of nodes to display.
+ */
+function _nodecarousel_get_nodes($nc, $start_position = 0, $nid = -1) {
+  $node_array = array();
+
+  $sort_ascending = array(' asc', ' desc');
+
+  switch ($nc->node_source) {
+    case NC_SOURCE_NODE_AND_TAXONOMY:
+      if (is_array($nc->taxonomy_tids) && count($nc->taxonomy_tids)) {
+        $base_query = "SELECT n.nid FROM {node} n INNER JOIN {term_node} tn ON (n.nid = tn.nid)";
+      }
+      else {
+        $base_query = "SELECT n.nid FROM {node} n";
+      }
+      if ($nc->sort == 'author_name') {
+        $base_query .= " INNER JOIN {users} u ON (n.uid = u.uid)";
+      }
+      $query = $base_query;
+      $where = array();
+      if (is_array($nc->node_types) && count($nc->node_types)) {
+        $where[] = " n.type IN (". implode(',', array_fill(0, count($nc->node_types), "'%s'")) .")";
+      }
+      if (is_array($nc->taxonomy_tids) && count($nc->taxonomy_tids)) {
+        $where[] = ' tn.tid IN ('. implode(',', array_fill(0, count($nc->taxonomy_tids), "'%s'")) .")";
+      }
+      $where[] = ' n.status = 1';
+      $query .= ' WHERE'. implode(' AND', $where);
+
+      $sort = array('date_created' => ' ORDER BY n.created',
+        'date_updated' => ' ORDER BY n.changed',
+        'title' => ' ORDER BY n.title',
+        'node_id' => ' ORDER BY n.nid',
+        'random' => get_random_sort(),
+        'author_name' => ' ORDER BY u.name',
+        'node_queue_order' => '');
+
+
+      $query .= ($sort[$nc->sort] == '') ? '' : $sort[$nc->sort] . $sort_ascending[$nc->sort_ascending];
+
+      $pos = $start_position;
+      $total = db_result(db_query(db_rewrite_sql(str_replace('SELECT n.nid FROM', 'SELECT COUNT(n.nid) FROM', $query)), array_merge($nc->node_types, $nc->taxonomy_tids)));
+
+      $result = db_query_range(db_rewrite_sql($query), array_merge($nc->node_types, $nc->taxonomy_tids), $start_position, $nc->number_fetch);
+      while ($row = db_fetch_object($result)) {
+        $node_array[] = node_load($row->nid);
+        $node_array[count($node_array) -1]->nc_position = ++$pos;
+        $node_array[count($node_array) -1]->nc_total = intval($total);
+      }
+      break;
+    case NC_SOURCE_NODEQUEUE:
+      if (module_exists('nodequeue')) {
+        $query = "SELECT nq.nid FROM {nodequeue_nodes} nq INNER JOIN {node} n ON (n.nid = nq.nid AND n.status = 1) WHERE nq.qid = %d ORDER BY nq.position";
+        $query .= $sort_ascending[$nc->sort_ascending];
+        $pos = $start_position;
+        $total = intval(_nodecarousel_get_nodequeue_size($nc->nodequeue_qid));
+        //drupal_set_message('Position: '. $pos .' Total:'. $total);
+        $result = db_query_range(db_rewrite_sql($query, 'nq', 'nid'), $nc->nodequeue_qid, $start_position, $nc->number_fetch);
+        while ($row = db_fetch_object($result)) {
+          $node_array[] = node_load($row->nid);
+          $node_array[count($node_array) -1]->nc_position = ++$pos;
+          $node_array[count($node_array) -1]->nc_total = $total;
+        }
+      }
+      break;
+
+    case NC_SOURCE_VIEW:
+      if (module_exists('views')) {
+        $view = views_get_view($nc->view_vid);
+        if ($view) {
+          $items = views_build_view('items', $view, array(), FALSE, $nc->number_fetch, 0, $start_position, NULL);
+          $pos = $start_position;
+          //$total = count($items['items']);
+          $total = intval(db_result(db_query(db_rewrite_sql($items['countquery']))));
+          //drupal_set_message('<pre>'. print_r($items, true) .'</pre>');
+          foreach ($items['items'] as $item) {
+            $node_array[] = node_load($item->nid);//$item;//
+            $node_array[count($node_array) -1]->nc_position = ++$pos;
+            $node_array[count($node_array) -1]->nc_total = $total;
+          }
+        }
+      }
+      break;
+
+    case NC_SOURCE_HOOK:
+      $node_array = module_invoke_all('nodecarousel', $nc->name, $start_position, $nc->number_fetch, $nid);
+      break;
+  }
+
+  return $node_array;
+}
+
+/**
+ * Queries the nodequeue to see how many nodes are in the list.
+ *
+ * @param int $qid
+ *   Nodequeue id.
+ * @return int
+ *   Number of nodes
+ */
+function _nodecarousel_get_nodequeue_size($qid) {
+  if (module_exists('nodequeue')) {
+    $query = "SELECT count(nq.nid) as nodecount FROM {nodequeue_nodes} nq INNER JOIN {node} n ON (n.nid = nq.nid AND n.status = 1) WHERE nq.qid = %d";
+    $number = db_fetch_object(db_query(db_rewrite_sql($query, 'nq', 'nid'), $qid));
+    //drupal_set_message('Nodequeue Count:'. $number->nodecount . ' Queue:'. $qid);
+
+    if (is_numeric($number->nodecount)) {
+      return $number->nodecount;
+    }
+    else {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Returns the appropriate order by clause for the SQL based on the type of database being used.
+ *
+ * @return string
+ *   Order by clause for random sorting.
+ */
+function get_random_sort() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      return " ORDER BY rand()";
+      break;
+    case 'pgsql':
+      return " ORDER BY random()";
+      break;
+  }
+  return '';
+}
+
+/**
+ * Implements hook_nodecarousel, used for testing.
+ *
+ * @param string $name
+ *   nodecarousel name
+ * @param int $start_position
+ *   index of nodes to start loading from
+ * @param int $number_fetch
+ *   number of nodes to load
+ * @return array
+ *   Array of nodes to display
+ */
+function nodecarousel_nodecarousel($name, $start_position, $number_fetch) {
+  $node_array = array();
+
+  if ($name == 'test_hook_1') {
+    $node_array[] = node_load(3);
+    $node_array[] = node_load(1);
+    $node_array[] = node_load(4);
+  }
+
+  return $node_array;
+}
+
+/**
+ * This function returns the block of javascript that turns the <ul> of nodes into a jCarousel display.
+ *
+ * @param stdClass $nc
+ *   The NodeCarousel to display
+ * @return string
+ *   The javascript for the NodeCarousel
+ */
+function get_jcarousel_initialization_block($nc) {
+
+  $js_block = <<<BLOCK
+function nc_load_%s() {
+  var carouselName = '%s';
+  jQuery('ul#nc_' + carouselName).removeClass('hidden');
+  jQuery('div#nc_wrapper_' + carouselName + ' .jcarousel_waiting').hide();
+  var jcar = jQuery('ul#nc_' + carouselName).jcarousel({
+    visible: %s,
+    scroll: %d,
+    vertical: %s,
+    wrap: '%s',
+    auto: %d,
+    animation: %s,
+    start: %d,
+    buttonNextHTML: '<div>%s</div>',
+    buttonPrevHTML: '<div>%s</div>',
+    itemFirstInCallback: trigger_js_scroll_%d,
+    itemLastInCallback: fetchMoreCarousel_%d,
+    initCallback: initialize_%d,
+    itemVisibleInCallback: item_visible_%d,
+    itemVisibleOutCallback: item_invisible_%d
+  });
+}
+
+BLOCK;
+
+  if ($nc->autoload != 0) {
+    $js_block .= "jQuery(document).ready(function(){ nc_load_$nc->name();});
+    
+    ";
+  }
+
+  if ($nc->dynamic) {
+    $last_in_callback_function = _nodecarousel_create_callback_javascript($nc);
+  }
+  else {
+    $last_in_callback_function = _nodecarousel_create_empty_callback_javascript($nc);
+  }
+
+  if ($nc->index_control == NC_INDEX_NUMBER || $nc->index_control == NC_INDEX_TITLE || $nc->index_control == NC_INDEX_THEME) {
+    $visible_callback_function = _nodecarousel_create_visible_callbacks_javascript($nc);
+  }
+  else {
+    $visible_callback_function = _nodecarousel_create_empty_visible_callbacks_javascript($nc);
+  }
+
+  $scroll_callback_function = _nodecarousel_create_scroll_callbacks_javascript($nc);
+
+  return sprintf($js_block, $nc->name, $nc->name, $nc->number_visible == 0 ? 'null': $nc->number_visible, $nc->number_scroll, $nc->horizontal? 'false':'true', $nc->wrap == '' ? 'null':$nc->wrap,
+    $nc->autoscroll, ($nc->animation_speed == 'fast' || $nc->animation_speed == 'slow') ? "'". $nc->animation_speed ."'" : $nc->animation_speed, $nc->start_position,
+    $nc->next_text, $nc->prev_text, $nc->ncid, $nc->ncid, $nc->ncid, $nc->ncid, $nc->ncid)
+    . $last_in_callback_function
+    . $visible_callback_function
+    . $scroll_callback_function
+    . _nodecarousel_create_initialize_javascript($nc);
+}
+
+function _nodecarousel_create_scroll_callbacks_javascript($nc) {
+  if ($nc->js_scroll_function != '') {
+  $js_callbacks = <<<SCROLL
+
+    function trigger_js_scroll_%d(carousel, listItem, index, state) {
+      %s('%s', index, state);
+    }
+
+SCROLL;
+    return sprintf($js_callbacks, $nc->ncid, $nc->js_scroll_function, $nc->name);
+  }
+  else {
+    $js_callbacks = <<<FAKESCROLL
+
+    function trigger_js_scroll_%d(carousel, listItem, index, state) {}
+FAKESCROLL;
+  }
+  return sprintf($js_callbacks, $nc->ncid);
+}
+
+/**
+ * This function returns two javascript functions used by jCarousel as callbacks when nodes come into or leave view.  These functions add or remove the 'visible' class from the index <ul>.
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel that is being rendered
+ * @return boolean
+ *   The javascript to print to the screen.
+ */
+function _nodecarousel_create_visible_callbacks_javascript($nc) {
+  $js_callbacks = <<<VISIBLE
+
+function item_visible_%d(carousel, listItem, index, state) {
+  var outermostDiv = $("#nc_%s").parent().parent();
+  $(".index_control_item_" + index, outermostDiv).addClass("visible");
+}
+function item_invisible_%d(carousel, listItem, index, state) {
+  var outermostDiv = $("#nc_%s").parent().parent();
+  $(".index_control_item_" + index, outermostDiv).removeClass("visible");
+}
+VISIBLE;
+
+  return sprintf($js_callbacks, $nc->ncid, $nc->name, $nc->ncid, $nc->name);
+}
+
+/**
+ * This function returns two javascript functions used by jCarousel as callbacks when nodes come into or leave view, but the callback functions do nothing.
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel that is being rendered
+ * @return boolean
+ *   The javascript to print to the screen.
+ */
+function _nodecarousel_create_empty_visible_callbacks_javascript($nc) {
+  $js_callbacks = <<<VISIBLE
+
+function item_visible_%d(carousel, listItem, index, state) {}
+function item_invisible_%d(carousel, listItem, index, state) {}
+VISIBLE;
+
+  return sprintf($js_callbacks, $nc->ncid, $nc->ncid);
+}
+
+/**
+ * This function generates the javascript function used in a dynamic nodecarousel to fetch the next few nodes and insert them into the end of the carousel
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel that is being rendered
+ * @return boolean
+ *   The javascript to print to the screen.
+ */
+function _nodecarousel_create_callback_javascript($nc) {
+  $base_path = base_path();
+
+  $js_block = <<<BLOCK
+function fetchMoreCarousel_%d(carousel, lastLI, index, carouselState) {
+  var carouselName = '%s';
+  target = '%snodecarousel/fetch';
+  oldLast = carousel.last;
+  var nid_id = '';
+  var nid = -1;
+  if ($('.node').length) {
+    nid_id = $('.node').get(0).id;
+    var nidmatch = nid_id.match(/node-(\d*)/);
+    if (nidmatch.length) {
+      nid = nidmatch[1];
+    }
+  }
+  if ($("#nc_%s").children("li").length == oldLast) {
+    $.getJSON(target, {start: oldLast, name: '%s', ajax: 'true', nid: nid}, function(j) {
+      var items = '';
+      if (j.length > 0) {
+        for (var i = 0; i < j.length; i++) {
+          carousel.add(oldLast + i + 1, j[i]);
+          carousel.size(oldLast + i + 1);
+        }
+        $("#nc_" + carouselName).children("li.jcarousel-item").addClass("nc_item_" + carouselName);
+        // If auto-scrolling, this starts it up again after fetching the next set.
+        carousel.startAuto();
+      }
+    });
+  }
+}
+
+BLOCK;
+
+  return sprintf($js_block, $nc->ncid, $nc->name, $base_path, $nc->name, $nc->name);
+}
+
+/**
+ * This function generates the javascript function used in a static nodecarousel which does nothing.  This is used to standardize the base javascript block.
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel that is being rendered
+ * @return boolean
+ *   The javascript to print to the screen.
+ */
+function _nodecarousel_create_empty_callback_javascript($nc) {
+  $base_path = base_path();
+
+  $js_block = <<<BLOCK
+function fetchMoreCarousel_%d(carousel, lastLI, index, carouselState) {}
+
+BLOCK;
+
+  return sprintf($js_block, $nc->ncid);
+}
+
+/**
+ * This function is used to generate the javascript called after the jCarousel is done being created, for further customization.
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel that is being rendered
+ * @return boolean
+ *   The javascript to print to the screen.
+ */
+function _nodecarousel_create_initialize_javascript($nc) {
+  $js_initialize = <<<INIT
+
+function initialize_%d(carousel, state) {
+  if (state == 'init') {
+    var carouselName = '%s';
+    var outermostDiv = $("#nc_" + carouselName).parent().parent();
+    var first = '%s';
+    var last  = '%s';
+    if (first != '') {
+      outermostDiv.children(".jcarousel-prev").before("<div class='jcarousel-first' id='nc_first_%d'>" + first + "</div>");
+    }
+    if (last != '') {
+      outermostDiv.children(".jcarousel-next").after("<div class='jcarousel-last' id='nc_last_%d'>" + last + "</div>");
+    }
+
+    jQuery('div#nc_first_%d').click(function(e) {
+      carousel.scroll(1, true);
+    });
+
+    jQuery('div#nc_last_%d').click(function(e) {
+      carousel.scroll($("#nc_" + carouselName + " li").length, true);
+    });
+INIT;
+
+  // If there is an index control, this block of text causes it to be created in javascript.
+  $js_index_script = '';
+  if ($nc->index_control == NC_INDEX_TITLE || $nc->index_control == NC_INDEX_NUMBER || $nc->index_control == NC_INDEX_THEME) {
+    $js_index_script = <<<INDEX
+
+    outermostDiv.append('<ul class="index_control_list"></ul>');
+    jQuery("#nc_%s>li").each(function(i) {
+      var displayText = i + 1;
+      if ("%s" == "%s") {
+        displayText = $(this).children('.node-carousel-item').children('.node-carousel-label').children("a").text();
+        if (displayText == '') {
+          displayText = $('.node-carousel-label', this).children('.node-carousel-item').children('.node-carousel-label').text();
+        }
+      }
+      if ("%s" == "%s") {
+        displayText = $('.node-carousel-index', this).text();
+      }
+      outermostDiv.children(".index_control_list").append("<li class='index_control_item index_control_item_" + (i + 1) + "' li_index='" + (i + 1) + "'><span class='index_control'>" + displayText + "</span></li>");
+    });
+    outermostDiv.children(".index_control_list").children(".index_control_item").click(function(e) {
+      carousel.scroll(parseInt($(this).attr('li_index')), true);
+    });
+
+INDEX;
+
+    $js_index_script = sprintf($js_index_script, $nc->name, $nc->index_control, NC_INDEX_TITLE, $nc->index_control, NC_INDEX_THEME);
+  }
+
+
+
+  $js_end_initialize = <<<ENDINIT
+
+  }
+}
+
+ENDINIT;
+
+  return sprintf($js_initialize, $nc->ncid, $nc->name, $nc->first_text, $nc->last_text, $nc->ncid, $nc->ncid, $nc->ncid, $nc->ncid)
+    . $js_index_script
+    . $js_end_initialize;
+}
+
+/**
+ * This is the theme function to create the nodecarousel.  If you override it, I suggest making sure to override the theme_nodecarousel_node as well.
+ *
+ * @param stdClass $nc
+ *   The Nodecarousel to write.
+ * @param array $node_array
+ *   An array of nodes to render into the jCarousel
+ * @return string
+ *   The html displaying an unordered list of nodes.
+ */
+function theme_nodecarousel($nc, $node_array) {
+  $content = '';
+
+  $content .= '<div id="nc_wrapper_'. $nc->name .'">';
+  $content .= '<div class="jcarousel_waiting">Loading...</div>';
+  $content .= '<ul class="jcarousel_target" id="nc_'. $nc->name .'">';
+
+  foreach ($node_array as $node) {
+    $content .= '<li class="nc_item_'. $nc->name .'">'. theme('nodecarousel_node', $node, $nc->name) .'</li>';
+  }
+
+  $content .= '</ul>';
+  $content .= '</div>';
+  //$content .= '<script type="text/javascript">$("#nc_'. $nc->name .'").addClass("hidden");</script>';
+  $content .= '<script type="text/javascript">var ul = document.getElementById("nc_'. $nc->name .'"); ul.className+=" hidden";</script>';
+
+  return $content;
+}
+
+/**
+ * This theme function styles the node for display on the screen.  Meant to be overridden.
+ *
+ * @param stdClass $node
+ *   Standard Node Object
+ * @param string $name
+ *   Name of the nodeCarousel
+ * @return string
+ *   The html displaying this node's information.
+ */
+function theme_nodecarousel_node($node, $name='') {
+  $content = '<div class="node-carousel-item">';
+
+  $content .= '<div class="node-carousel-title node-carousel-label">'. l($node->title, 'node/'. $node->nid) .'</div>';
+  $view = node_view($node, TRUE, FALSE, FALSE);
+  $content .= _nodecarousel_find_image_in_string($view);
+
+  $content .= '<div class="hidden nid">'. $node->nid .'</div>';
+  $node_words = explode(' ', $node->title);
+  $content .= '<div class="hidden node-carousel-index">'. $node_words[0] .'</div>';
+
+  $content .= '</div>';
+  return $content;
+}
+
+/**
+ * This function looks for the first image tag in a string, and returns that tag.
+ * 
+ * @param string $view
+ *   A string containing, possibly, an image tag.
+ * @return string
+ *   An image tag, or else an empty string.
+ */
+function _nodecarousel_find_image_in_string($view) {
+  $regexp = '@<img\s*((?:\s+\w+=([-+]?[0-9.]+|(["\']).+?\3))*)\s*/>@si';
+  
+  $matches = array();
+  if (preg_match($regexp, $view, $matches)) {
+    return $matches[0];
+  }
+  
+  return '';
+}
+
+/**
+ * Fetches the next few items for display in the carousel
+ *
+ * @param int $start
+ * @param int $number
+ * @return javascript json formatted array of items to display in the list.
+ */
+function nodecarousel_fetch() {
+
+  //print 'test';
+  $start_index = (int)$_GET['start'];
+  $count = (int)$_GET['count'];
+  $name = $_GET['name'];
+  $nid = $_GET['nid'];
+  $items = array();
+
+  $nc = nodecarousel_load($name);
+  //print_r($nc);
+  $node_array = _nodecarousel_get_nodes($nc, $start_index, $nid);
+  foreach ($node_array as $node) {
+    $items[] = theme('nodecarousel_node', $node, $name);
+  }
+  print drupal_to_js($items);
+  exit();
+}
+
+/**
+ * Function that automatically loads the jCarousel scripts and CSS skins, but only once.
+ *
+ * This function copies the jcarousel_add from the jcarousel module, and is used when I need to
+ * locally test things with my own version of jcarousel.  In release, this is left commented out.
+ *
+ * @param string $skin
+ *   Skin name.
+ */
+/*
+function jcarousel_add($skin = 'tango') {
+  static $added;
+
+  if (!isset($added)) {
+    drupal_add_js(drupal_get_path('module', 'nodecarousel') .'/jcarousel/lib/jquery.jcarousel.js');
+    drupal_add_css(drupal_get_path('module', 'nodecarousel') .'/jcarousel/lib/jquery.jcarousel.css');
+    if ($skin) {
+      drupal_add_css(drupal_get_path('module', 'nodecarousel') ."/jcarousel/skins/$skin/skin.css");
+    }
+    $added = TRUE;
+  }
+}
+*/

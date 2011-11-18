@@ -1,0 +1,10 @@
+; $Id: cck_address_canada.info,v 1.10 2007/12/14 20:12:13 rconstantine Exp $
+;/**
+; * @package CCK_Address_Canada
+; * @category NeighborForge
+; */
+name = Address Field Canadian Support
+description = Adds support for Canadian Provinces.
+dependencies = content cck_address
+package = CCK
+project = "cck_address"

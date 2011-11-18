@@ -1,0 +1,5 @@
+; $Id: panels_tabs.info,v 1.1.2.3 2008/02/19 22:10:49 wimleers Exp $
+name = Tabs panel style
+description = Configurable 'tabs' panel style. Provides 3 kinds of tabs.
+package = "Panels style plugins"
+dependencies = panels tabs

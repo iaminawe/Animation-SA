@@ -1,0 +1,10 @@
+name = Resume access
+description = "Allows setting of permissions on resumes by role."
+dependencies = resume
+version = "$Name: DRUPAL-5--2-0 $"
+
+; Information added by drupal.org packaging script on 2008-03-08
+version = "5.x-2.0"
+project = "jobsearch"
+datestamp = "1205004610"
+

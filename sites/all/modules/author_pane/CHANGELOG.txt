@@ -1,0 +1,66 @@
+$Id: CHANGELOG.txt,v 1.1.4.18 2009/03/30 15:33:15 michellec Exp $
+
+------------------------ D5 BRANCH ------------------------------------------------------
+
+March 21, 2009
+--------------
+#408006 by Michelle: Changed online/offline default to be small icon plus words.
+
+March 18, 2009
+--------------
+NOISSUE by Michelle: Made author-pane-block.tpl.php template for the block version.
+#379694 by Michelle: twist3r: Double check that arg(1) is numeric.
+#402352 by Michelle: Removed logic to print user title image. Variable is still there.
+
+March 18, 2009
+--------------
+NOISSUE by Michelle: Added imagecache support to Author Pane block.
+
+March 6, 2009 -- BETA 3
+-------------
+#391992 by Michelle: Default optional theme paramaters to NULL.
+
+March 5, 2009
+-------------
+#392064 by jmai: Removed extra parenthesis from location integration.
+
+March 4, 2009
+-------------
+#382082 by Michelle: Added check for existance of location_display() to avoid errors with older versions of location.
+#363706 by Michelle: New feature: User Titles image support.
+#362958 by Michelle: Changed userpoints integration to default to total points instead of default category.
+#380942 by Kripsy: Don't show fasttoggle user block on own Author Pane.
+#384854 by Michelle: Check that preprocess function still exists (from cache) before trying to run it.
+#363393 by Michelle: Fixed instructions on image directory override and made it more flexible.
+NOISSUE by Michelle: Trimmed down default CSS to just some basic positioning.
+NOISSUE by Michelle: Cleaned up template file.
+
+February 9, 2009
+----------------
+#362958 by Michelle: Changed userpoints integration to default to total points instead of default category.
+
+January 17, 2009 -- BETA 2
+----------------
+NOISSUE by Michelle: Missed a variable name change on the 15th.
+NOISSUE by Michelle: New feature: Author Pane as a block on node/user/blog pages.
+NOISSUE by Michelle: Added option to select what node types to display block on.
+NOISSUE by Michelle: Updated readme to describe new block. (missed beta 2)
+
+January 15, 2009
+----------------
+NOISSUE by Michelle: Better naming for template suggestion variable.
+
+January 12, 2009 -- BETA 1
+----------------
+#348897 by Michelle: Fixed lack of title text on user online/offline image.
+NOISSUE by Michelle: Copied readme file from D6 and adjusted it.
+
+December 30, 2008
+-----------------
+Initial conversion of D6 code to work in D5.
+Fixed bugs in the preprocess backport.
+
+December 21, 2008
+-----------------
+Initial dev release.
+

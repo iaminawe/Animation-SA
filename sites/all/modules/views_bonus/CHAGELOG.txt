@@ -1,0 +1,71 @@
+CHANGELOG for Views_Bonus
+
+August 16, 2007: Release 5.x-1.2-Alpha1
+  o #163440 by dmitrig01: Merge All Panels Integrations
+
+August 10, 2007
+  o #130137 by simplymenotu: Added a CHANGELOG.txt file for Views_Bouns
+
+August 7, 2007
+  o #165066 by webchick: Views Export: Code style fixes
+  o #165067 by webchick: Views Export: Merge "export views as X" permissions
+
+August 1, 2007: Release 5.x-1.1
+  o #163732: Export DOC or CSV as Arguments instead of Views
+
+July 31, 2007
+  o #114115: module to export a view as CSV or Doc
+  o Moved to DRUPAL-5
+
+July 2, 2007
+  o #114115: module to export a view as CSV or Doc
+  o #116154 and #123954: Grid view incorrectly requires Panels patch by myself and torelado
+
+May 22, 2007
+  o #134375 change summary sorted as view to summary sorted ascending in default view to accomodate changes in the way Views works.
+
+May 12, 2007
+  o #116154: Grid view doesn't need panels.  Patch by me
+
+March 30, 2007
+  o Hungarian translation
+
+March 16, 2007
+  o #125843 by talltim. Replace theme_add_style with drupal_add_css.
+  o Adding a Sparklines view style
+
+March 12, 2007
+  o preserve keys during weighting
+
+March 11, 2007
+  o forget new css file
+  o fix the horribly non functional tag cloud style plugin.
+  o minor readme improvement
+
+March 6, 2007
+  o #87750 render a term Summary View as a tag cloud.
+
+January 19, 2007: Release 4.7.x-1.1
+  o Experimental reshuffling of the bonus pack to match the 4.7 version. Probably has bugs. Too tired to do full testing.
+  o #105618: customizable column count for grid view
+  o Got rid of $Name: DRUPAL-5--1-2-ALPHA2 $ which has caused merge conflicts
+  o Moved the administration menu item to a tab under views; made the text at the top a little stronger.
+  o #107230: Fixed visible foreach error.
+
+December 20, 2006
+  o A bunch of corrections to the linage view.
+  o Added new monthly archive default view
+  o #90161: Correction to lineage view
+  o #101442: Ensure $output is always an array for PHP5 compliance
+
+November 13, 2006: Release 5.x-1.0
+  o 2.0 version of bonus pack that separates each plugin into its own file.
+
+November 4, 2006
+  o minor documentation update
+  o Minor improvements to audio play list
+  o Audio playlist for 4.7
+  o added audio playlists
+
+October 31, 2006
+  o Revert drupal_add_css back to theme_add_style

@@ -1,0 +1,6 @@
+; $Id: text_facets.info,v 1.4 2008/04/23 14:58:40 davidlesieur Exp $
+name = CCK Text Facets
+description = "Exposes CCK Text fields as facets."
+dependencies = content text faceted_search cck_facets search
+package = Faceted Search
+

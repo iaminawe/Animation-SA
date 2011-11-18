@@ -1,0 +1,595 @@
+<?php
+/**
+* This module is used to make a backup of the current instance of Drupal.
+* A good example of when this module is useful is when you are hosting a 
+* Drupal powered site for end users that aren't familliar with a UNIX shell,
+* but would like to be able to back up the website over the web.
+*
+*/
+
+/**
+* @todo
+*	- Configuration form:
+*		- http://drupal.org/node/87159
+*		- Periodic backups via cron? - http://drupal.org/node/128332
+*		- Max number of backup files via cron
+*	- Command-line script
+*
+*/
+
+/**
+ * Implementation of hook_help().
+ */
+function backup_help($section = "") {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t("Backs up your Drupal installation.");
+  }
+}
+
+
+/**
+* Implementation of book_perm().
+*/
+function backup_perm() {  
+	return(array("make backups"));
+}
+
+
+/**
+* Display the menu items for this module.
+*
+*/
+function backup_menu($may_cache) {
+
+	$retval = array();
+
+	//
+	// To re-create the menu after you make changes here, load the
+	// /admin/build/menu page.
+	//
+	if ($may_cache) {
+		$menu_type = MENU_CALLBACK |MENU_VISIBLE_IN_TREE 
+			|MENU_MODIFIABLE_BY_ADMIN;
+		$retval[] = array(
+			"path" => "admin/content/backup",
+			"title" => t("Backup"),
+			"access" => user_access('make backups'),
+			"callback" => "backup_page",
+			"description" => "Back up your Drupal installation.",
+			"type" => $menu_type,
+			);
+
+		$menu_type = MENU_CALLBACK |MENU_MODIFIABLE_BY_ADMIN;
+		$retval[] = array(
+			"path" => "admin/content/backup/phpinfo",
+			"title" => t("Backup"),
+			"access" => user_access('make backups'),
+			"callback" => "backup_page_phpinfo",
+			"type" => $menu_type,
+			);
+
+	}
+
+	return($retval);
+
+} // End of backup_menu()
+
+
+/**
+* This function is used to create our backup form.
+*
+* @return array Associative array of all the form elements.
+*/
+function backup_form() {
+
+	include("forms.inc.php");
+
+	$form = array();
+	$error = "";
+	$form["backup"] = backup_form_backup();
+	$form["backup_text"] = backup_form_backup_text();
+
+	//
+	// Debugging info, which includes our path and programs.
+	//
+	$form["debugging"] = backup_form_debugging($error);
+
+	//
+	// Configuration info
+	//
+	$form["config"] = backup_form_config();
+
+	//
+	// If an error was found, we want to uncollapse these elements so
+	// the user can see what went wrong.
+	//
+	if (!empty($error)) {
+		$form["debugging"]["#collapsed"] = FALSE;
+		$form["backup"]["#disabled"] = TRUE;
+		$form["backup"]["#value"] .= " " . t("(Disabled)");
+	}
+
+	//
+	// Get our list of backed up files.
+	//
+	$form["files"] = backup_form_files();
+
+	return($form);
+
+} // End of backup_form()
+
+
+/**
+* Form action to make the backup.
+*/
+function backup_action_backup() {
+
+	$db_file = "";
+
+	//
+	// Backup our database
+	//
+	$target = variable_get("backup_target", "");
+
+	watchdog("backup", t("Starting backup..."));
+
+	//
+	// If we are not backing up to the Drupal root directory, then let's set
+	// the permissions of existing backup files to 000 while the backup is run.
+	//
+	if (!empty($target)) {
+
+		$error = backup_get_backups($files);
+		if (!empty($error)) {
+			$error = "backup_database(): " . $error;
+			drupal_set_message($error, "error");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			return(null);
+		}
+
+		$error = backup_permission_null($files);
+		if (!empty($error)) {
+			$error = "backup_database(): " . $error;
+			drupal_set_message($error, "error");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			return(null);
+		}
+
+	}
+
+	$error = backup_database($db_file, $target);
+	if (!empty($error)) {
+		$error = "backup_database(): " . $error;
+		drupal_set_message($error, "error");
+		watchdog("backup", $error, WATCHDOG_ERROR);
+		return(null);
+	}
+
+	$message = t("Database backed up successfully.");
+	watchdog("backup", $message);
+	drupal_set_message($message);
+
+	//
+	// Backup our filesystem
+	//
+	$error = backup_files($db_file, $backup_file, $target);
+	if (!empty($error)) {
+		$error = "backup_files(): " . $error;
+		drupal_set_message($error, "error");
+		watchdog("backup", $error, WATCHDOG_ERROR);
+		return(null);
+	}
+
+	//
+	// If we are not writing to the Drupal root directory, restore the 
+	// permissions on our backup files.
+	//
+	if (!empty($target)) {
+
+		$error = backup_permission_rw($files);
+		if (!empty($error)) {
+			$error = "backup_database(): " . $error;
+			drupal_set_message($error, "error");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			return(null);
+		}
+
+	}
+
+	$message = t("Files backed up successfully.");
+	drupal_set_message($message);
+	watchdog("backup", $message);
+
+	$message = t("Click this filename to download: ")
+		. l($backup_file, $backup_file);
+	watchdog("backup", $message);
+	drupal_set_message($message);
+
+	//
+	// Redirect back to our page.
+	//
+	drupal_goto("admin/content/backup");
+
+} // End of backup_action_backup()
+
+
+/**
+* Save our configuration.
+*/
+function backup_action_save_config(&$data) {
+
+	variable_set("backup_target", $data["target"]);
+	variable_set("backup_capture_errors", $data["capture_errors"]);
+	variable_set("backup_from_parent", $data["from_parent"]);
+
+	drupal_set_message(t("Configuration Saved"));
+
+} // End of backup_action_save_config()
+
+
+/**
+* Delete selected backups
+*/
+function backup_action_delete(&$data) {
+
+	$target = variable_get("backup_target", "");
+
+	//$target .= "BOGUS"; // Debugging
+	if (empty($target)) {
+		$target = ".";
+	}
+
+	//
+	// Loop through all of our value forms, and only delete those backup
+	// filenames that have a value set.
+	//
+	foreach ($data as $key => $value) {
+
+		if (!backup_is_backup($key)) {
+			continue;
+		}
+
+		if (empty($value)) {
+			continue;
+		}
+
+		//
+		// Okay, we are deleting the file.  Decode the filename, preprend the
+		// target directory, and delete it.
+		//
+		$key = rawurldecode($key);
+
+		$filename = $target . "/" . $key;
+
+		if (!unlink($filename)) {
+			$error = t("Unable to delete file %filename%",
+				array("%filename%" => $filename));
+			drupal_set_message($error, "error");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+		} else {
+			$message = t("File %filename% deleted!",
+				array("%filename%" => $filename));
+			drupal_set_message($message);
+			watchdog("backup", $message);
+		}
+
+	}
+
+} // End of backup_action_delete()
+
+
+/**
+* Process our submitted form.
+*
+* @param string $form_id The unique ID of our form.
+*
+* @param array $form_values Associative array of form values.
+*/
+function backup_form_submit($form_id, $form_values) {
+
+	// Debugging
+	//print "<pre>"; print_r($form_values); print "</pre>"; exit();
+
+	include_once("functions.inc.php");
+
+	$op = $form_values["op"];
+
+	//
+	// Are we saving our config, or making a backup?
+	//
+	if ($op == t("Save Config")) {
+		backup_action_save_config($form_values);
+
+	} else if ($op == t("Delete Selected Backups")) {
+		backup_action_delete($form_values);
+
+	} else {
+		backup_action_backup();
+
+	}
+
+} // End of backup_form_submit()
+
+
+/**
+* Make sure that our directory is writable.
+*/
+function backup_form_validate($form_id, $form_values) {
+
+	if (!empty($form_values["from_parent"])) {
+		$parent_dir = backup_get_dirname() . "/";
+		$tmp = chdir("..");
+		if (empty($tmp)) {
+			$error = t("Unable to chdir() to parent directory. ")
+				. t("Cannot backup from parent directory.")
+				;
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			form_set_error("target", $error);
+		}
+		chdir($parent_dir);
+	}
+
+
+	$target = $form_values["target"];
+
+	//
+	// Default to Drupal's root directory
+	//
+	if (empty($target)) {
+		$target = ".";
+	}
+
+	//
+	// Sanitize the target to prevent traversing the filesystem.
+	//
+	$target = str_replace("..", "__SANITIZED__", $target);
+
+	//
+	// Make sure the directory is writeable
+	//
+	if (!is_writable($target)) {
+		$error = t("Path '". realpath($target) ."' is not writable. ")
+			. t("Note that the user the webserver runs as may be different "
+				. "from the user that owns that directory. ")
+			. t("Please contact your SysAdmin for further assistance.")
+			;
+		watchdog("backup", $error, WATCHDOG_ERROR);
+		form_set_error("target", $error);
+	}
+
+	//
+	// Check and see if there are any non-backup files in the directory.
+	// If there are, assume that there is legitmiate data in this directory and
+	// refuse to use it.
+	//
+	if ($target != ".") {
+
+		$fp = opendir($target);
+		if (empty($fp)) {
+			$error = t("Unable to open directory '$target' for reading!");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			form_set_error("target", $error);
+		}
+
+		//
+		// Loop through our files and freak out if there are any non-backup files
+		// found here.
+		//	
+		while ($file = readdir($fp)) {
+
+			if ($file == "." || $file == "..") {
+				continue;
+			}
+
+			if (backup_is_backup($file)) {
+				continue;
+			}
+
+			$error = t("File '$file' in backup directory does not appear to be a backup!  For safety reasons, I cannot allow non-backup files in that directory.  Please clear any non-backup files out of the directory and try again.");
+			watchdog("backup", $error, WATCHDOG_ERROR);
+			form_set_error("target", $error);
+
+		}
+
+		closedir($fp);
+
+	}
+
+} // End of backup_form_validate()
+
+
+/**
+* This function is our menu item callback.  It is the main part of our module.
+*
+* @return string Our content to display
+*/
+function backup_page() {
+
+	$content = "";
+
+	$form_html .= drupal_get_form("backup_form");
+
+	$content .= $form_html;
+
+	//
+	// Send our content to the user
+	// 
+	return($content);
+
+} // End of backup_page()
+
+
+/**
+* This function calls phpinfo(), which can then be used for debugging
+*	and support purposes.  
+*
+* @return null Do not return anything.  We do not want any of the regular
+*	page printed.
+*/
+function backup_page_phpinfo() {
+
+	print l(t("Click to return to the Backup screen"), 
+		"admin/content/backup"
+		);
+	print "<p>\n";
+
+	phpinfo();
+
+	print l(t("Click to return to the Backup screen"), 
+		"admin/content/backup"
+		);
+
+	return(null);
+}
+
+
+/**
+* Walk through the path and find the location of a specific file.
+*
+* @return mixed The full pathname to the file, or null on failure.
+*/
+function backup_search_path($file) {
+
+	$retval = '';
+
+	$path = getenv('PATH');
+	$path = explode(':', $path);
+
+	foreach ($path as $key => $value) {
+		$file2 = $value . '/' . $file;
+		if (is_file($file2)) {
+
+			if (!is_executable($file2)) {
+				$error = t("File %file% is not executable.",
+					array("%file%" => $file2));
+				form_set_error("", $error);
+				break;
+			}
+
+			$retval = $file2;
+			break;
+		}
+	}
+
+	return($retval);
+
+} // End of backup_search_path()
+
+
+/**
+* This function gets a list of programs that will be used to perform the 
+* backup.
+*
+* @return array An associative array where the key is the file/directory
+*	and the value is the path to the program, or null if it couldn't be
+*	found.
+*/
+function backup_get_programs() {
+
+	// Init
+	$retval = array();
+
+	//
+	// List of programs to search for.
+	//
+	$binaries = array(
+		"mysqldump", 
+		"tar", 
+		"gzip",
+		//"gzip.TEST.debug", // Found, but not executable
+		//"TEST.debug",		// Not found
+		);
+
+	//
+	// Loop through our programs and search for each
+	//
+	foreach ($binaries as $key => $value) {
+
+		$file = backup_search_path($value);
+
+		if (!empty($file)) {
+			$retval[$value] = $file;
+		} else {
+			$retval[$value] = "";
+		}
+
+	}
+
+	return($retval);
+
+} // End of backup_get_programs()
+
+
+/**
+* This function turns the list of programs into content.
+*
+* @param array $files Associative array of files from backup_get_programs()
+*
+* @param boolean $error This is set to true if there was a missing file
+*	that prevents us from running the program.
+*
+* @return string Content string to be added on to the content variable.
+*/
+function backup_get_programs_html(&$files, &$error) {
+
+	// Init
+	$retval = "";
+	$error = false;
+
+	$retval .= '<ul>';
+
+	foreach ($files as $key => $value) {
+
+		if (empty($value)) {
+			form_set_error("", t("System program \"%file%\" not found in "
+				. "\$PATH.  Please check with your sysadmin for further "
+				. "assistance. ", 
+				array("%file%" => $key)
+				));
+			$retval .= t("<li>%key% program NOT found or executable</li>",
+				array("%key%" => $key)
+				);
+			$error = true;
+
+		} else {
+			$retval .= t("<li>%key% program found at: %value%</li>", 
+				array(
+					"%key%" => $key,
+					"%value%" => $value,
+					));
+
+		}
+
+	}
+
+	$retval .= "</ul>";
+
+	return($retval);
+
+} // End of backup_get_programs_html()
+
+
+/**
+* This function shows the path that is being searched.
+*
+* @return A string with the path that is being searched.
+*/
+function backup_get_path() {
+
+	$retval = '';
+
+	$path = getenv('PATH');
+	//
+	// Add in spaces so that the text will wrap.
+	//
+	$path = str_replace(':', ': ', $path);
+
+	$retval = $path;
+
+	return($retval);
+
+} // End of backup_get_path()
+
+
+?>

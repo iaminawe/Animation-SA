@@ -1,0 +1,267 @@
+<?php
+// $Id: avatar_selection.install,v 1.1.2.8.2.12 2008/10/25 20:54:36 snpower Exp $
+
+/**
+ * @file
+ * The Avatar Selection module install file.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+ * Write table structure to the SQL database.
+ * If the 'user_picture' option is set to off, a warning will be printed.
+ */
+function avatar_selection_install() {
+  $t = get_t();
+  if (!variable_get('user_pictures', 0)) {
+    drupal_set_message($t('User Pictures option is disabled.  You will need to enable this option before you can use the Avatar Selection module.  You may configure this setting at the <a href="@url">User settings</a> page.', array('@url' => url('admin/user/settings'))));
+  }
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("CREATE TABLE IF NOT exists {avatar_selection} (
+        aid int(10) unsigned NOT NULL,
+        avatar varchar(255) NOT NULL,
+        weight int(10) NOT NULL DEFAULT 0,
+        name varchar(255),
+        PRIMARY KEY (aid),
+        UNIQUE KEY avatar (avatar)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      db_query("CREATE TABLE IF NOT exists {avatar_selection_roles} (
+        aid int(10) unsigned NOT NULL DEFAULT 0,
+        rid int(10) NOT NULL
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      db_query("CREATE TABLE IF NOT exists {avatar_selection_og} (
+        aid int(10) unsigned NOT NULL DEFAULT 0,
+        ogid int(10) NOT NULL
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {avatar_selection} (
+        aid serial CHECK (aid >= 0),
+        avatar varchar(255) NOT NULL,
+        weight integer NOT NULL DEFAULT 0,
+        name varchar(255),
+        PRIMARY KEY (aid),
+        UNIQUE (avatar)
+      )");
+      db_query("CREATE TABLE {avatar_selection_roles} (
+        aid integer NOT NULL DEFAULT 0,
+        rid integer NOT NULL
+      )");
+      db_query("CREATE TABLE {avatar_selection_og} (
+        aid integer NOT NULL DEFAULT 0,
+        ogid integer NOT NULL
+      )");
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ * Remove all the variables, files and sql tables used by the module.
+ */
+function avatar_selection_uninstall() {
+  // Delete the variables we created.
+  variable_del('avatar_selection_disable_user_upload');
+  variable_del('avatar_selection_force_user_avatar_reg');
+  variable_del('avatar_selection_force_user_avatar');
+  variable_del('avatar_selection_avatar_per_page');
+  variable_del('avatar_selection_set_random_default');
+  variable_del('avatar_selection_distinctive_avatars');
+
+  // Delete the images.
+  $dir = file_create_path('avatar_selection') .'/';
+  $listings = file_scan_directory($dir, '.*\.(gif|GIF|Gif|jpg|JPG|Jpg|jpeg|JPEG|Jpeg|png|PNG|Png)', array('.', '..', 'CVS'), 0, FALSE);
+  if ($listings) {
+    foreach ($listings as $listing) {
+      file_delete($dir . $listing->basename);
+    }
+  }
+
+  // Drop the avatar_selection table.
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $deleted = db_query("DROP TABLE IF EXISTS {avatar_selection}");
+      $deleted = db_query("DROP TABLE IF EXISTS {avatar_selection_roles}");
+      $deleted = db_query("DROP TABLE IF EXISTS {avatar_selection_og}");
+      break;
+    case 'pgsql':
+      $deleted = db_query("DROP TABLE {avatar_selection}");
+      $deleted = db_query("DROP TABLE {avatar_selection_roles}");
+      $deleted = db_query("DROP TABLE {avatar_selection_og}");
+      break;
+  }
+
+  // Clear the cache tables.
+  cache_clear_all(null, 'cache');
+  cache_clear_all(null, 'cache_filter');
+  cache_clear_all(null, 'cache_menu');
+  cache_clear_all(null, 'cache_page');
+}
+
+/**
+ * Create the new 'avatar_selection' sql table structure for updating from an
+ * older installation.
+ *
+ * @return
+ *   Array to which query results will be added.
+ */
+function avatar_selection_update_1() {
+  $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("CREATE TABLE IF NOT exists {avatar_selection} (
+        avatar varchar(255) NOT NULL UNIQUE,
+        access varchar(255),
+        PRIMARY KEY (avatar)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      break;
+    case 'pgsql':
+      $ret[] = update_sql("CREATE TABLE {avatar_selection} (
+        avatar varchar(255) NOT NULL UNIQUE,
+        access varchar(255),
+        PRIMARY KEY (avatar)
+      )");
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Adds to the current table structure another column, 'og_access'.
+ *
+ * @return
+ *    Array to which query results will be added.
+ */
+function avatar_selection_update_2() {
+  $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN og_access varchar(255)");
+      break;
+    case 'pgsql':
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN og_access varchar(255)");
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Adds to the current table structure another two columns, 'weight' and 'name'.
+ *
+ * @return
+ *    Array to which query results will be added.
+ */
+function avatar_selection_update_3() {
+  $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN weight int(10) NOT NULL DEFAULT 0");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN name varchar(255)");
+      break;
+    case 'pgsql':
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN weight integer NOT NULL DEFAULT 0");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN name varchar(255)");
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Updates the avatar entry so it's just a filename, rather than a path +
+ * filename.
+ *
+ * @return
+ *    Array to which query results will be added.
+ */
+function avatar_selection_update_4() {
+  $ret = array();
+
+  $result = db_query("SELECT avatar FROM {avatar_selection}");
+  while ($avatar_info = db_fetch_object($result)) {
+    $avatar = $avatar_info->avatar;
+    $path_info = pathinfo($avatar);
+    $ret[] = update_sql("UPDATE {avatar_selection} SET avatar = '". $path_info['basename'] ."' WHERE avatar = '". $avatar ."'");
+  }
+
+  return $ret;
+}
+
+function avatar_selection_update_5() {
+  $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("CREATE TABLE IF NOT exists {avatar_selection_roles} (
+        aid int(10) unsigned NOT NULL DEFAULT 0,
+        rid int(10) NOT NULL
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      $ret[] = update_sql("CREATE TABLE IF NOT exists {avatar_selection_og} (
+        aid int(10) unsigned NOT NULL DEFAULT 0,
+        ogid int(10) NOT NULL
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} DROP PRIMARY KEY");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN aid int(10) unsigned NOT NULL DEFAULT 0");
+
+      break;
+
+    case 'pgsql':
+      $ret[] = update_sql("CREATE TABLE {avatar_selection_roles} (
+        aid integer NOT NULL DEFAULT 0,
+        rid integer NOT NULL
+      )");
+      $ret[] = update_sql("CREATE TABLE {avatar_selection_og} (
+        aid integer NOT NULL DEFAULT 0,
+        ogid integer NOT NULL
+      )");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD COLUMN aid integer NOT NULL DEFAULT 0");
+      $ret[] = update_sql("ALTER TABLE {avatar_selection} DROP CONSTRAINT {avatar_selection}_pkey");
+
+      break;
+  }
+
+  $aid = 0;
+  $result = db_query("SELECT avatar, access, og_access FROM {avatar_selection}");
+  while ($avatar = db_fetch_object($result)) {
+    $avs_access = preg_split('/\s*,\s*/', $avatar->access);
+    $og_access = preg_split('/\s*,\s*/', $avatar->og_access);
+
+    $aid = $aid + 1;
+    $ret[] = update_sql("UPDATE {avatar_selection} SET aid = $aid WHERE avatar = '". $avatar->avatar ."'");
+
+    if (count($avs_access) > 0) {
+      foreach ($avs_access as $access) {
+        if (!empty($access)) {
+          $ret[] = update_sql("INSERT INTO {avatar_selection_roles} (aid, rid) VALUES(". $aid .", ". $access .")");
+        }
+      }
+    }
+
+    if (count($og_access) > 0) {
+      foreach ($og_access as $access) {
+        if (!empty($access)) {
+          $ret[] = update_sql("INSERT INTO {avatar_selection_og} (aid, ogid) VALUES(". $aid .", ". $access .")");
+        }
+      }
+    }
+  }
+
+  $ret[] = update_sql("INSERT INTO {sequences} (name, id) VALUES('". db_prefix_tables('{avatar_selection}_aid') ."', $aid)");
+  $ret[] = update_sql("ALTER TABLE {avatar_selection} ADD PRIMARY KEY (aid)");
+
+  $ret[] = update_sql("ALTER TABLE {avatar_selection} DROP COLUMN access");
+  $ret[] = update_sql("ALTER TABLE {avatar_selection} DROP COLUMN og_access");
+
+  return $ret;
+}

@@ -1,0 +1,4 @@
+ad_notify.module:
+ Written by Jeremy Andrews (2/2007)
+ Maintained by Jeremy Andrews <jeremy@kerneltrap.org>
+

@@ -1,0 +1,10 @@
+; $Id: cck_address.info,v 1.11 2007/12/14 20:12:13 rconstantine Exp $
+;/**
+; * @package CCK_Address
+; * @category NeighborForge
+; */
+name = Address Field
+description = Defines address field so all parts are treated as a single unit.
+dependencies = content
+package = CCK
+project = "cck_address"

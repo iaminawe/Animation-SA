@@ -1,0 +1,9 @@
+; $Id: taxonomy_xml.info,v 1.1 2007/07/03 07:04:38 nicolash Exp $
+name = Taxonomy import/export via XML
+description = Makes it possible to import and export taxonomy terms via XML.
+dependencies = taxonomy
+; Information added by drupal.org packaging script on 2008-04-11
+version = "5.x-1.0"
+project = "taxonomy_xml"
+datestamp = "1207882216"
+

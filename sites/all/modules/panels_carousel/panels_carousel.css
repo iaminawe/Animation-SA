@@ -1,0 +1,14 @@
+/* $Id: panels_carousel.css,v 1.1 2007/08/14 23:23:40 wimleers Exp $ */
+
+/**
+ * Make Mini Panels of the carousel style usable on the "edit content" page.
+ */
+ul.jcarousel {
+	height: auto !important;
+}
+
+ul.jcarousel li.jcarousel-item div.panel-pane {
+	border: none !important;
+	background: transparent !important;
+	margin: 0 !important;
+}

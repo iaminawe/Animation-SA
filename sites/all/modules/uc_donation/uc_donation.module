@@ -1,0 +1,628 @@
+<?php
+// $Id: uc_donation.module,v 1.2.2.2 2009/03/12 23:20:02 greenskin Exp $
+
+/**
+ * @file
+ * Provides a donation product type.
+ *
+ * Allows the creation of donation products. These products by default are not
+ * shippable and allow an end user to specify an amount to donate before adding
+ * it to the cart. Once added to the cart the user can there also change the
+ * amount of the donation.
+ *
+ * Written by greenSkin. Development sponsored by the It Is Written.
+ * http://www.itiswritten.org
+ */
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_node_info().
+ */
+function uc_donation_node_info() {
+  return array(
+    'donation' => array(
+      'name' => t('Donation'),
+      'module' => 'uc_donation',
+      'description' => t("This node module the creation of donation products."),
+      'title_label' => t('Name'),
+      'body_label' => t('Description')
+    )
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_donation_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/store/reports/donations',
+      'title' => t('Donation reports'),
+      'description' => t('View reports for all store donations'),
+      'callback' => 'uc_donation_reports',
+      'access' => user_access('view reports'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_access().
+ */
+function uc_donation_access($op, $node){
+  global $user;
+
+  switch ($op){
+    case 'create':
+      return user_access('create products');
+    case 'update':
+    case 'delete':
+      if ($user->uid == $node->uid){
+        return user_access('edit own products');
+      }
+      else{
+        return user_access('edit products');
+      }
+  }
+}
+
+function uc_donation_forms(){
+  $products = db_query("SELECT DISTINCT nid FROM {node} WHERE type = '%s'",'donation');
+
+  while ($product = db_fetch_object($products)) {
+    $forms['uc_donation_add_to_cart_form_'. $product->nid] = array('callback' => 'uc_donation_add_to_cart_form');
+    $forms['uc_catalog_buy_it_now_form_'. $prodrow->nid] = array('callback' => 'uc_catalog_buy_it_now_form');
+  }
+
+  return $forms;
+}
+
+function uc_donation_form(&$node) {
+  $type = node_get_types('type', $node);
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  $form['body_filter'] = array(
+    '#weight' => -4
+  );
+  $form['body_filter']['body'] = array(
+    '#type' => 'textarea',
+    '#title' => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#required' => FALSE
+  );
+  $form['body_filter']['filter'] = filter_form($node->format);
+
+  $form['base']['prices'] = array(
+    '#weight' => 5,
+    '#theme' => 'uc_product_form_prices',
+    '#description' => t('List price and Cost are provided for if this donation product contains a product with a value.')
+  );
+  $form['base']['prices']['list_price'] = array(
+    '#type' => 'textfield',
+    '#title' => t('List Price'),
+    '#required' => FALSE,
+    '#default_value' => $node->list_price,
+    '#description' => t('The listed MSRP'),
+    '#weight' => 0,
+    '#size' => 20,
+    '#maxlength' => 35,
+  );
+  $form['base']['prices']['cost'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Cost'),
+    '#required' => FALSE,
+    '#default_value' => $node->cost,
+    '#description' => t("Your store's cost"),
+    '#weight' => 1,
+    '#size' => 20,
+    '#maxlength' => 35,
+  );
+  $form['base']['prices']['sell_price'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Amount'),
+    '#required' => TRUE,
+    '#default_value' => $node->sell_price,
+    '#description' => t('Default Donation Amount'),
+    '#weight' => 2,
+    '#size' => 20,
+    '#maxlength' => 35,
+  );
+  $form['base']['model'] = array('#type' => 'textfield',
+    '#title' => t('SKU'),
+    '#required' => TRUE,
+    '#default_value' => $node->model,
+    '#description' => t('Donation SKU/project'),
+    '#weight' => 0,
+    '#size' => 32,
+  );
+  $form['base']['shippable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Product and its derivatives are shippable.'),
+    '#default_value' => isset($node->shippable) ? $node->shippable : FALSE,
+    '#weight' => 10,
+  );
+
+  $form['base']['weight'] = array(
+    '#weight' => 15,
+    '#theme' => 'uc_product_form_weight',
+  );
+  $form['base']['weight']['weight'] = array('#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#default_value' => $node->weight,
+    '#size' => 10,
+    '#maxlength' => 15,
+  );
+  $units = array(
+    'lb' => t('Pounds'),
+    'kg' => t('Kilograms'),
+    'oz' => t('Ounces'),
+    'g' => t('Grams'),
+  );
+  $form['base']['weight']['weight_units'] = array('#type' => 'select',
+    '#title' => t('Unit of measurement'),
+    '#default_value' => $node->weight_units ? $node->weight_units : variable_get('uc_weight_unit', 'lb'),
+    '#options' => $units,
+  );
+  $form['base']['dimensions'] = array('#type' => 'fieldset',
+    '#title' => t('Dimensions'),
+    '#description' => t('Physical dimensions of the packaged product.'),
+    '#weight' => 20,
+    '#theme' => 'uc_product_dimensions_form',
+  );
+  $form['base']['dimensions']['length_units'] = array('#type' => 'select',
+    '#title' => t('Units of measurement'),
+    '#options' => array(
+      'in' => t('Inches'),
+      'cm' => t('Centimeters'),
+    ),
+    '#default_value' => $node->length_units ? $node->length_units : variable_get('uc_length_unit', 'in'),
+  );
+  $form['base']['dimensions']['length'] = array('#type' => 'textfield',
+    '#title' => t('Length'),
+    '#default_value' => $node->length,
+    '#size' => 10,
+  );
+  $form['base']['dimensions']['width'] = array('#type' => 'textfield',
+    '#title' => t('Width'),
+    '#default_value' => $node->width,
+    '#size' => 10,
+  );
+  $form['base']['dimensions']['height'] = array('#type' => 'textfield',
+    '#title' => t('Height'),
+    '#default_value' => $node->height,
+    '#size' => 10,
+  );
+  $form['base']['pkg_qty'] = array('#type' => 'textfield',
+    '#title' => t('Package quantity'),
+    '#default_value' => $node->pkg_qty ? $node->pkg_qty : 1,
+    '#description' => t('For a package containing only this product, how many are in it?'),
+    '#weight' => 25,
+  );
+  $form['base']['default_qty'] = array('#type' => 'textfield',
+    '#title' => t('Default quantity to add to cart'),
+    '#default_value' => !is_null($node->default_qty) ? $node->default_qty : 1,
+    '#description' => t('Leave blank or zero to disable the quantity field in the add to cart form.'),
+    '#weight' => 27,
+    '#size' => 5,
+    '#maxlength' => 6,
+  );
+  $form['base']['ordering'] = array('#type' => 'weight',
+    '#title' => t('List order'),
+    '#delta' => 25,
+    '#default_value' => $node->ordering,
+    '#weight' => 30,
+  );
+
+  $form['#validate']['uc_product_form_validate'] = array();
+
+  return $form;
+}
+
+/**
+ * Implementation of hook_insert().
+ */
+function uc_donation_insert($node){
+  if (!isset($node->unique_hash)){
+    $node->unique_hash = md5($node->vid . $node->nid . $node->model . $node->list_price . $node->cost . $node->sell_price . $node->weight . $node->weight_units . $node->length . $node->width . $node->height . $node->length_units . $node->pkg_qty . $node->default_qty . $node->shippable . time());
+  }
+  db_query("INSERT INTO {uc_products} (vid, nid, model, list_price, cost, sell_price, weight, weight_units, length, width, height, length_units, pkg_qty, default_qty, unique_hash, ordering, shippable) VALUES (%d, %d, '%s', %f, %f, %f, %f, '%s', %f, %f, %f, '%s', %d, %d, '%s', %d, %d)",
+    $node->vid, $node->nid, $node->model, $node->list_price, $node->cost, $node->sell_price, $node->weight, $node->weight_units, $node->length, $node->width, $node->height, $node->length_units, $node->pkg_qty, $node->default_qty, $node->unique_hash, $node->ordering, $node->shippable
+  );
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function uc_donation_update($node){
+  if ($node->revision){
+    db_query("INSERT INTO {uc_products} (vid, nid, model, list_price, cost, sell_price, weight, weight_units, length, width, height, length_units, pkg_qty, default_qty, unique_hash, ordering, shippable) VALUES (%d, %d, '%s', %f, %f, %f, %f, '%s', %f, %f, %f, '%s', %d, %d, '%s', %d, %d)",
+      $node->vid, $node->nid, $node->model, $node->list_price, $node->cost, $node->sell_price, $node->weight, $node->weight_units, $node->length, $node->width, $node->height, $node->length_units, $node->pkg_qty, $node->default_qty, $node->unique_hash, $node->ordering, $node->shippable
+    );
+  }
+  else{
+    //drupal_set_message('<pre>'. print_r($node, true) .'</pre>');drupal_set_message('<pre>'. print_r($node, true) .'</pre>');
+    db_query("UPDATE {uc_products} SET model = '%s', list_price = %f, cost = %f, sell_price = %f, weight = %f, weight_units = '%s', length = %f, width = %f, height = %f, length_units = '%s', pkg_qty = %d, default_qty = %d, ordering = %d, shippable = %d WHERE vid = %d",
+      $node->model, $node->list_price, $node->cost, $node->sell_price, $node->weight, $node->weight_units, $node->length, $node->width, $node->height, $node->length_units, $node->pkg_qty, $node->default_qty, $node->ordering, $node->shippable, $node->vid);
+  }
+}
+
+/**
+ * Implementation of hook_load().
+ */
+function uc_donation_load($node) {
+  return db_fetch_object(db_query('SELECT model, list_price, cost, sell_price, weight, weight_units, length, width, height, length_units, pkg_qty, default_qty, unique_hash, ordering, shippable FROM {uc_products} WHERE vid = %d', $node->vid));
+}
+
+/**
+ * Implementation of hook_delete().
+ */
+function uc_donation_delete(&$node) {
+  db_query("DELETE from {uc_products} WHERE nid = %d", $node->nid);
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function uc_donation_view($node, $teaser = 0, $page = 0){
+  $node = node_prepare($node, $teaser);
+
+  $enabled = variable_get('uc_product_field_enabled', array(
+    'image' => 1,
+    'display_price' => 1,
+    'model' => 1,
+    'sell_price' => 1,
+    'weight' => 1,
+  ));
+  $weight = variable_get('uc_product_field_weight', array(
+    'image' => -2,
+    'display_price' -1,
+    'model' => 0,
+    'list_price' => 2,
+    'cost' => 3,
+    'sell_price' => 4,
+    'weight' => 5,
+  ));
+
+  //drupal_set_message('<pre>'. print_r($node->field_image_cache, true) .'</pre>');
+  if (isset($node->field_image_cache) && file_exists($node->field_image_cache[0]['filepath'])){
+    $node->content['image'] = array('#value' => theme('uc_product_image', $node->field_image_cache),
+      '#access' => $enabled['image'] && module_exists('imagecache'),
+      '#weight' => $weight['image'],
+    );
+  }
+
+  if (!$teaser){
+    $node->content['body']['#weight'] = 1;
+  }
+  else {
+    $node->content['#attributes'] = array('style' => 'display: inline');
+  }
+
+  if (!$teaser){
+    $node->content['add_to_cart'] = array('#value' => theme('uc_donation_add_to_cart', $node),
+      '#weight' => 10,
+    );
+  }
+  else if (variable_get('uc_product_add_to_cart_teaser', true)){
+    $node->content['add_to_cart'] = array('#value' => theme('uc_donation_add_to_cart', $node),
+      '#weight' => 10,
+    );
+  }
+  //print '<pre>'. print_r($node, true) .'</pre>';
+  return $node;
+}
+
+/**
+ * Wrap the "Add to Cart" form in a <div>.
+ *
+ * @ingroup themeable
+ */
+function theme_uc_donation_add_to_cart($node){
+  $output = '<div class="add_to_cart" title="'. t('Click to add to cart.') .'">';
+  $output .= drupal_get_form('uc_donation_add_to_cart_form_'. $node->nid, $node);
+  $output .= '</div>';
+  return $output;
+}
+
+function uc_donation_add_to_cart_form($node){
+  $form = array();
+  $form['#base'] = 'uc_donation_add_to_cart_form';
+  $form['nid'] = array('#type' => 'value', '#value' => $node->nid);
+  $form['donate_price'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Amount'),
+    '#default_value' => $node->sell_price,
+    '#size' => 6,
+    '#maxlength' => 10,
+    '#required' => TRUE,
+    '#field_prefix' => variable_get('uc_sign_after_amount', FALSE) ? '' : variable_get('uc_currency_sign', '$'),
+    '#field_suffix' => variable_get('uc_sign_after_amount', FALSE) ? variable_get('uc_currency_sign', '$') :''
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' =>  variable_get('add_to_cart_text_donation', t('Add to cart')), );
+  return $form;
+}
+
+function uc_donation_add_to_cart_form_validate($form_id, $form_values){
+  $form_values['donate_price'] = str_replace('$','',$form_values['donate_price']);
+  if (!is_numeric($form_values['donate_price']) || intval($form_values['donate_price']) <= 0){
+    form_set_error('price', t('You have entered an invalid amount.'));
+  }
+}
+
+function uc_donation_add_to_cart_form_submit($form_id, $form_values){
+  $form_values['donate_price'] = str_replace('$','',$form_values['donate_price']);
+  return uc_cart_add_item($form_values['nid'], 1,  module_invoke_all('add_to_cart_data', $form_values));
+}
+
+function uc_donation_form_alter($form_id, &$form) {
+  if ($form_id == 'uc_cart_view_form') {
+    $form['#validate']['uc_donation_cart_view_validate'] = array();
+    $form['#submit']['uc_donation_cart_view_submit'] = array();
+  }
+  if ($form_id == 'node_type_form') {
+    if ($form['#node_type']->type == 'donation') {
+      $form['add_to_cart_text'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Add to cart button text'),
+        '#default_value' => variable_get('add_to_cart_text_donation', 'Add to cart'),
+        '#required' => TRUE,
+        '#weight' => 0
+      );
+    }
+  }
+}
+
+function uc_donation_cart_view_validate($form_id, $form_values) {
+  foreach ($form_values['items'] as $item) {
+    if (isset($item['donate_price'])) {
+      $item['donate_price'] = str_replace('$','',$item['donate_price']);
+      if (!is_numeric($item['donate_price']) || intval($item['donate_price']) <= 0){
+        form_set_error('price', t('You have entered an invalid amount.'));
+      }
+    }
+  }
+}
+
+function uc_donation_cart_view_submit($form_id, $form_values) {
+  switch ($form_values['op']) {
+    case t('Update cart'):
+      foreach ($form_values['items'] as $item) {
+        if (isset($item['donate_price'])) {
+          $data = unserialize($item['data']);
+          $data['amount'] = str_replace('$','',$item['donate_price']);
+          $data = serialize($data);
+          $cid = uc_cart_get_id();
+          db_query("UPDATE {uc_cart_products} SET data = '%s', changed = %d WHERE nid = %d AND cart_id = '%s' AND data = '%s'", $data, time(), $item['nid'], $cid, $item['data']);
+        }
+      }
+      return 'cart';
+  }
+}
+
+/*******************************************************************************
+ * Hook Functions (TAPIr)
+ ******************************************************************************/
+
+/**
+ * Implementation of TAPIr's hook_table_alter().
+ *
+ * Adds a 'Amount' column to several product tables.
+ */
+function uc_donation_table_alter($table_id, $op, $args = NULL) {
+  if (arg(0) !== 'donation') {
+    switch ($table_id) {
+      case 'uc_cart_view_table':
+        switch ($op) {
+          case 'fields':
+            $fields[] = array(
+              'name' => 'amount',
+              'title' => t('Amount'),
+              'weight' => 2.5,
+              'enabled' => TRUE
+            );
+            return $fields;
+          case 'data':
+            $data = array();
+            foreach (element_children($args['items']) as $i) {
+              $data['amount'][] = array('data' => $args['items'][$i]['donate_price'] ? drupal_render($args['items'][$i]['donate_price']) : '','class'=>'amount');
+            }
+            return $data;
+        }
+        break;
+    }
+  }
+}
+
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+function uc_donation_product_types(){
+  return array_keys(uc_donation_node_info());
+}
+
+function uc_donation_cart_item($op, &$item){
+  switch ($op){
+    case 'load':
+      $node = node_load($item->nid);
+      if ($node->type == 'donation') {
+        $item->module = 'uc_donation';
+        if ($item->data['amount'] != NULL) {
+          $item->price = $item->data['amount'];
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of Übercart hook_cart_display().
+ */
+function uc_donation_cart_display($item){
+  $node = node_load($item->nid);
+  $element = array();
+  $element['nid'] = array('#type' => 'value', '#value' => $node->nid);
+  $element['module'] = array('#type' => 'value', '#value' => 'uc_donation');
+  $element['remove'] = array('#type' => 'checkbox');
+
+  $element['options'] = '';
+  $op_names = array();
+  if (module_exists('uc_attribute') && is_array($item->options)) {
+    foreach ($item->options as $option) {
+      $op_names[] = t('@attribute: @option', array('@attribute' => $option['attribute'], '@option' => $option['name']));
+    }
+    $element['options'] = array('#value' => theme('item_list', $op_names, NULL, 'ul', array('class' => 'cart-options')));
+  }
+
+  $element['title'] = array(
+    '#value' => l($node->title, 'node/'. $node->nid),
+  );
+  $element['#total'] = $item->price;
+  $element['data'] = array('#type' => 'hidden', '#value' => serialize($item->data));
+  $element['qty'] = array(
+    '#type' => 'hidden',
+    '#value' => $item->qty
+  );
+  $element['donate_price'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $item->price,
+    '#size' => 6,
+    '#maxlength' => 10,
+    '#field_prefix' => variable_get('uc_sign_after_amount', FALSE) ? '' : variable_get('uc_currency_sign', '$'),
+    '#field_suffix' => variable_get('uc_sign_after_amount', FALSE) ? variable_get('uc_currency_sign', '$') : ''
+  );
+
+  return $element;
+}
+
+/**
+ * Implementation of hook_add_to_cart().
+ * 
+ * Removes donation item from cart if it is being updated with a different amount.
+ */
+function uc_donation_add_to_cart($nid, $qty, $data) {
+  $node = node_load($nid);
+  if ($node->type == 'donation') {
+    $items = uc_cart_get_contents();
+    if (!empty($items)) {
+      foreach ($items as $item) {
+        if ($item->nid == $nid) {
+          if ($data['attributes'] == $item->data['attributes']) {
+            $cid = uc_cart_get_id();
+            uc_cart_remove_item($item->nid, $cid, $item->data);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Update information about a specific item in current cart.
+ */
+function uc_donation_update_cart_item($nid, $data = array(), $qty, $cid = NULL) {
+  if (!$nid) return NULL;
+  $cid = !(is_null($cid) || empty($cid)) ? $cid : uc_cart_get_id();
+  if ($qty < 1){
+    uc_cart_remove_item($nid, $cid, $data);
+  }
+  else{
+    // db_query("UPDATE {uc_cart_products} SET qty = %d, changed = %d WHERE nid = %d AND cart_id = '%s' AND data = '%s'", $qty, time(), $nid, $cid, serialize($data));
+    cache_clear_all();
+  }
+
+  // Rebuild the items hash
+  uc_cart_get_contents(NULL, 'rebuild');
+  if (!substr(request_uri(), 'cart', -4)) {
+    drupal_set_message(t('Your item(s) have been updated.'));
+  }
+}
+
+function uc_donation_add_to_cart_data($form_values, $nid = NULL){
+  if ($nid == NULL) {
+    return array('amount' => $form_values['donate_price']);
+  } else {
+    return array('amount' => $form_values[$nid]);
+  }
+}
+
+/*******************************************************************************
+ * Workflow-ng Hooks                                                          
+ ******************************************************************************/
+
+
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+/**
+ * Display the product reports
+ */
+function uc_donation_reports() {
+  $output = t("The following are all donation products listed in the store, their amount sold, how many times it has been viewed*, and the revenue they have produced. If you do not see the number of views you must enable the statistics module on the ").l('module administration page','admin/build/modules').".";
+  $statistics = db_result(db_query("SELECT status FROM {system} WHERE name = 'statistics'"));
+  $count_views = variable_get('statistics_count_content_views', FALSE);
+  $page = (!is_null($_GET['page'])) ? intval($_GET['page']) : 0;
+
+  if ($statistics && $count_views) {
+    $header = array(
+      array('data' => t('#')),
+      array('data' => t('Donation Product'), 'field' => 'n.title'),
+      array('data' => t('Views'), 'field' => 'c.totalcount'),
+      array('data' => t('Sold'), 'field' => 'sold'),
+      array('data' => t('Revenue'), 'field' => 'revenue', 'sort' => 'desc'),
+    );
+    $sql = "SELECT n.nid, n.title, c.totalcount, (SELECT SUM(qty) FROM {uc_order_products} as p LEFT JOIN {uc_orders} as o ON p.order_id = o.order_id WHERE o.order_status = 'completed' AND p.nid = n.nid) as sold, (SELECT SUM(p2.price) FROM {uc_order_products} as p2 LEFT JOIN {uc_orders} as o2 ON p2.order_id = o2.order_id WHERE o2.order_status = 'completed' AND p2.nid = n.nid) as revenue FROM {node} as n LEFT JOIN {node_counter} as c ON n.nid = c.nid WHERE type = 'donation' GROUP BY n.nid DESC";
+  }
+  else {
+    $header = array(
+      array('data' => t('#')),
+      array('data' => t('Product'), 'field' => 'n.title'),
+      array('data' => t('Sold'), 'field' => 'sold'),
+      array('data' => t('Revenue'), 'field' => 'revenue', 'sort' => 'desc'),
+    );
+    $sql = "SELECT n.nid, n.title, (SELECT SUM(qty) FROM {uc_order_products} as p LEFT JOIN {uc_orders} as o ON p.order_id = o.order_id WHERE o.order_status = 'completed' AND p.nid = n.nid) as sold, (SELECT SUM(p2.price) FROM {uc_order_products} as p2 LEFT JOIN {uc_orders} as o2 ON p2.order_id = o2.order_id WHERE o2.order_status = 'completed' AND p2.nid = n.nid) as revenue FROM {node} as n WHERE type = 'donation' GROUP BY n.nid DESC";
+  }
+  $sql_count = "SELECT COUNT(nid) FROM {node} WHERE type = 'donation'";
+  $products = pager_query($sql.tablesort_sql($header), variable_get('uc_reports_table_size',30), 0, $sql_count);
+
+  while ($product = db_fetch_array($products)) {
+    if ($statistics && $count_views) {
+      $rows[] = array(
+        array('data' => ($page*variable_get('uc_reports_table_size',30))+(count($rows)+1)),
+        array('data' => l($product['title'],'node/'.($product['nid']))),
+        array('data' => (empty($product['totalcount'])) ? 0 : $product['totalcount']),
+        array('data' => (empty($product['sold'])) ? 0 : $product['sold']),
+        array('data' => uc_currency_format((empty($product['revenue'])) ? 0 : $product['revenue']), 'nowrap' => 'nowrap'),
+      );
+    }
+    else {
+      $rows[] = array(
+        array('data' => ($page*variable_get('uc_reports_table_size',30))+(count($rows)+1)),
+        array('data' => l($product['title'],'node/'.($product['nid']))),
+        array('data' => (empty($product['sold'])) ? 0 : $product['sold']),
+        array('data' => uc_currency_format((empty($product['revenue'])) ? 0 : $product['revenue']), 'nowrap' => 'nowrap'),
+      );
+    }
+  }
+  if (empty($rows)) {
+    $rows[] = array(array('data' => t('No products found'), 'colspan' => count($header)));
+  }
+  $output .= theme('table', $header, $rows, array('width' => '100%', 'class' => 'uc-sales-table'));
+  $output .= "<small>*".t('Make sure %setting_name is set to %state in the ',array('%setting_name' => 'count content views', '%state' => 'enabled')).l(t('access log settings page'),'admin/logs/settings').t(' to enable views column.')."</small>";
+  $output .= theme_pager(NULL, variable_get('uc_reports_table_size',30));
+
+  return $output;
+}

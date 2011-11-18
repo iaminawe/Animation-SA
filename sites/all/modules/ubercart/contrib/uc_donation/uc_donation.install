@@ -1,0 +1,33 @@
+<?php
+// $Id: uc_donation.install,v 1.1 2008/05/02 00:36:05 greenskin Exp $
+
+/**
+ * Implementation of hook_install
+ */
+function uc_donation_install() {
+  
+}
+
+/**
+ * Implementation of hook_uninstall
+ */
+function uc_donation_uninstall() {
+  $variables = db_query("SELECT name FROM {variable} WHERE name LIKE 'uc_donation%%'");
+  while ($variable = db_fetch_object($variables)) {
+    variable_del($variable->name);
+  }
+}
+
+function uc_donation_update_1(){
+  variable_set('uc_donate_add', variable_get('uc_donation_donate_add', ''));
+  variable_del('uc_donation_donate_add');
+  
+  variable_set('uc_donate_checkout', variable_get('uc_donation_donate_checkout', ''));
+  variable_del('uc_donation_donate_checkout');
+  
+  variable_set('uc_donate_description', variable_get('uc_donation_donate_description', ''));
+  variable_del('uc_donation_donate_description');
+  
+  variable_set('uc_donate_title', variable_get('uc_donation_donate_title', ''));
+  variable_del('uc_donation_donate_title');
+}

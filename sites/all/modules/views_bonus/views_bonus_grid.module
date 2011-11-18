@@ -1,0 +1,51 @@
+<?php
+// $Id: views_bonus_grid.module,v 1.1.2.4 2007/07/02 17:07:30 dmitrig01 Exp $
+
+function views_bonus_grid_views_style_plugins() {
+  $items['bonus_grid'] = array(
+    'name' => t('Bonus: Grid View'),
+    'theme' => 'views_bonus_view_grid',
+    'validate' => 'views_ui_plugin_validate_list',
+    'needs_fields' => true,
+  );
+  return $items;
+}
+
+function theme_views_bonus_view_grid($view, $nodes, $type) {
+  drupal_add_css(drupal_get_path('module', 'views_bonus_grid') .'/views_bonus.css');
+  $fields = _views_get_fields();
+  $content = '<table class="view-grid view-grid-' . $view->name . '">';
+  
+  // set default count.
+  $cols = $view->gridcount ? $view->gridcount : 4;
+
+  $count = 0;
+  $total = count($nodes);
+  foreach ($nodes as $node) {
+    $item = '';
+    if ($count % $cols == 0) { 
+      $content .= '<tr>'; 
+    }
+
+    foreach ($view->field as $field) {
+      if ($fields[$field['id']]['visible'] !== FALSE) {
+        if ($field['label']) {
+          $item .= "<div class='view-label view-label-$field[queryname]'>" . $field['label'] . "</div>";
+        }
+        $item .= "<div class='view-field view-data-$field[queryname]'>" . views_theme_field('views_handle_field', $field['queryname'], $fields, $field, $node, $view) . "</div>";
+      }
+    }
+    $content .= "<td class='view-grid-item'><div class='view-item view-item-$view->name'>$item</div></td>\n"; 
+
+    $count++;
+    if ($count % $cols == 0 || $count == $total) {
+      $content .= '</tr>';
+    }
+  }
+  $content .= '</table>';
+  
+  if ($content) {
+    return $content;
+  }
+}
+

@@ -1,0 +1,25 @@
+/* $Id: menu_block.css,v 1.1 2008/06/23 10:06:38 johnalbin Exp $ */
+
+/* Duplicate of core's .menu */
+  ul.menu-list
+  {
+    list-style: none;
+    border: none;
+    text-align: left;
+  }
+
+  ul.menu-list li
+  {
+    margin: 0 0 0 0.5em;
+  }
+
+  ul.menu-list li.expanded,
+  ul.menu-list li.collapsed,
+  ul.menu-list li.leaf
+  {
+    list-style-type: square;
+    list-style-image: url(menu-leaf.png); /* We don't style with expanded and collapsed images. */
+    background: none; /* Override garland's tree styling. */
+    padding: 0.2em 0.5em 0 0;
+    margin: 0;
+  }

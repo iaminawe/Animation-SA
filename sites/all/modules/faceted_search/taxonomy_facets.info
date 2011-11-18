@@ -1,0 +1,6 @@
+; $Id: taxonomy_facets.info,v 1.6 2008/01/10 19:32:59 davidlesieur Exp $
+name = Taxonomy Facets
+description = "Provides facets based on taxonomy."
+dependencies = taxonomy search faceted_search
+package = Faceted Search
+

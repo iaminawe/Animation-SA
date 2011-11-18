@@ -1,0 +1,6 @@
+; $Id: author_facet.info,v 1.2 2007/11/15 23:32:19 davidlesieur Exp $
+name = Author Facet
+description = "Provides a facet for content authors."
+dependencies = faceted_search search
+package = Faceted Search
+

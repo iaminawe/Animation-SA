@@ -1,0 +1,6 @@
+; $Id: faceted_search_ui.info,v 1.4 2007/11/15 23:32:19 davidlesieur Exp $
+name = Faceted Search UI
+description = "User interface for searching and browsing through multiple facets."
+dependencies = faceted_search search
+package = Faceted Search
+

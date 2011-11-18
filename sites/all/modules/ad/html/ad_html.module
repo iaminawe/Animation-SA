@@ -1,0 +1,109 @@
+<?php
+// $Id: ad_html.module,v 1.1.2.9 2009/02/11 21:20:52 jeremy Exp $
+
+/**
+ * @file
+ * Enhances the ad module to support html ads.
+ *
+ * Copyright (c) 2007-2008.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.  All rights reserved.
+ */
+
+/**
+ * Function used to display the selected ad.
+ */
+function ad_html_display_ad($ad) {
+  return "<div class=\"html-advertisement\" id=\"ad-$ad->aid\"><div class=\"ad-header\">". check_markup($ad->html, $ad->format, FALSE) .'</div></div>';
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function ad_html_help($path) {
+  switch ($path) {
+    case 'node/add/ad#html':
+      $output = t('A html advertisement.');
+      break;
+  }
+  return $output;
+}
+
+/** 
+ * Implementation of the ad module's _adapi hook.
+ */
+function ad_html_adapi($op, &$node) {
+  switch ($op) {
+    case 'load':
+      $return = db_fetch_array(db_query('SELECT * FROM {ad_html} WHERE aid = %d', $node['aid']));
+      $return['ad'] = check_markup($return['html'], $node->format, FALSE);
+      return $return;
+
+    case 'insert':
+      db_query("INSERT INTO {ad_html} (aid, html) VALUES(%d, '%s')", $node->nid, $node->html);
+      break;
+
+    case 'update':
+      db_query("UPDATE {ad_html} SET html = '%s' WHERE aid = %d", $node->html, $node->nid);
+      break;
+
+    case 'delete':
+      db_query('DELETE FROM {ad_html} WHERE aid = %d', $node->nid);
+      break;
+
+    case 'form':
+      return ad_html_node_form($node);
+
+    case 'view':
+      return ad_html_node_view($node);
+
+    case 'type':
+      return 'html';
+
+    case 'permissions':
+      if (!isset($node->adtype) || $node->adtype == 'html') {
+        return array('manage ad html');
+      }
+  }
+}
+
+/**
+ * Adapi helper function for displaying a node form.
+ */
+function ad_html_node_form(&$node) {
+  $form = array();
+
+  $form['ad_html'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('HTML'),
+    '#collapsible' => TRUE,
+  );
+
+  $form['ad_html']['display'] = array(
+    '#type' => 'markup',
+    '#value' => ad_html_display_ad($node),
+  );
+
+  if (ad_adaccess($node->nid, 'manage ad html') ||
+      arg(1) == 'add' && user_access('create advertisements')) {
+    $form['ad_html']['html'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Ad HTML'),
+      '#required' => TRUE,
+      '#default_value' => $node->html,
+      '#description' => t('Paste the complete HTML provided by your advertising affiliate.'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Helper function, display the html ad as a node.
+ */
+function ad_html_node_view(&$node) {
+  $node->content['ad'] = array(
+    '#value' => theme('box', '', stripslashes(ad_html_display_ad($node))),
+    '#weight' => -1,
+  );
+}
+

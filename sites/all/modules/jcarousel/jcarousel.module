@@ -1,0 +1,21 @@
+<?php
+// $Id: jcarousel.module,v 1.1.2.3 2007/08/14 22:26:15 wimleers Exp $
+
+/**
+ * @file
+ * This module provides a central function for adding the jCarousel jQuery
+ * plugin and makes sure it's added only once per page.
+ */
+
+/**
+ * Add the JS and basic CSS to the current page, if they aren't added already.
+ */
+function jcarousel_add() {
+  static $added;
+
+  if (!isset($added)) {
+    drupal_add_js(drupal_get_path('module', 'jcarousel') .'/jcarousel.js');
+    drupal_add_css(drupal_get_path('module', 'jcarousel') .'/jcarousel.css');
+    $added = TRUE;
+  }
+}

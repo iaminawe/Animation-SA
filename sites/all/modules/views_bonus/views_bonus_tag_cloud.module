@@ -1,0 +1,56 @@
+<?php
+
+function views_bonus_tag_cloud_menu($may_cache) {
+  if (!$may_cache) {
+    $mod = 'views_bonus_tag_cloud';
+    $stylesheet = drupal_get_path('module', $mod) ."/$mod.css";
+    drupal_add_css($stylesheet); //don't add 'all' like tagadelic does
+  }
+}
+
+function views_bonus_tag_cloud_views_style_plugins() {
+  $items['tag_cloud'] = array(
+    'name' => t('Bonus: Tag cloud summary'),
+    'summary_theme' => 'views_bonus_tag_cloud_summary',
+    'theme' => 'views_view_nodes',
+  );
+  return $items;
+}
+
+function theme_views_bonus_tag_cloud_summary($view, $type, $level, $nodes, $args) {
+  $nodes = vbtg_build_weighted_tags($nodes, variable_get('tagadelic_levels', 6), variable_get('tagadelic_page_amount', '60'));
+  return theme('vbtg_weighted', $nodes, $view->real_url);  
+}
+
+// similar to tagadelic function but takes an array as argument, and expects num_nodes element. 
+// also does not wipe out existing $nodes object. weight is delivered as tagdelic_weight
+function vbtg_build_weighted_tags($nodes, $steps = 6) {
+  // Find minimum and maximum log-count. By our MatheMagician Steven Wittens aka UnConeD.
+  $min = 1e9;
+  $max = -1e9;
+  foreach ($nodes as $key => $tag) {
+    $tag->count = $tag->num_nodes;
+    
+    $tag->number_of_nodes = $tag->count;
+    $tag->count = log($tag->count);
+    $min = min($min, $tag->count);
+    $max = max($max, $tag->count);
+    $tags[$key] = $tag;
+  }
+  // Note: we need to ensure the range is slightly too large to make sure even
+  // the largest element is rounded down.
+  $range = max(.01, $max - $min) * 1.0001;
+
+  foreach ($tags as $key => $value) {
+    $nodes[$key]->tagadelic_weight = 1 + floor($steps * ($value->count - $min) / $range);
+  }
+  return $nodes;
+}
+
+// same as tagadelic function but with smarter URL
+function theme_vbtg_weighted($terms, $url) {
+  foreach ($terms as $term) {
+    $output .= l($term->name, "$url/$term->tid", array('class'=>"tagadelic level$term->tagadelic_weight")) ." \n";
+  }
+  return $output;
+}

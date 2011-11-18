@@ -1,0 +1,10 @@
+; $Id: ad_report.info,v 1.1.2.1 2007/02/24 13:03:56 morbus Exp $
+name = Report
+package = Ad
+dependencies = ad
+description = Provides comprehensive charts and reports about advertising statistics.
+; Information added by drupal.org packaging script on 2009-02-11
+version = "5.x-1.7"
+project = "ad"
+datestamp = "1234387502"
+

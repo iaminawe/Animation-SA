@@ -1,0 +1,11 @@
+; $Id: pageroute_ui.info,v 1.1 2007/03/05 14:06:40 fago Exp $
+name = Pageroute UI
+description = Adminstration pages allowing you to create and edit pageroutes.
+package = Pageroute
+dependencies = pageroute
+
+; Information added by drupal.org packaging script on 2008-11-14
+version = "5.x-1.1"
+project = "pageroute"
+datestamp = "1226665217"
+

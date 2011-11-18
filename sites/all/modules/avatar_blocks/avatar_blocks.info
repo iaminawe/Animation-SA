@@ -1,0 +1,9 @@
+name = Avatar Blocks
+description = "Provides a collection of blocks for use on a Drupal social networking site."
+version = "5.x-1.2"
+
+; Information added by drupal.org packaging script on 2008-08-04
+version = "5.x-1.2"
+project = "avatar_blocks"
+datestamp = "1217887804"
+

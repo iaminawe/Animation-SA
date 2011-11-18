@@ -1,0 +1,676 @@
+<?php
+// $Id: uc_node_checkout.module,v 1.1.2.2 2008/11/25 19:40:22 rszrama Exp $
+
+/**
+ * @file
+ * Associate node types with products on your site that customers can purchase.
+ *
+ * Sponsored by Lullabot - http://www.lullabot.com
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_node_checkout_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/store/settings/node-checkout',
+      'title' => t('Node checkout settings'),
+      'description' => t('Map products to node types and adjust node checkout behavior.'),
+      'callback' => 'uc_node_checkout_admin',
+      'access' => user_access('administer node checkout'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/node-checkout/overview',
+      'title' => t('Node types'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/node-checkout/settings',
+      'title' => t('Settings'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('uc_node_checkout_settings_form'),
+      'access' => user_access('administer node checkout'),
+      'type' => MENU_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path' => 'uc_node_checkout/autocomplete',
+      'callback' => 'uc_node_checkout_autocomplete',
+      'access' => user_access('administer node checkout'),
+      'type' => MENU_CALLBACK,
+    );
+  }
+  else {
+    foreach (node_get_types('types') as $type => $info) {
+      $items[] = array(
+        'path' => 'admin/store/settings/node-checkout/'. $type,
+        'title' => t('@type product checkout', array('@type' => $info->name)),
+        'description' => t('Map a product to @type nodes.', array('@type' => $info->name)),
+        'callback' => 'drupal_get_form',
+        'callback arguments' => array('uc_node_checkout_type_form', $info),
+        'type' => MENU_CALLBACK,
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function uc_node_checkout_perm() {
+  return array('administer node checkout');
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function uc_node_checkout_help($section) {
+  switch ($section) {
+    case 'admin/store/settings/node-checkout':
+      return t('The table represents products associated with node types on your site. If you want a node type to be governed by UC Node Checkout, simply click its edit link and specify which product node on your site should be added to the cart when a node of that type gets created.  Use the settings tab to adjust some extra behaviors and display settings of the module.');
+  }
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function uc_node_checkout_enable() {
+  // Get the weight of the cart module.
+  $weight = db_result(db_query("SELECT weight FROM {system} WHERE name = 'uc_cart' AND type = 'module'"));
+
+  // Set this module's weight to the cart module's + 100 to make sure its hooks
+  // are invoked in the right order.
+  db_query("UPDATE {system} SET weight = %d WHERE name = 'uc_node_checkout' AND type = 'module'", $weight + 100);
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function uc_node_checkout_user($op, &$edit, &$user, $category = NULL) {
+  switch ($op) {
+    case 'load':
+      // Fall through if this a new user load prior to checkout.
+      if (request_uri() != '/user/register?destination=cart/checkout' || $user->uid == 0) {
+        break;
+      }
+    case 'login':
+      $rebuild = FALSE;
+
+      // Update the author of node checkout nodes referenced in the cart.
+      foreach (uc_cart_get_contents($user->uid, 'rebuild') as $item) {
+        // If the item has a checkout node...
+        if ($node = $item->checkout_node) {
+          // Update the author and save the node.
+          $node->uid = $user->uid;
+          node_save($node);
+
+          // Make sure we rebuild the shopping cart with the updated info.
+          $rebuild = TRUE;
+        }
+      }
+
+      // Rebuild the cart contents so the checkout nodes are updated.
+      if ($rebuild) {
+        uc_cart_get_contents($user->uid, 'rebuild');
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_node_checkout_form_alter($form_id, &$form) {
+  global $user;
+
+  // Alter the cart view form to change node checkout product titles into edit
+  // links for the nodes they reference.
+  if ($form_id == 'uc_cart_view_form') {
+    $items = uc_cart_get_contents();
+    $i = 0;
+    foreach ($items as $item) {
+      if (isset($item->checkout_node)) {
+        $node = $item->checkout_node;
+
+        // Update the title if the based on user access.
+        if (variable_get('uc_node_checkout_cart_titles', TRUE)) {
+          if (node_access('update', $node)) {
+            $title = l($item->title, 'node/'. $node->nid .'/edit', array(), 'destination=cart');
+
+            // Add the click to edit link to the title if necessary.
+            if (variable_get('uc_node_checkout_click_to_edit', TRUE)) {
+              $title .= ' '. theme('uc_cart_click_to_edit');
+            }
+          }
+          else {
+            $title = $item->title;
+          }
+
+          $form['items'][$i]['title']['#value'] = $title;
+        }
+
+        // Add the node teaser beneath the title if necessary.
+        if (variable_get('uc_node_cart_teaser', TRUE)) {
+          if (variable_get('uc_node_order_product_teaser_override', FALSE)) {
+            $teaser = '<ul class="uc-node-cart-teaser"><li>'
+                    . token_replace(variable_get('uc_node_order_product_attribute', 'ID'), 'node', $node) .': '
+                    . token_replace(variable_get('uc_node_order_product_option', '[nid] - [title]'), 'node', $node);
+          }
+          else {
+            $teaser = theme('uc_node_cart_teaser', $node);
+          }
+          $form['items'][$i]['options']['#value'] .= $teaser;
+        }
+      }
+      $i++;
+    }
+
+    // Add a submit handler to check for removed products.
+    $form['#submit']['uc_node_checkout_cart_view_submit'] = array();
+  }
+
+  // Check stock levels on the checkout form and prevent checkout if specified.
+  if ($form_id == 'uc_cart_checkout_form' && module_exists('uc_stock')) {
+    // Loop through the items in the cart.
+    foreach (uc_cart_get_contents() as $item) {
+      // If an item is governed by node checkout...
+      if (isset($item->checkout_node)) {
+        // Get the stock level for each model.
+        $stock = uc_stock_level($item->model);
+
+        // If the product has no stock...
+        if ($stock !== FALSE && $stock <= 0) {
+          // And we've set this to prevent checkout for node checkout nodes...
+          if (variable_get('uc_node_stock_prevent_checkout', TRUE)) {
+            drupal_set_message(t('Due to stock levels, you may not complete the purchase of %title at this time. Please contact us for more information.', array('%title' => $item->title)), 'error');
+            drupal_goto('cart');
+          }
+        }
+      }
+    }
+  }
+
+  // Alter the node forms for UC Node Checkout governed node types.
+  foreach (uc_node_checkout_product_map() as $type => $nid) {
+    if ($form_id == $type .'_node_form') {
+      if (empty($form['nid']['#value'])) {
+        // If specified, redirect anonymous customers to login.
+        if (variable_get('uc_node_checkout_node_access', TRUE) && !$user->uid) {
+          drupal_set_message(t('You must login or create a user account to continue.'));
+          $_SESSION['node_checkout_redirect'] = 'node/add/'. $type;
+          drupal_goto('user');
+        }
+        else {
+          unset($_SESSION['node_checkout_redirect']);
+        }
+
+        // If stock control is turned on, prevent adding an out of stock node.
+        if (module_exists('uc_stock')) {
+          $node = node_load($nid);
+          $stock = uc_stock_level($node->model);
+
+          if ($stock !== FALSE && $stock <= 0) {
+            if (variable_get('uc_node_stock_prevent_add', FALSE)) {
+              drupal_set_message(t('Due to stock levels, this product is currently not available.'));
+              drupal_goto(variable_get('uc_node_stock_prevent_add_redirect', 'cart'));
+            }
+            elseif (variable_get('uc_node_stock_prevent_checkout', TRUE) && empty($form['#post'])) {
+              drupal_set_message(t('Due to stock levels, you will not be able to complete the purchase of this product. You may still create it and add it to your shopping cart until stock is available. Please contact us for more information.'));
+            }
+          }
+        }
+
+        // If enabled, alter the submit button to say "Add to cart".
+        if (variable_get('uc_node_checkout_alter_node_submit_button', TRUE)) {
+          $form['submit']['#value'] = t('Add to cart');
+        }
+      }
+
+      // Remove restricted fields for users without access.
+      $fields = variable_get('uc_node_checkout_'. $type .'_restrictions', array());
+
+      if (!empty($fields) && !user_access('edit '. $type .' content')) {
+        foreach ($fields as $field) {
+          $form[$field]['#access'] = FALSE;
+        }
+      }
+
+      // Redirect non-administrators to the shopping cart after edits.
+      if (variable_get('uc_node_checkout_submit_redirect', TRUE) && !user_access('edit '. $type .' content')) {
+        $form['#redirect'] = variable_get('uc_add_item_redirect', 'cart');
+      }
+    }
+  }
+
+  // Redirect shopper back to node add form once they've logged in.
+  if (variable_get('uc_node_checkout_node_access', TRUE) && ($form_id == 'user_login' || $form_id == 'user_edit' || $form_id == 'user_register')) {
+    if (isset($_SESSION['node_checkout_redirect'])) {
+      $form['#redirect'] = $_SESSION['node_checkout_redirect'];
+    }
+  }
+}
+
+// Submit handler for cart view form that deletes nodes when necessary.
+function uc_node_checkout_cart_view_submit($form_id, $form_values) {
+  if (variable_get('uc_node_checkout_delete_nodes', TRUE)) {
+    foreach ($form_values['items'] as $key => $item) {
+      $data = unserialize($item['data']);
+
+      if ($item['remove'] && isset($data['node_checkout_nid'])) {
+        node_delete($data['node_checkout_nid']);
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function uc_node_checkout_nodeapi(&$node, $op, $arg3 = NULL, $arg4 = NULL) {
+  switch ($op) {
+    // Add the associated product to the cart when a node is created that should
+    // be checked out.
+    case 'insert':
+      // If this node type is mapped to a product...
+      if ($product_nid = uc_node_checkout_product_map($node->type)) {
+        // Load up the corresponding product so we can use the default add to
+        // cart quantity.
+        $product = node_load($product_nid);
+
+        // Make sure we add at least 1 to the cart.
+        if (empty($product->default_qty)) {
+          $product->default_qty = 1;
+        }
+
+        $data = array('nid' => $product_nid, 'node_checkout_nid' => intval($node->nid));
+        $extra = module_invoke_all('add_to_cart_data', array('nid' => $product_nid, 'qty' => $product->default_qty));
+        foreach ($extra as $key => $value) {
+          if (!isset($data[$key])) {
+            $data[$key] = $value;
+          }
+        }
+
+        uc_cart_add_item($product_nid, $product->default_qty, $data, NULL, FALSE, FALSE);
+      }
+      break;
+
+    // When enabled, deletes nodes from the site when their creators remove the
+    // associated products from their cart.
+    case 'delete':
+      // Skip this whole block of code if we're not supposed to delete orphans.
+      if (variable_get('uc_node_checkout_delete_orphans', TRUE)) {
+        if ($product_nid = uc_node_checkout_product_map($node->type)) {
+          db_query("DELETE FROM {uc_cart_products} WHERE data LIKE '%%\"node_checkout_nid\";i:%d;%%'", $node->nid);
+          if (db_affected_rows()) {
+            // Display a message here if necessary.
+          }
+        }
+      }
+      break;
+
+    // When enabled, redirects users to their cart when they try to view a node
+    // governed by UC Node Checkout.
+    case 'view':
+      // Skip this whole block of code if this settings isn't enabled.
+      if (variable_get('uc_node_checkout_view_redirect', TRUE)) {
+        if ($product_nid = uc_node_checkout_product_map($node->type) && !user_access('edit '. $node->type .' content')) {
+          drupal_goto(variable_get('uc_add_item_redirect', 'cart'));
+        }
+      }
+  }
+}
+
+/**
+ * Implementation of UC hook_cart_item().
+ */
+function uc_node_checkout_cart_item($op, &$item) {
+  switch ($op) {
+    case 'load':
+      // Load the entire related node into the item array for use in display.
+      if (isset($item->data['node_checkout_nid']) && $node = node_load($item->data['node_checkout_nid'])) {
+        $item->checkout_node = $node;
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of UC hook_order().
+ */
+function uc_node_checkout_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    // Add the node checkout teaser to products on order view screens.
+    case 'load':
+      // Skip the whole block of the teaser is not enabled.
+      if (variable_get('uc_node_order_product_display', TRUE) && module_exists('uc_attribute')) {
+        $attribute = variable_get('uc_node_order_product_attribute', 'ID');
+        $option = variable_get('uc_node_order_product_option', '[nid] - [title]');
+
+        for ($i = 0, $j = count($arg1->products); $i < $j; $i++) {
+          if (isset($arg1->products[$i]->data['node_checkout_nid'])) {
+            $node = node_load($arg1->products[$i]->data['node_checkout_nid']);
+
+            if ($node) {
+              $arg1->products[$i]->data['attributes'][token_replace($attribute, 'node', $node)] = token_replace($option, 'node', $node);
+            }
+          }
+        }
+      }
+  }
+}
+
+// Displays the node checkout settings table/form.
+function uc_node_checkout_admin() {
+  $nc_map = uc_node_checkout_product_map();
+  $rows = array();
+
+  $header = array(t('Type'), t('Product'), t('Actions'));
+
+  foreach (node_get_types('types') as $type => $info) {
+    if ($nc_map[$type]) {
+      $product = node_load($nc_map[$type]);
+    }
+    else {
+      $product = FALSE;
+    }
+    $rows[] = array(
+      $info->name,
+      $product ? l($product->model, 'node/'. $product->nid) : t('n/a'),
+      l(t('edit'), 'admin/store/settings/node-checkout/'. $type),
+    );
+  }
+
+  $output = theme('table', $header, $rows);
+
+  return $output;
+}
+
+// Displays the form to map a product to a node type.
+function uc_node_checkout_type_form($type) {
+  $nc_map = uc_node_checkout_product_map();
+  $form = array();
+
+  $options = array(0 => t('<None>'));
+
+  $result = db_query("SELECT n.nid, p.model, n.title FROM {uc_products} AS p INNER JOIN {node} AS n ON p.vid = n.vid ORDER BY p.model");
+  while ($product = db_fetch_object($result)) {
+    $options[$product->nid] = '('. $product->model .') '. $product->title;
+  }
+
+  $form['type'] = array(
+    '#type' => 'value',
+    '#value' => $type->type,
+  );
+
+  $form['product_nid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Product NID'),
+    '#description' => t("When a %type node is created, one of the chosen product is added to the user's cart.<br />Start typing a SKU or title in this field to view autocomplete options.<br />Empty this field to disable node checkout for this node type.", array('%type' => $type->name)),
+    '#default_value' => $nc_map[$type->type],
+    '#autocomplete_path' => 'uc_node_checkout/autocomplete',
+  );
+
+  $restrictions = variable_get('uc_node_checkout_'. $type->type .'_restrictions', array());
+
+  $form['disable_preview'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable the preview button for this node type for users without %access permission.', array('%access' => t('edit @type content', array('@type' => $type->type)))),
+    '#description' => t('This setting is recommended when using the general node checkout redirections.'),
+    '#default_value' => in_array('preview', $restrictions),
+  );
+
+  // Integrate w/ content module from CCK to restrict field types from users
+  // without access.
+  if (module_exists('content')) {
+    $cck_type = content_types($type->type);
+
+    if (!empty($cck_type['fields'])) {
+      $options = array();
+
+      foreach ($cck_type['fields'] as $key => $value) {
+        $options[$key] = check_plain($value['widget']['label']);
+      }
+
+      $form['restricted_fields'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Restricted node fields'),
+        '#description' => t('Selected fields will only appear on the node form for users with %access permission.', array('%access' => t('edit @type content', array('@type' => $type->type)))),
+        '#options' => $options,
+        '#default_value' => $restrictions,
+      );
+    }
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function uc_node_checkout_type_form_submit($form_id, $form_values) {
+  // Save the product node ID.
+  if ($form_values['product_nid']) {
+    db_query("UPDATE {uc_node_checkout_types} SET product_nid = %d WHERE type = '%s'", $form_values['product_nid'], $form_values['type']);
+    if (!db_affected_rows()) {
+      db_query("INSERT INTO {uc_node_checkout_types} (type, product_nid) VALUES ('%s', %d)", $form_values['type'], $form_values['product_nid']);
+    }
+  }
+  else {
+    db_query("DELETE FROM {uc_node_checkout_types} WHERE type = '%s'", $form_values['type']);
+  }
+
+  // Save the restricted fields settings.
+  $fields = array();
+
+  foreach ((array) $form_values['restricted_fields'] as $key => $value) {
+    if ($value) {
+      $fields[] = $key;
+    }
+  }
+
+  if ($form_values['disable_preview']) {
+    $fields[] = 'preview';
+  }
+
+  variable_set('uc_node_checkout_'. $form_values['type'] .'_restrictions', $fields);
+
+  return 'admin/store/settings/node-checkout';
+}
+
+// Displays the settings form for node checkout behavior/display settings.
+function uc_node_checkout_settings_form() {
+  $form = array();
+
+  $form['behavior'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Behavior settings'),
+  );
+  $form['behavior']['uc_node_checkout_node_access'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use UC Node Checkout to prevent anonymous node add access for node types it governs.'),
+    '#description' => t('Enable anonymous creation of node checkout node types and anonymous users will be instructed to create an account.'),
+    '#default_value' => variable_get('uc_node_checkout_node_access', TRUE),
+  );
+  $form['behavior']['uc_node_checkout_submit_redirect'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect customers to their cart after adding or editing a node checkout governed node.'),
+    '#description' => t('Users who have "edit node_type content" permission are exempt from this redirect.'),
+    '#default_value' => variable_get('uc_node_checkout_submit_redirect', TRUE),
+  );
+  $form['behavior']['uc_node_checkout_view_redirect'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect customers to their cart when they try to view a node governed by node checkout.'),
+    '#description' => t('Users who have "edit node_type content" permission are exempt from this redirect.'),
+    '#default_value' => variable_get('uc_node_checkout_view_redirect', TRUE),
+  );
+  $form['behavior']['uc_node_checkout_delete_orphans'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Delete products associated with nodes from shopping carts when the nodes are deleted.'),
+    '#default_value' => variable_get('uc_node_checkout_delete_orphans', TRUE),
+  );
+  $form['behavior']['uc_node_checkout_delete_nodes'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Delete nodes whose creators remove the associated product from their cart.'),
+    '#default_value' => variable_get('uc_node_checkout_delete_nodes', TRUE),
+  );
+
+  if (module_exists('uc_stock')) {
+    $form['stock'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Stock management'),
+    );
+    $form['stock']['uc_node_stock_prevent_checkout'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Prevent checkout when a customer tries to purchase an out of stock node.'),
+      '#default_value' => variable_get('uc_node_stock_prevent_checkout', TRUE),
+    );
+    $form['stock']['uc_node_stock_prevent_add'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Prevent node creation when a customer tries to create an out of stock node.'),
+      '#default_value' => variable_get('uc_node_stock_prevent_add', FALSE),
+    );
+    $form['stock']['uc_node_stock_prevent_add_redirect'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Out of stock redirect'),
+      '#description' => t('Specify a redirect page if a customer is prevented from creating a node due to stock.'),
+      '#default_value' => variable_get('uc_node_stock_prevent_add_redirect', 'cart'),
+      '#size' => 32,
+      '#field_prefix' => url(NULL, NULL, NULL, TRUE) . (variable_get('clean_url', 0) ? '' : '?q='),
+    );
+  }
+
+  $form['display'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display settings'),
+  );
+  $form['display']['uc_node_checkout_alter_node_submit_button'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Alter the node form submit button to say "Add to cart" when a node is being created.'),
+    '#default_value' => variable_get('uc_node_checkout_alter_node_submit_button', TRUE),
+  );
+  $form['display']['uc_node_checkout_cart_titles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Change cart item titles into edit links for their associated nodes.'),
+    '#description' => t('Only works for the cart view form; you must implement a custom solution for the cart block.'),
+    '#default_value' => variable_get('uc_node_checkout_cart_titles', TRUE),
+  );
+  $form['display']['uc_node_checkout_click_to_edit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display a "click to edit" message on the cart view form for node checkout products.'),
+    '#description' => t('Override theme_uc_cart_click_to_edit() in your theme to alter the display of this.'),
+    '#default_value' => variable_get('uc_node_checkout_click_to_edit', TRUE),
+  );
+  $form['display']['uc_node_cart_teaser'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display the node cart teaser on the cart view form for node checkout products.'),
+    '#description' => t('Override theme_uc_node_cart_teaser() in your theme to alter the display of this.'),
+    '#default_value' => variable_get('uc_node_cart_teaser', TRUE),
+  );
+  $form['display']['order'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Order product display'),
+    '#description' => t('These settings require the Attribute module to be enabled and will add an attribute line to the node checkout product on order view screens.'),
+  );
+  $form['display']['order']['uc_node_order_product_display'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display a node teaser as an attribute/option combination for nodes on orders.'),
+    '#default_value' => variable_get('uc_node_order_product_display', TRUE),
+    '#disabled' => !module_exists('uc_attribute'),
+  );
+  $form['display']['order']['uc_node_order_product_teaser_override'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override the default node cart teaser with these settings.'),
+    '#default_value' => variable_get('uc_node_order_product_teaser_override', FALSE),
+  );
+  $form['display']['order']['uc_node_order_product_attribute'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Order product attribute'),
+    '#description' => t('Specify the name of the attribute.'),
+    '#default_value' => variable_get('uc_node_order_product_attribute', 'ID'),
+  );
+  $form['display']['order']['uc_node_order_product_option'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Order product option'),
+    '#description' => t('Specify a pattern for the option string; uses node tokens like [nid] and [title].'),
+    '#default_value' => variable_get('uc_node_order_product_option', '[nid] - [title]'),
+  );
+  $form['display']['order']['tokens'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Node tokens'),
+    '#description' => t('Use these tokens in the attribute and option fields above.  They will be replaced with values from the node checkout nodes on the order pages. Do not use tokens ending in -raw for these settings!'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['display']['order']['tokens']['data'] = array(
+    '#value' => '<div>'. theme('token_help', 'node') .'</div>',
+  );
+
+  return system_settings_form($form);
+}
+
+// Returns an autocomplete list for nodes on the node access feature form.
+function uc_node_checkout_autocomplete($string = '') {
+  $matches = array();
+
+  if ($string) {
+    $result = db_query_range("SELECT nid, title FROM {node} WHERE LOWER(title) LIKE LOWER('%s%%')", $string, 0, 10);
+    while ($node = db_fetch_object($result)) {
+      $matches[$node->nid] = check_plain($node->title);
+    }
+  }
+
+  print drupal_to_js($matches);
+  exit();
+}
+
+/**
+ * Returns an array mapping node types to their associated products.
+ *
+ * @param $type
+ *   Optional. Specify a node type and only return that type's product nid.
+ * @return
+ *   Either an array containing all node type to product nid associations or a
+ *   single nid for the specified node type.
+ */
+function uc_node_checkout_product_map($type = '') {
+  static $nc_map = array();
+
+  // The only limitation here is that the static caching will have no effect
+  // when this module is enabled but no associations have been made.
+  if (empty($nc_map)) {
+    $result = db_query("SELECT type, product_nid FROM {uc_node_checkout_types}");
+
+    while ($nc_type = db_fetch_array($result)) {
+      $nc_map[$nc_type['type']] = $nc_type['product_nid'];
+    }
+  }
+
+  // If we passed in a node type, return that node type's product nid.
+  if (!empty($type)) {
+    return $nc_map[$type];
+  }
+
+  return $nc_map;
+}
+
+// Themes a click to edit link by node checkout products in a customer's cart.
+function theme_uc_cart_click_to_edit() {
+  return '<span class="node-checkout-edit">'. t('(click to edit)') .'</span>';
+}
+
+// Themes a cart teaser for a node checkout product in the shopping cart.
+function theme_uc_node_cart_teaser($node) {
+  $output = '<div class="uc-node-cart-teaser" id="uc-node-cart-teaser-'
+          . $node->nid .'">'. check_plain($node->title) .'</div>';
+
+  return $output;
+}
+

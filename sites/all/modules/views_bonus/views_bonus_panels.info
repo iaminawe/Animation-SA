@@ -1,0 +1,10 @@
+name = Bonus: Panels
+description = Various views style plugins to put views nodes in panels
+dependencies = views panels
+package = Views
+
+; Information added by drupal.org packaging script on 2008-05-10
+version = "5.x-1.2-alpha2"
+project = "views_bonus"
+datestamp = "1210435225"
+

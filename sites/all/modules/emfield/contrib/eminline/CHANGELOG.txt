@@ -1,0 +1,7 @@
+// $Id: CHANGELOG.txt,v 1.1.2.2 2009/07/09 20:50:16 aaron Exp $
+
+CHANGELOG for Embedded Inline Media.
+
+July 2009
+---------
+ * Initial d5 version of eminline (grndlvl).

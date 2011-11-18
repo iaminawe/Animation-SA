@@ -1,0 +1,7 @@
+Menu Block 5.x-1.0
+  * Simplified block configuration.
+
+Menu Block 5.x-0.9
+  #266223: Add option to limit the depth of the tree to an arbitrary level
+  * Added block config to specify whether to expand all children.
+  * Added settings to enable specific menu blocks.

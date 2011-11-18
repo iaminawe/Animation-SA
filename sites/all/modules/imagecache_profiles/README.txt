@@ -1,0 +1,37 @@
+Imagecache_Profiles module allows you to set user profile pictures that are consistent throughout your site and allows avatars on the user profile pages to be a different size. 
+
+- Download and enable the ImageCache module
+  - create a new ImageCache preset with the following settings
+    - preset namespace: user_image_default
+      - select "scale" from the add a new selection drop down menu
+        - set width and height to 100
+        - set scale to fit to Outside dimensions
+        - set weight to 0
+        - update preset
+      - select "crop" from the add a new selection drop down menu
+        - set width and height to 100
+        - set x offset and y offset to center
+        - set weight to 1
+        - update preset
+    - preset namespace: user_image_large
+      - select "scale" from the add a new selection drop down menu
+        - set width and height to 200
+        - set scale to fit to Outside dimensions
+        - set weight to 0
+        - update preset
+      - select "crop" from the add a new selection drop down menu
+        - set width and height to 200
+        - set x offset and y offset to center
+        - set weight to 1
+        - update preset
+
+- Download and enable the ImageCache_Profiles module as usual
+  - Enable user pictures at admin/user/settings
+    - set picture maximum dimensions to 1600x1400
+    - set picture maximum file size to 1024
+    - set your picture guidelines text to: “Photo must be larger than 100x100 pixels.”
+    - select the ImageCache preset to set the user picture size on a user's profile page
+    - select the ImageCache preset to set the default user picture size throughout the site
+    - set picture minimum width in pixels: 200
+    - set picture minimum height in pixels: 200
+    - save configuration

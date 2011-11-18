@@ -1,0 +1,32 @@
+<?php
+// $Id: ad_external.install,v 1.1.2.1 2007/10/19 00:36:36 jeremy Exp $
+
+/**
+ * Ad_external module database schema.
+ * Copyright (c) 2007 Jeremy Andrews <jeremy@kerneltrap.org>.  
+ * All rights reserved.
+ */
+
+function ad_external_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+    default:
+      db_query("CREATE TABLE {ad_external} (
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        url VARCHAR(255) NOT NULL DEFAULT '',
+
+        PRIMARY KEY (aid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+  }
+
+  drupal_set_message(t('The necessary ad_external module tables have been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad_external module.
+ */
+function ad_external() {
+  db_query('DROP TABLE {ad_external}');
+}

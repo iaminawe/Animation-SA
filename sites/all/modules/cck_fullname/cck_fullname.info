@@ -1,0 +1,15 @@
+; $Id: cck_fullname.info,v 1.1.2.6 2007/12/14 20:27:36 rconstantine Exp $
+;/**
+; * @package CCK_Fullname
+; * @category NeighborForge
+; */
+name = Fullname Field
+description = Defines fullname field so first, middle and last names are treated as a single unit.
+dependencies = content
+package = CCK
+project = "cck_fullname"
+; Information added by drupal.org packaging script on 2007-12-17
+version = "5.x-1.5"
+project = "cck_fullname"
+datestamp = "1197923703"
+

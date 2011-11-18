@@ -1,0 +1,32 @@
+<?php
+// $Id: uc_donate.install,v 1.1 2008/05/02 00:36:05 greenskin Exp $
+
+/**
+ * Implementation of hook_install
+ */
+function uc_donate_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("CREATE TABLE IF NOT EXISTS {uc_donate} (
+        `id` int(10) unsigned NOT NULL auto_increment,
+        `nid` int(10) unsigned NOT NULL,
+        `group` varchar(128) NULL,
+        `weight` int(10) NULL default '0',
+        `type` enum('donation', 'group', 'queue') NOT NULL default 'donation',
+        PRIMARY KEY (id)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+    break;
+  }
+}
+
+/**
+ * Implementation of hook_uninstall
+ */
+function uc_donate_uninstall() {
+  db_query("DROP TABLE {uc_donate}");
+  $variables = db_query("SELECT name FROM {variable} WHERE name LIKE 'uc_donate%%'");
+  while ($variable = db_fetch_object($variables)) {
+    variable_del($variable->name);
+  }
+}

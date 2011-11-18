@@ -1,0 +1,58 @@
+#user-profile .panel-pane h2.title {
+  background-color: #00a7ff;
+  color: #fff;
+  padding: 5px 9px;
+}
+
+#mini-panel-user_basics div.panel-row-1 div.panel-col-1 { width: 20%; }
+#mini-panel-user_basics div.panel-row-1 div.panel-col-2 { width: 21%; }
+#mini-panel-user_basics div.panel-row-1 div.panel-col-3 { width: 58%; }
+
+#mini-panel-user_basics {
+  padding-top: 10px;
+  background: #eee;
+}
+
+#mini-panel-user_basics .picture {
+  float: none;
+}
+
+#mini-panel-user_basics .picture img {
+  border: 1px solid #999;
+  margin: 0 10px;
+  padding: 3px;
+  background: #fff;
+}
+
+.view-content-buddylist-of-uid .thumbnail {
+  float: left;
+  width: 100px;
+  height: 140px;
+  border: 1px solid #ccc;
+  margin: 10px;
+  padding: 5px;
+  text-align: center;
+}
+
+.view-content-buddylist-of-uid img {
+  width: 85px;
+}
+
+#user-interests {
+  /* No default CSS.. Fill this in if you want. */
+}
+#user-links {
+  /* No default CSS.. Fill this in if you want. */  
+}
+#user-contact{
+  /* No default CSS.. Fill this in if you want. */  
+}
+#user-buddies {
+  /* No default CSS.. Fill this in if you want. */    
+}
+#user-gallery {
+  /* No default CSS.. Fill this in if you want. */    
+}
+#user-guestbook {
+  /* No default CSS.. Fill this in if you want. */    
+}

@@ -1,0 +1,176 @@
+<?php
+// $Id: faq.install,v 1.1.4.17.2.11 2009/06/24 09:13:43 snpower Exp $
+
+/**
+ * @file
+ * FAQ module install file.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+ * Inserts the FAQ module's schema in the SQL database.
+ */
+function faq_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $created1 = db_query("CREATE TABLE IF NOT EXISTS {faq_weights} (
+        tid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        nid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        weight TINYINT(4) NOT NULL DEFAULT '0',
+        PRIMARY KEY (tid, nid)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      $created2 = db_query("CREATE TABLE IF NOT EXISTS {faq_questions} (
+        nid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        vid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        question text NOT NULL,
+        PRIMARY KEY (nid, vid)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+
+    case 'pgsql':
+      $created1 = db_query('CREATE TABLE {faq_weights} (
+        tid integer NOT NULL DEFAULT 0,
+        nid integer NOT NULL DEFAULT 0,
+        weight smallint NOT NULL DEFAULT 0,
+        PRIMARY KEY (tid, nid)
+      );');
+      $created2 = db_query('CREATE TABLE {faq_questions} (
+        nid integer NOT NULL DEFAULT 0,
+        vid integer NOT NULL DEFAULT 0,
+        question text NOT NULL,
+        PRIMARY KEY (nid, vid)
+      );');
+      break;
+  }
+
+  if (!$created1 || !$created2) {
+    drupal_set_message(t('Table installation for the FAQ module was unsuccessful.'), 'error');
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ * Remove the variables, nodes and schema corresponding to the FAQ module.
+ */
+function faq_uninstall() {
+  // Delete the variables we created.
+  variable_del('faq_display');
+  variable_del('faq_back_to_top');
+  variable_del('faq_use_categories');
+  variable_del('faq_category_display');
+  variable_del('faq_block_recent_faq_count');
+  variable_del('faq_block_random_faq_count');
+  variable_del('faq_use_teaser');
+  variable_del('faq_show_node_links');
+  variable_del('faq_more_link');
+  variable_del('faq_description');
+  variable_del('faq_description_format');
+  variable_del('faq_group_questions_top');
+  variable_del('faq_hide_child_terms');
+  variable_del('faq_show_term_page_children');
+  variable_del('faq_answer_category_name');
+  variable_del('faq_question_listing');
+  variable_del('faq_qa_mark');
+  variable_del('faq_question_label');
+  variable_del('faq_answer_label');
+  variable_del('faq_category_listing');
+  variable_del('faq_count');
+  variable_del('faq_omit_vocabulary');
+  variable_del('faq_enable_term_links');
+  variable_del('faq_disable_node_links');
+  variable_del('faq_default_sorting');
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $deleted = db_query("DROP TABLE IF EXISTS {faq_weights}");
+      $deleted = db_query("DROP TABLE IF EXISTS {faq_questions}");
+      break;
+
+    case 'pgsql':
+      $deleted = db_query('DROP TABLE {faq_weights}');
+      $deleted = db_query('DROP TABLE {faq_questions}');
+      break;
+  }
+
+  // Remove the node type.
+  node_type_delete('FAQ');
+
+  // Clear the cache tables.
+  cache_clear_all('*', 'cache', TRUE);
+  cache_clear_all('*', 'cache_filter', TRUE);
+  cache_clear_all('*', 'cache_menu', TRUE);
+  cache_clear_all('*', 'cache_page', TRUE);
+}
+
+/**
+ * Create the new 'faq_weights' table in order to upgrade from older
+ * installations.
+ *
+ * @return
+ *   An array containing the structure of the SQL schema.
+ */
+function faq_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {faq_weights} (
+        tid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        nid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        weight TINYINT(4) NOT NULL DEFAULT '0',
+        PRIMARY KEY (tid, nid)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+
+    case 'pgsql':
+      $ret[] = update_sql('CREATE TABLE {faq_weights} (
+        tid integer NOT NULL DEFAULT 0,
+        nid integer NOT NULL DEFAULT 0,
+        weight smallint NOT NULL DEFAULT 0,
+        PRIMARY KEY (tid, nid)
+      );');
+      break;
+  }
+
+  return $ret;
+}
+
+/**
+ * Create the new 'faq_questions' table in order to upgrade from older
+ * installations.
+ *
+ * @return
+ *   An array containing the structure of the SQL schema.
+ */
+function faq_update_2() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {faq_questions} (
+        nid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        vid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        question text NOT NULL,
+        PRIMARY KEY (nid, vid)
+      ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+
+    case 'pgsql':
+      $ret[] = update_sql('CREATE TABLE {faq_questions} (
+        nid integer NOT NULL DEFAULT 0,
+        vid integer NOT NULL DEFAULT 0,
+        question text NOT NULL,
+        PRIMARY KEY (nid, vid)
+      );');
+      break;
+  }
+
+  $ret[] = update_sql("INSERT INTO {faq_questions} (nid, vid, question) SELECT r.nid, r.vid, r.title FROM {node_revisions} r, {node} n WHERE n.nid = r.nid AND n.type = 'faq'");
+
+  return $ret;
+}
+
+

@@ -1,0 +1,24 @@
+<?php
+// $Id: views_filterblock.install,v 1.1.2.1 2008/01/22 16:53:59 douggreen Exp $
+
+/**
+ * Helper function for views_filterblock_uninstall; deletes all variables whose names
+ * start with the given prefix.
+ */
+function _views_filterblock_variable_delete_prefix($prefix) {
+  global $conf;
+  $len = strlen($prefix);
+  foreach ($conf as $key => $value) {
+    if (substr($key, 0, $len) == $prefix) {
+      variable_del($key);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_uninstall
+ */
+function views_filterblock_uninstall() {
+  _views_filterblock_variable_delete_prefix('views_filterblock_view.');
+  variable_del('views_filterblock_num');
+}

@@ -1,0 +1,35 @@
+<?php
+// $Id: signwriter.install,v 1.4 2006/11/27 22:41:48 wrunt Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function signwriter_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {signwriter} (
+	  id int(10) unsigned NOT NULL auto_increment,
+	  name varchar(128),
+	  pattern varchar(128),
+	  fontfile varchar(128),
+	  fontsize int(6) NOT NULL default 20,
+	  imagetype varchar(8) NOT NULL default 'gif',
+	  background varchar(6) NOT NULL default 'ffffff',
+	  foreground varchar(6) NOT NULL default '000000',
+	  transparent int(2) NOT NULL default '1',
+	  bgimage varchar(128),
+	  width int(8),
+	  height int(8),
+	  maxwidth int(8),
+	  textalign varchar(32),
+	  xoffset int(8),
+	  yoffset int(8),
+	  PRIMARY KEY (id),
+	  KEY (name)
+        ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+  }
+}
+
+?>

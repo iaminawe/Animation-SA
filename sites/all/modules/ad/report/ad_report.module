@@ -1,0 +1,286 @@
+<?php
+// $Id: ad_report.module,v 1.1.2.3.2.14 2009/01/29 06:26:05 jeremy Exp $
+
+/**
+ * @file
+ * Provides comprehensive charts and reports about advertising statistics.
+ *
+ * Copyright (c) 2007.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.  All rights reserved.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function ad_report_menu($may_cache) {
+  $items = array();
+
+  if (!$may_cache) {
+    if (arg(0) == 'node' && is_numeric(arg(1)) && ad_adaccess(arg(1), 'access statistics')) {
+      $node = node_load(array('nid' => arg(1)));
+      if ($node->adtype) {
+        $items[] = array(
+          'path' => "node/$node->nid/report",
+          'title' => t('Reports'),
+          'callback' => 'ad_report_bargraph',
+          'callback arguments' => array($node, arg(3), 'node'),
+          'type' => MENU_LOCAL_TASK,
+          'access' => ad_adaccess($node->nid, 'access statistics'));
+        $items[] = array(
+          'path' => "node/$node->nid/report/hourly",
+          'access' => ad_adaccess($node->nid, 'access statistics'),
+          'title' => t('Hourly'),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 0);
+        $items[] = array(
+          'path' => "node/$node->nid/report/daily",
+          'access' => ad_adaccess($node->nid, 'access statistics'),
+          'title' => t('Daily'),
+          'type' => MENU_DEFAULT_LOCAL_TASK,
+          'weight' => 1);
+        $items[] = array(
+          'path' => "node/$node->nid/report/weekly",
+          'access' => ad_adaccess($node->nid, 'access statistics'),
+          'title' => t('Weekly'),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 2);
+        $items[] = array(
+          'path' => "node/$node->nid/report/monthly",
+          'access' => ad_adaccess($node->nid, 'access statistics'),
+          'title' => t('Monthly'),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 3);
+      }
+    }
+    else if (arg(0) == 'ad_report' && is_numeric(arg(1))) {
+      if (arg(3) == 'node') {
+        $access = ad_adaccess(arg(1), 'access statistics');
+      }
+      else {
+        // TODO: Need to implement proper permissions here.
+        $access = TRUE;
+      }
+      $items[] = array(
+        'path' => 'ad_report/'. arg(1). '/bargraph/' . arg(3),
+        'title' => 'Bar graph',
+        'callback' => 'ad_report_generate_bargraph',
+        'callback arguments' => array(arg(1), arg(3)),
+        'type' => MENU_CALLBACK,
+        'access' => $access);
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Page to display ad with bargraph.
+ */
+function ad_report_bargraph($data, $granularity, $type = 'node') {
+  switch ($granularity) {
+    case 'hourly':
+      drupal_set_title(t('past twelve hours'));
+      break;
+    case 'daily':
+    default:
+      $granularity = 'daily';
+      drupal_set_title(t('past twelve days'));
+      break;
+    case 'weekly':
+      drupal_set_title(t('past twelve weeks'));
+      break;
+    case 'monthly':
+      drupal_set_title(t('past twelve months'));
+      break;
+  }
+
+  switch ($type) {
+    case 'node':
+      $ad = db_fetch_object(db_query('SELECT aid, redirect, adtype FROM {ads} WHERE aid = %d', $data->nid));
+      if ($ad->aid) {
+        $output = '<img src="'. url("ad_report/$data->nid/bargraph/$granularity/node") .'" />';
+        $output .= theme('box', $data->title, module_invoke("ad_$data->adtype", 'display_ad', $ad));
+      }
+      break;
+    default:
+      $output = '<img src="'. url("ad_report/$data->uid/bargraph/$granularity/$type") .'" />';
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Page that utilizes gd to generate a bargraph.
+ *
+ * TODO: Make this more dynamic, allowing to move through time, etc.
+ */
+function ad_report_generate_bargraph($id, $granularity, $type) {
+  header("Content-type: image/png");
+
+  // Preperation.
+  $views = array();
+  $max_views = 0;
+  $statistics = array();
+  $clicks = array();
+  $max_clicks = 0;
+  $time = time();
+
+  $increments = 12;
+  switch ($granularity) {
+    case 'hourly':
+      $start_time = (60 * 60 * 11);
+      // Increment hourly.
+      $increment_time = (60 * 60);
+
+      $format_start = 'YmdH';
+      $format_end = 'YmdH';
+      $format_end_append = '';
+      $format_upper = 'M d';
+      $format_lower = 'ga';
+      $graph_height = 250;
+      break;
+    case 'daily':
+    default:
+      $start_time = (60 * 60 * 24 * 11);
+      // Increment daily.
+      $increment_time = (60 * 60 * 24);
+
+      $format_start = 'Ymd00';
+      $format_end = 'Ymd';
+      $format_end_append = '24';
+      $format_upper = 'D';
+      $format_lower = 'M d';
+      break;
+    case 'weekly':
+      $start_time = (60 * 60 * 24 * 7 * 11);
+      // Increment weekly.
+      $increment_time = (60 * 60 * 24 * 7);
+
+      $format_start = 'Ymd00';
+      $format_end = 'Ymd';
+      $format_end_append = '24';
+      $end_add = (60 * 60 * 24 * 6);
+      //$end_add = 600;
+      $format_upper = 'M d -';
+      $format_lower = '';
+      break;
+    case 'monthly':
+      $start_time = ((60 * 60 * 24 * 2) + (60 * 60 * 24 * 7 * 4)) * 11;
+      // Increment monthly (every 30 days).
+      $increment_time = (60 * 60 * 24 * 2) + (60 * 60 * 24 * 7 * 4);
+
+      $format_start = 'Ymd00';
+      $format_end = 'Ymd';
+      $format_end_append = '24';
+      $end_add = (60 * 60 * 24 * 29);
+      $format_upper = 'M d -';
+      $format_lower = '';
+      break;
+  }
+
+  // Retrive data from database.
+  for ($i = $time - $start_time; $i <= $time; $i = $i + $increment_time) {
+    $day_start = date($format_start, $i);
+    $day_end = date($format_end, $i + $end_add). $format_end_append;
+    if ($type == 'node') {
+      $view = (int)db_result(db_query("SELECT SUM(count) FROM {ad_statistics} WHERE aid = %d AND action = 'view' AND date >= %d AND date <= %d", $id, $day_start, $day_end));
+      $click = (int)db_result(db_query("SELECT SUM(count) FROM {ad_statistics} WHERE aid = %d AND action = 'click' AND date >= %d AND date <= %d", $id, $day_start, $day_end));
+    }
+    else if ($type == 'user') {
+      $view = (int)db_result(db_query("SELECT SUM(a.count) FROM {ad_statistics} a LEFT JOIN {node} n ON a.aid = n.nid WHERE uid = %d AND type = 'ad' AND (action = 'view' OR action = 'count') AND date >= %d AND date <= %d", $id, $day_start, $day_end));
+      $click = (int)db_result(db_query("SELECT SUM(a.count) FROM {ad_statistics} a LEFT JOIN {node} n ON a.aid = n.nid WHERE uid = %d AND type = 'ad' AND action = 'click' AND date >= %d AND date <= %d", $id, $day_start, $day_end));
+    }
+    else {
+      $function = "ad_report_views_$type";
+      if (function_exists("$function")) {
+        $view = $function($id, $day_start, $day_end);
+      }
+      $function = "ad_report_clicks_$type";
+      if (function_exists("$function")) {
+        $click = $function($id, $day_start, $day_end);
+      }
+    }
+    if ($view > $max_views) {
+      $max_views = $view;
+    }
+    $statistics[] = array(
+      'upper' => date($format_upper, $i),
+      'lower' => date($format_lower, $i),
+      'views' => $view,
+      'clicks' => $click);
+  }
+
+  // Build graph image.
+  $image_width = 50 * $increments + 1;
+  $image_height = 300;
+  $graph_width = 50 * $increments;
+  $graph_height = 250;
+
+  $graph = imagecreate($image_width, $image_height);
+
+  // Configure colors to use in chart.
+  $color = array(
+    'white' => imagecolorallocate($graph, 255, 255, 255),
+    'black' => imagecolorallocate($graph, 0, 0, 0),
+    'grey' => imagecolorallocate($graph, 192, 192, 192),
+    'blue' => imagecolorallocate($graph, 0, 0, 255),
+    'orange' => imagecolorallocate($graph, 220, 210, 60),
+  );
+
+  // Draw the outside edges of the graph.
+  imageline($graph, 0, 0, 0, $graph_height, $color['grey']);
+  imageline($graph, 0, 0, $graph_width, 0, $color['grey']);
+  imageline($graph, $graph_width - 1, 0, $graph_width - 1, $graph_height, $color['grey']);
+  imageline($graph, 0, $graph_height - 1, $graph_width - 1, $graph_height - 1, $color['grey']);
+
+  // Draw a grid.
+  for ($i = 0; $i < ($increments + 1); $i++) {
+    imageline($graph, $i*50, 0, $i*50, $graph_height, $color['grey']);
+  }
+  for ($i = 0; $i < 11; $i++) {
+    imageline($graph, 0, $i*25, $graph_width, $i*25, $color['grey']);
+  }
+
+  $multiply = 0;
+  if ($max_views > $graph_height) {
+    if (!$multiply) {
+      $multiply = .9;
+    }
+    while (($max_views * $multiply) >= $graph_height) {
+      $multiply *= .9;
+    }
+  }
+  else if ($max_views) {
+    while (($max_views * ($multiply + 1)) <= $graph_height) {
+      $multiply++;
+    }
+  }
+
+  // Display views.
+  for ($i = 0; $i < $increments ; $i++) {
+    $view = $multiply ? $statistics[$i]['views'] * $multiply : $statistics[$i]['views'];
+    if ($view) {
+      imagefilledrectangle($graph, $i*50 + 4, $graph_height-$view, ($i+1)*50, $graph_height, $color['grey']);
+      $string_height = $view < 10 ? $graph_height - 10 : $graph_height - $view;
+      imagestring($graph, 2, $i*50 + 15, $string_height, $statistics[$i]['views'], $color['black']);
+    }
+    // Display timestamp
+    imagestring($graph, 2, $i*50 + 2, 255, $statistics[$i]['upper'], $color['black']);
+    imagestring($graph, 2, $i*50 + 3, 265, $statistics[$i]['lower'], $color['black']);
+  }
+
+  // Display clicks.
+  for ($i = 0; $i < $increments; $i++) {
+    $click = $multiply ? $statistics[$i]['clicks'] * $multiply : $statistics[$i]['clicks'];
+    if ($click) {
+      imagefilledrectangle($graph, $i*50 + 10, $graph_height-$click, ($i+1)*50, $graph_height, $color['blue']);
+      $string_height = $click < 10 ? $graph_height - 10 : $graph_height - $click;
+      imagestring($graph, 2, $i*50 + 20, $string_height, $statistics[$i]['clicks'], $color['white']);
+    }
+  }
+
+  imagepng($graph);
+  imagedestroy($graph);
+  
+}
+

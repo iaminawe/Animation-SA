@@ -1,0 +1,127 @@
+<?php
+// $Id: ad_image.install,v 1.2.2.2.2.6 2008/01/11 18:29:05 jeremy Exp $
+
+/**
+ * Ad_image module database schema.
+ * Copyright (c) 2005-2006 Jeremy Andrews <jeremy@kerneltrap.org>.  
+ * All rights reserved.
+ */
+
+function ad_image_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      /**
+      * The ad_image_format table provides format guidelines for a given group
+      * of image ads.
+      */
+      db_query("CREATE TABLE {ad_image_format} (
+        gid INT NOT NULL UNIQUE PRIMARY KEY,
+
+        min_width INT NOT NULL DEFAULT '0',
+        max_width INT NOT NULL DEFAULT '0',
+        min_height INT NOT NULL DEFAULT '0',
+        max_height INT NOT NULL DEFAULT '0'
+      );");
+
+      /**
+       * The ad_image table stores information about each image ad.
+       */
+      db_query("CREATE TABLE {ad_image} (
+        aid INT NOT NULL DEFAULT '0' UNIQUE,
+        fid INT NOT NULL DEFAULT '0',
+ 
+        url VARCHAR(255) NOT NULL DEFAULT '',
+        tooltip VARCHAR(255) NOT NULL DEFAULT '',
+        width INT NOT NULL DEFAULT '0',
+        height INT NOT NULL DEFAULT '0'
+      );");
+      break;
+
+    case 'mysql':
+    case 'mysqli':
+    default:
+
+      /**
+       * The ad_image_format table provides format guidelines for a given group
+       * of image ads.
+       */
+      db_query("CREATE TABLE {ad_image_format} (
+        gid INT(10) UNSIGNED NOT NULL,
+
+        min_width INT(5) UNSIGNED NOT NULL DEFAULT '0',
+        max_width INT(5) UNSIGNED NOT NULL DEFAULT '0',
+        min_height INT(5) UNSIGNED NOT NULL DEFAULT '0',
+        max_height INT(5) UNSIGNED NOT NULL DEFAULT '0',
+
+        PRIMARY KEY (gid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * The ad_image table stores information about each image ad.
+       */
+      db_query("CREATE TABLE {ad_image} (
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        fid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        url VARCHAR(255) NOT NULL DEFAULT '',
+        tooltip VARCHAR(255) NOT NULL DEFAULT '',
+        width INT UNSIGNED NOT NULL DEFAULT '0',
+        height INT UNSIGNED NOT NULL DEFAULT '0',
+
+        UNIQUE KEY (aid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+  }
+
+  drupal_set_message(t('The necessary ad_image module tables have been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad_image module.
+ */
+function ad_image_uninstall() {
+  // Delete all ad_image content.
+  $result = db_query("SELECT aid FROM {ad_image}");
+  while ($aid = db_result($result)) {
+    node_delete($aid);
+  }
+
+  // Drop all ad_image module tables.
+  db_query('DROP TABLE {ad_image}');
+  db_query('DROP TABLE {ad_image_format}');
+}
+
+/**
+ * Ad tooltip support to images.
+ */
+function ad_image_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      $ret[] = update_sql("ALTER TABLE {ad_image} ADD tooltip VARCHAR(255) NOT NULL DEFAULT ''");
+      break;
+    default:
+      $ret[] = update_sql("ALTER TABLE {ad_image} ADD tooltip VARCHAR(255) NOT NULL DEFAULT '' AFTER url");
+  }
+  return $ret;
+}
+
+/**
+ * Convert to utf8 character set for all tables to allow for proper 
+ * internationalization.
+ */
+function ad_image_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      break;
+    default:
+      $tables = array('ad_image', 'ad_image_format');
+      foreach ($tables as $table) {
+        $ret[] = update_sql('ALTER TABLE {'. $table. '} CONVERT TO CHARACTER SET utf8');
+      }
+  }
+  return $ret;
+}
+
+?>

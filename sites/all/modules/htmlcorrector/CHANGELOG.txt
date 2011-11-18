@@ -1,0 +1,7 @@
+17 December 2001
+------------------------------
+- Initial Release
+- Features: * Smart-Close
+            * XHTML-ify
+            * Fix Entities
+

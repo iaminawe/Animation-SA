@@ -1,0 +1,10 @@
+name = "Bonus: grid view"
+description = "View type that outputs a LIST view in a simple grid. In your PHP argument code, you can use &lt;?php $view->gridcount = SOME_NUMBER; ?&gt; to change the column count"
+dependencies = views
+package = Views
+
+; Information added by drupal.org packaging script on 2008-05-10
+version = "5.x-1.2-alpha2"
+project = "views_bonus"
+datestamp = "1210435225"
+

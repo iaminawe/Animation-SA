@@ -1,0 +1,489 @@
+<?php
+// $Id: ad.install,v 1.2.2.4.2.32 2009/01/29 06:26:02 jeremy Exp $
+
+/**
+ * Ad module database schema.
+ * Copyright (c) 2005-2007 Jeremy Andrews <jeremy@kerneltrap.org>.  
+ * All rights reserved.
+ */
+
+function ad_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+     /* The ad table stores administrative information about each ad.  The
+      * actual ad itself can be found in the appropriate ad type table.
+      */
+     db_query("CREATE TABLE {ads} (
+       aid INT NOT NULL UNIQUE DEFAULT '0' PRIMARY KEY,
+       uid INT NOT NULL DEFAULT '0',
+ 
+       adstatus VARCHAR(255) NOT NULL DEFAULT '',
+       adtype VARCHAR(255) NOT NULL DEFAULT '',
+
+       redirect VARCHAR(255) NOT NULL DEFAULT '',
+
+       autoactivate INT NOT NULL DEFAULT '0',
+       autoactivated INT NOT NULL DEFAULT '0',
+       autoexpire INT NOT NULL DEFAULT '0',
+       autoexpired INT NOT NULL DEFAULT '0',
+
+       activated INT NOT NULL DEFAULT '0',
+       maxviews INT NOT NULL DEFAULT '0',
+       maxclicks INT NOT NULL DEFAULT '0',
+       expired INT NOT NULL DEFAULT '0'
+     );");
+
+     /**
+      * Every ad can have one or more owners.
+      */
+     db_query("CREATE TABLE {ad_owners} (
+       oid SERIAL NOT NULL PRIMARY KEY,
+       aid INT NOT NULL DEFAULT '0',
+       uid INT NOT NULL DEFAULT '0'
+     );");
+
+     /**
+      * Permissions can be granted to each owner of each ad.  The same owner
+      * can own multiple ads, and can have different permissions for each ad.
+      */
+     db_query("CREATE TABLE {ad_permissions} (
+       oid INT NOT NULL DEFAULT '0' PRIMARY KEY,
+       permissions TEXT NULL DEFAULT ''
+     );");
+
+     /**
+      * This table counts each time a given action occurs on an ad.  Actions
+      * include when the ad is viewed, clicked, enabled and disabled.
+      * Statistics are collected at an hourly granularity.
+      *
+      * The source column is used for tracking statistics for externally 
+      * hosted ads.
+      *
+      * Actions:
+      *  'view', 'click', 'enable', 'disable'
+      */
+     db_query("CREATE TABLE {ad_statistics} (
+       sid SERIAL NOT NULL PRIMARY KEY,
+       aid INT NOT NULL DEFAULT '0',
+
+       date INT NOT NULL DEFAULT '0',
+       action VARCHAR(255) NOT NULL DEFAULT '',
+       adgroup VARCHAR(255) NULL DEFAULT '',
+       hostid VARCHAR(32) NULL DEFAULT '',
+       count INT NOT NULL DEFAULT '0'
+     );");
+
+     /**
+      * The ad_clicks table tracks when a given advertisement was clicked, 
+      * who clicked it (uid if any and IP address), and what page they were
+      * on when they clicked it.
+      */
+      db_query("CREATE TABLE {ad_clicks} (
+        cid SERIAL NOT NULL PRIMARY KEY,
+        aid INT NOT NULL DEFAULT '0',
+        uid INT NOT NULL DEFAULT '0',
+
+        status INT NOT NULL DEFAULT '0',
+ 
+        hostname varchar(128) NOT NULL DEFAULT '',
+        user_agent varchar(255) NOT NULL DEFAULT '',
+        adgroup varchar(255) NOT NULL DEFAULT '',
+        hostid varchar(32) NOT NULL DEFAULT '',
+        url varchar(255) DEFAULT '',
+        timestamp INT NOT NULL DEFAULT '0',
+      );");
+
+      /**
+       * The ad_hosts table is used to configure users that can display ads
+       * remotely. 
+       */
+      db_query("CREATE TABLE {ad_hosts} (
+        uid INT NOT NULL DEFAULT '0' PRIMARY KEY,
+ 
+        hostid varchar(32) DEFAULT '',
+        status INT NOT NULL DEFAULT '0',
+        description TEXT NOT NULL DEFAULT ''
+      );");
+      break;
+
+    case 'mysql':
+    case 'mysqli':
+    default:
+
+      /* The ad table stores administrative information about each ad.  The
+       * actual ad itself can be found in the appropriate ad type table.
+       */
+      db_query("CREATE TABLE {ads} (
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        uid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  
+        adstatus VARCHAR(255) NOT NULL DEFAULT '',
+        adtype VARCHAR(255) NOT NULL DEFAULT '',
+
+        redirect VARCHAR(255) NOT NULL DEFAULT '',
+
+        autoactivate INT UNSIGNED NOT NULL DEFAULT '0',
+        autoactivated INT UNSIGNED NOT NULL DEFAULT '0',
+        autoexpire INT UNSIGNED NOT NULL DEFAULT '0',
+        autoexpired INT UNSIGNED NOT NULL DEFAULT '0',
+
+        activated INT UNSIGNED NOT NULL DEFAULT '0',
+        maxviews INT UNSIGNED NOT NULL DEFAULT '0',
+        maxclicks INT UNSIGNED NOT NULL DEFAULT '0',
+        expired INT UNSIGNED NOT NULL DEFAULT '0',
+
+        PRIMARY KEY  (aid),
+        KEY (uid),
+        KEY (autoactivate),
+        KEY (autoexpire)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * Every ad can have one or more owners.
+       */
+      db_query("CREATE TABLE {ad_owners} (
+        oid INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        uid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        PRIMARY KEY  (oid),
+        KEY  (aid),
+        KEY  (uid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * Permissions can be granted to each owner of each ad.  The same owner
+       * can own multiple ads, and can have different permissions for each ad.
+       */
+      db_query("CREATE TABLE {ad_permissions} (
+        oid INT(11) UNSIGNED NOT NULL DEFAULT '0',
+        permissions LONGTEXT NULL,
+        PRIMARY KEY  (oid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * This table counts each time a given action occurs on an ad.  Actions
+       * include when the ad is viewed, clicked, enabled and disabled.
+       * Statistics are collected at an hourly granularity.
+       *
+       * The source column is used for tracking statistics for externally 
+       * hosted ads.
+       *
+       * Actions:
+       *  'view', 'click', 'enable', 'disable'
+       */
+      db_query("CREATE TABLE {ad_statistics} (
+        sid INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        aid INT UNSIGNED NOT NULL DEFAULT '0',
+
+        date INT(10) UNSIGNED NOT NULL DEFAULT '0',
+        action VARCHAR(255) NOT NULL DEFAULT '',
+        adgroup VARCHAR(255) NULL DEFAULT '',
+        hostid VARCHAR(32) NULL DEFAULT '',
+        count INT(11) UNSIGNED NOT NULL DEFAULT '0',
+
+        PRIMARY KEY  (sid),
+        KEY (aid),
+        KEY (date),
+        KEY (action),
+        KEY (adgroup),
+        KEY (hostid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * The ad_clicks table tracks when a given advertisement was clicked, 
+       * who clicked it (uid if any and IP address), and what page they were
+       * on when they clicked it.
+       */
+      db_query("CREATE TABLE {ad_clicks} (
+        cid INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        aid INT UNSIGNED NOT NULL DEFAULT '0',
+        uid int(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        status INT(2) NOT NULL DEFAULT '0',
+
+        hostname varchar(128) NOT NULL DEFAULT '',
+        user_agent varchar(255) NOT NULL DEFAULT '',
+        adgroup varchar(255) NOT NULL DEFAULT '',
+        hostid varchar(32) NOT NULL DEFAULT '',
+        url varchar(255) DEFAULT '',
+        timestamp INT(11) UNSIGNED NOT NULL DEFAULT '0',
+
+        PRIMARY KEY  (cid),
+        KEY  (aid),
+        KEY  (status),
+        KEY  (hostname),
+        KEY  (user_agent),
+        KEY  (adgroup),
+        KEY  (hostid),
+        KEY  (url)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+      /**
+       * The ad_hosts table is used to configure users that can display ads
+       * remotely. 
+       */
+      db_query("CREATE TABLE {ad_hosts} (
+        uid INT UNSIGNED NOT NULL DEFAULT '0',
+
+        hostid varchar(32) DEFAULT '',
+
+        status INT(2) UNSIGNED NOT NULL DEFAULT '0',
+        description TEXT NULL,
+
+        PRIMARY KEY  (uid),
+        KEY  (status),
+        KEY  (hostid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+  }
+
+  drupal_set_message(t('The necessary ad module tables have been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad module.
+ */
+function ad_uninstall() {
+  // Delete all ad content.
+  $result = db_query("SELECT nid FROM {node} WHERE type = 'ad'");
+  while ($nid = db_result($result)) {
+    node_delete($nid);
+    variable_del("ad_autoactivate_warning_$nid");
+  }
+
+  // Drop all ad module tables.
+  db_query('DROP TABLE {ad_clicks}');
+  db_query('DROP TABLE {ad_hosts}');
+  db_query('DROP TABLE {ad_owners}');
+  db_query('DROP TABLE {ad_permissions}');
+  db_query('DROP TABLE {ad_statistics}');
+  db_query('DROP TABLE {ads}');
+
+  // Delete all remaining ad module variables.
+  $variables = array('ad_cron_timestamp', 'ad_link_target', 'ad_cache', 'ad_cache_file', 'adserve', 'ad_group_vid', 'ad_groups', 'ad_validate_url', 'ad_display');
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+  // TODO: "ad_block_quantity_$delta"
+}
+
+/**
+ * Introduce fields for specifying an optional maximum number of view or clicks
+ * for each ad.  Also introduce fields for tracking the last time the ad was
+ * activated or expired.
+ */
+function ad_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      db_add_column($ret, 'ads', 'activated', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      db_add_column($ret, 'ads', 'maxviews', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      db_add_column($ret, 'ads', 'maxclicks', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      db_add_column($ret, 'ads', 'expired', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      break;
+    case 'mysql':
+    case 'mysqli':
+    default:
+      $ret[] = update_sql("ALTER TABLE {ads} ADD activated INT UNSIGNED NOT NULL DEFAULT '0' AFTER autoexpired");
+      $ret[] = update_sql("ALTER TABLE {ads} ADD maxviews INT UNSIGNED NOT NULL DEFAULT '0' AFTER activated");
+      $ret[] = update_sql("ALTER TABLE {ads} ADD maxclicks INT UNSIGNED NOT NULL DEFAULT '0' AFTER maxviews");
+      $ret[] = update_sql("ALTER TABLE {ads} ADD expired INT UNSIGNED NOT NULL DEFAULT '0' AFTER maxclicks");
+  }
+  return $ret;
+}
+
+/**
+ * Ad notifications are being moved to an external module, so remove all
+ * references from the core module.
+ */
+function ad_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    default:
+      $ret[] = update_sql("DROP TABLE {ad_notifications}");
+      $ret[] = update_sql("ALTER TABLE {ads} DROP expire_notified");
+      $ret[] = update_sql("ALTER TABLE {ads} DROP renew_notified");
+  }
+  return $ret;
+}
+
+/**
+ * Redirect urls need to be absolute to work when hosting ads remotely.
+ */
+function ad_update_3() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    default:
+      $result = db_query('SELECT aid FROM {ads}');
+      while ($ad = db_fetch_object($result)) {
+        $ret[] = update_sql("UPDATE {ads} SET redirect = '". url("ad/redirect/$ad->aid", NULL, NULL, TRUE) ."' WHERE aid = $ad->aid");
+      }
+  }
+  return $ret;
+}
+
+/**
+ * Move ad groups from custom tables into taxonomy tables.
+ */
+function ad_update_4() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    default:
+      // Move groups from ad_groups into taxonomy.
+      $result = db_query('SELECT * FROM {ad_groups}');
+      while ($group = db_fetch_object($result)) {
+        // The default group is now no group at all.
+        if ($group->gid == 1)
+          continue;
+        $edit = array('vid' => _ad_get_vid(), 'name' => $group->name, 'description' => $group->description);
+        taxonomy_save_term($edit);
+        $tid[$group->gid] = $edit['tid'];
+      }
+      // Assign ads to new ad groups.
+      $result = db_query('SELECT aid,gid FROM {ads}');
+      while ($ad = db_fetch_object($result)) {
+        if ($tid[$ad->gid]) {
+          $ret[] = update_sql("INSERT INTO {term_node} (nid, tid) VALUES ($ad->aid, ". $tid[$ad->gid] .')');
+        }
+      }
+      // Fix the deltas of any group blocks.
+      $result = db_query("SELECT * from {blocks} WHERE module = 'ad'");
+      $ret[] = update_sql("DELETE FROM {blocks} WHERE module = 'ad'");
+      while ($block = db_fetch_object($result)) {
+        if ($block->delta == 1) {
+          // The old "default" group block now as a delta of 0.
+          $ret[] = update_sql("INSERT INTO {blocks} VALUES('ad', 0, '$block->theme', $block->status, $block->weight, '$block->region', $block->custom, $block->throttle, $block->visibility, '$block->pages', '$block->title')");
+        }
+        else {
+          // Switch from a delta of "gid" to a delta of "tid".
+          $ret[] = update_sql("INSERT INTO {blocks} VALUES('ad', ". $tid[$block->delta] .", '$block->theme', $block->status, $block->weight, '$block->region', $block->custom, $block->throttle, $block->visibility, '$block->pages', '$block->title')");
+        }
+      }
+      // Remove old groups table and column.
+      $ret[] = update_sql("DROP TABLE {ad_groups}");
+      $ret[] = update_sql("ALTER TABLE {ads} DROP gid");
+  }
+  return $ret;
+}
+
+/**
+ * Convert to utf8 character set for all tables to allow for proper 
+ * internationalization.
+ */
+function ad_update_5() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      // Not sure if anything needs to be done for utf8 support in PostgreSQL.
+      break;
+    default:
+      $tables = array('ads', 'ad_clicks', 'ad_hosts', 'ad_owners', 'ad_permissions', 'ad_statistics');
+      foreach ($tables as $table) {
+        $ret[] = update_sql('ALTER TABLE {'. $table. '} CONVERT TO CHARACTER SET utf8');
+      }
+  }
+  return $ret;
+}
+
+/**
+ * Update embed-ad-#-count variable to use "-1" instead of "9999" to auto embed 
+ * ads after the last paragraph.
+ */
+function ad_update_6() {
+  $types = node_get_types();
+  foreach ($types as $key => $type) {
+    $count = variable_get("embed-ad-$key-count", 0);
+    if ($count == 9999) {
+      variable_set("embed-ad-$key-count", -1);
+    }
+  }
+  return array();
+}
+
+/**
+ * Add a user_agent column to the ad_clicks table so it's possible to filter
+ * out clicks based on the agent (ie, if it reports itself as a bot).
+ */
+function ad_update_7() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {ad_clicks} ADD user_agent varchar(255) NOT NULL DEFAULT '' AFTER hostname");
+      $ret[] = update_sql("ALTER TABLE {ad_clicks} ADD KEY (user_agent)");
+      break;
+    case 'pgsql':
+      db_add_column($ret, 'ad_clicks', 'user_agent', 'varchar(255)', array('not null' => TRUE, 'default' => "''"));
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Introduce "status" for remote hosts, allowing them to be disabled.
+ */
+function ad_update_8() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {ad_hosts} ADD status INT NOT NULL DEFAULT '0' AFTER hostid");
+      break;
+
+    case 'pgsql':
+      db_add_column($ret, 'ad_hosts', 'status', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Introduce "status" for ad clicks, allowing duplicates to be filtered out.
+ */
+function ad_update_9() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {ad_clicks} ADD status INT(2) NOT NULL DEFAULT '0' AFTER uid");
+      break;
+
+    case 'pgsql':
+      db_add_column($ret, 'ad_clicks', 'status', 'int', array('not null' => TRUE, 'default' => "'0'"));
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Introduce "adgroup" for ad statistics and clicks, providing per-group 
+ * granularity.
+ */
+function ad_update_10() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {ad_statistics} ADD adgroup VARCHAR(255) NULL DEFAULT '' AFTER action");
+      $ret[] = update_sql("ALTER TABLE {ad_statistics} ADD KEY (adgroup)");
+      $ret[] = update_sql("ALTER TABLE {ad_clicks} ADD adgroup VARCHAR(255) NULL DEFAULT '' AFTER user_agent");
+      $ret[] = update_sql("ALTER TABLE {ad_clicks} ADD KEY (adgroup)");
+      break;
+
+    case 'pgsql':
+      db_add_column($ret, 'ad_statistics', 'adgroup', 'VARCHAR(255)', array('default' => "''"));
+      db_add_column($ret, 'ad_clicks', 'adgroup', 'VARCHAR(255)', array('default' => "''"));
+      break;
+  }
+  return $ret;
+}
+
+/**
+ * Update the cached menu to incorporate new ad type settings.
+ */
+function ad_update_5111() {
+  $ret = array();
+  cache_clear_all('*', 'cache_menu', TRUE);
+  return $ret;
+}
+

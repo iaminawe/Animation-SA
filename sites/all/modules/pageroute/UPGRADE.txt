@@ -1,0 +1,30 @@
+Upgrading Pageroute from 4.7.x to a 5.x version
+------------------------------------------------
+
+Pageroute has been substantially improved for 5.x, so some things have changed.
+Most things do only concern developers, who should look at API.txt for a 
+documentation of the new API.
+
+This document is about the changes, which are important and visible for users:
+
+ * You can upgrade pageroute like any other module, remove the old files,
+   add all new files and run your drupal's update.php.
+
+ * Pageroute arguments changed!
+   In 4.7.x the first pageroute argument was always interpreted as a user id and
+   the second argument as a node id.
+   I've changed the argument order for 5.x, so the first one is the node id and the
+   second one the user id.
+   So to go through the route as another user e.g. as user with the id 5, but without
+   passing a node id just us the URL:
+                                pageroute_url/0/5
+
+   I've changed the argument's order, because of pageroute's future of a general
+   node creation/edit tool. So working with nodes is becoming more important, so
+   passing a node id will be used much more often than passing an user id!
+
+ 
+ * The experimental pageroute_workflow module has been removed. If you haven't used it,
+   nevermind. Otherwise have a look at the "States Module Integration", which is described
+   in the README.
+ 

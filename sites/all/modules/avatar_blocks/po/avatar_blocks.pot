@@ -1,0 +1,149 @@
+# $Id: avatar_blocks.pot,v 1.1 2008/07/24 01:53:14 roopletheme Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  avatar_blocks.module: n/a
+#  avatar_blocks.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-07-23 06:46-0700\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: avatar_blocks.module:30
+msgid "Who's Online Avatars"
+msgstr ""
+
+#: avatar_blocks.module:31
+msgid "Who's New Avatars"
+msgstr ""
+
+#: avatar_blocks.module:33
+msgid "My Buddylist Avatars"
+msgstr ""
+
+#: avatar_blocks.module:42
+msgid "User activity"
+msgstr ""
+
+#: avatar_blocks.module:45
+msgid "A user is considered online for this long after they have last viewed a page."
+msgstr ""
+
+#: avatar_blocks.module:49;85
+msgid "Number of users to display"
+msgstr ""
+
+#: avatar_blocks.module:51
+msgid "Maximum number of currently online users to display."
+msgstr ""
+
+#: avatar_blocks.module:56;92;122;147;164;179
+msgid "None"
+msgstr ""
+
+#: avatar_blocks.module:63;99;129
+msgid "Imagecache Preset"
+msgstr ""
+
+#: avatar_blocks.module:64;100;130
+msgid "Select an Imagecache preset to apply to the avatars."
+msgstr ""
+
+#: avatar_blocks.module:71
+msgid "Include text summary"
+msgstr ""
+
+#: avatar_blocks.module:73
+msgid "Enable this option to display a text summary of online users."
+msgstr ""
+
+#: avatar_blocks.module:77;107
+msgid "Display users without avatars"
+msgstr ""
+
+#: avatar_blocks.module:79;109
+msgid "Enable this option to display the default avatar for users without pictures. You must configure a default picture."
+msgstr ""
+
+#: avatar_blocks.module:87
+msgid "Maximum number of new users to display."
+msgstr ""
+
+#: avatar_blocks.module:115
+msgid "Number of buddies to display"
+msgstr ""
+
+#: avatar_blocks.module:117
+msgid "Maximum number of buddies to display."
+msgstr ""
+
+#: avatar_blocks.module:137
+msgid "Display buddies without avatars"
+msgstr ""
+
+#: avatar_blocks.module:139
+msgid "Enable this option to display the default avatar for buddies without pictures. You must configure a default picture."
+msgstr ""
+
+#: avatar_blocks.module:196
+msgid "Who's Online"
+msgstr ""
+
+#: avatar_blocks.module:202
+msgid "Who's New"
+msgstr ""
+
+#: avatar_blocks.module:208
+msgid "My Buddylist"
+msgstr ""
+
+#: avatar_blocks.module:222;231
+msgid "Number of users must be a number"
+msgstr ""
+
+#: avatar_blocks.module:240
+msgid "Number of buddies must be a number"
+msgstr ""
+
+#: avatar_blocks.module:336
+msgid "There is currently %members and %visitors online."
+msgstr ""
+
+#: avatar_blocks.module:339
+msgid "There are currently %members and %visitors online."
+msgstr ""
+
+#: avatar_blocks.module:336;339
+msgid "1 user"
+msgid_plural "@count users"
+msgstr[0] ""
+msgstr[1] ""
+
+#: avatar_blocks.module:336;339
+msgid "1 guest"
+msgid_plural "@count guests"
+msgstr[0] ""
+msgstr[1] ""
+
+#: avatar_blocks.module:0
+msgid "avatar_blocks"
+msgstr ""
+
+#: avatar_blocks.info:0
+msgid "Avatar Blocks"
+msgstr ""
+
+#: avatar_blocks.info:0
+msgid "Provides a collection of blocks for use on a Drupal social networking site."
+msgstr ""
+

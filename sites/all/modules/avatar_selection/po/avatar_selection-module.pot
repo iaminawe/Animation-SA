@@ -1,0 +1,336 @@
+# $Id: avatar_selection-module.pot,v 1.1.6.7 2008/08/13 15:04:56 snpower Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  avatar_selection.module,v 1.1.2.20.2.38 2008/08/06 21:30:49 snpower
+#  avatar_selection.info,v 1.1.2.2.2.1 2008/07/07 12:35:51 snpower
+#  avatar_selection.install,v 1.1.2.8.2.11 2008/07/29 14:57:35 snpower
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-08-13 16:03+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: avatar_selection.module:20;23
+msgid "Allows the user to pick an avatar from a list."
+msgstr ""
+
+#: avatar_selection.module:25
+msgid "Upload images to display as a user avatar.  These images can be anything you like, but it is recommended that you maintain a uniform icon size for all of your avatars.  Maximum dimensions are 85x85 and the maximum size is 30 kB."
+msgstr ""
+
+#: avatar_selection.module:61 avatar_selection.info:0
+msgid "Avatar Selection"
+msgstr ""
+
+#: avatar_selection.module:64
+msgid "Allows the user to upload and delete avatars."
+msgstr ""
+
+#: avatar_selection.module:68
+msgid "Configure"
+msgstr ""
+
+#: avatar_selection.module:69
+msgid "Allows the user to configure avatar settings."
+msgstr ""
+
+#: avatar_selection.module:78;603;917;1003
+msgid "Upload"
+msgstr ""
+
+#: avatar_selection.module:79
+msgid "Allows the user to upload avatars."
+msgstr ""
+
+#: avatar_selection.module:88;100
+msgid "Manage avatars"
+msgstr ""
+
+#: avatar_selection.module:89;101
+msgid "Allows the user to modify or delete an avatar from a list."
+msgstr ""
+
+#: avatar_selection.module:172;212
+msgid "Select an avatar"
+msgstr ""
+
+#: avatar_selection.module:172;212
+msgid "Or simply select an icon"
+msgstr ""
+
+#: avatar_selection.module:173;213
+msgid "Your virtual face or picture."
+msgstr ""
+
+#: avatar_selection.module:206
+msgid "Picture"
+msgstr ""
+
+#: avatar_selection.module:465
+msgid "Add another"
+msgstr ""
+
+#: avatar_selection.module:483;544;714
+msgid "User Pictures option is disabled.  You will need to enable this option before you can use the Avatar Selection module.  You may configure this setting on the <a href=\"@url\">User settings</a> page."
+msgstr ""
+
+#: avatar_selection.module:489
+msgid "How many avatars per page"
+msgstr ""
+
+#: avatar_selection.module:490
+msgid "The number of avatars to show per page."
+msgstr ""
+
+#: avatar_selection.module:497
+msgid "Disable users uploading pictures to profile"
+msgstr ""
+
+#: avatar_selection.module:498
+msgid "Allow users to pick their avatar from the selection but prevent them from uploading new avatars when editing their account."
+msgstr ""
+
+#: avatar_selection.module:503
+msgid "Force users to select an avatar image on user registration."
+msgstr ""
+
+#: avatar_selection.module:504
+msgid "This only applies on the user registration screen."
+msgstr ""
+
+#: avatar_selection.module:510
+msgid "Force users to select an avatar image when editing their account"
+msgstr ""
+
+#: avatar_selection.module:511
+msgid "This only applies when the user is editing their account details and image uploads are disabled."
+msgstr ""
+
+#: avatar_selection.module:516
+msgid "Enable random default avatar image."
+msgstr ""
+
+#: avatar_selection.module:517
+msgid "Automatically set a random avatar image to be used when the user doesn't set one for their account."
+msgstr ""
+
+#: avatar_selection.module:522
+msgid "Enable unique avatars."
+msgstr ""
+
+#: avatar_selection.module:523
+msgid "Only allow users to pick an avatar that isn't already in use by another user.  If there are no available avatars left, the default avatar image will be used."
+msgstr ""
+
+#: avatar_selection.module:530;868;897;979;1057
+msgid "Update"
+msgstr ""
+
+#: avatar_selection.module:551
+msgid "Bulk Upload / Delete"
+msgstr ""
+
+#: avatar_selection.module:552
+msgid "To upload a large number of avatars, first copy the images manually to the %dir folder, using ftp for example.  To make these new avatar images available, check the 'Scan for new avatars' option. All new images will then be added to the list.  By removing files from this directory and checking the box, you can also perform a bulk delete."
+msgstr ""
+
+#: avatar_selection.module:558
+msgid "Scan avatars"
+msgstr ""
+
+#: avatar_selection.module:559
+msgid "All new avatar images found will be added to the list of available avatars with the name, weight and permissions defined below.  Scanning for new avatars may be slow depending on the number of files.  All avatar entries which no longer have a corresponding file will be be removed."
+msgstr ""
+
+#: avatar_selection.module:564
+msgid "Upload image"
+msgstr ""
+
+#: avatar_selection.module:566
+msgid "A new avatar image.  Maximum dimensions are %dimensions and the maximum size is %size kB.  Images must have one of the following extensions (case sensitive): png, jpg, jpeg, gif, PNG, JPG, JPEG, GIF."
+msgstr ""
+
+#: avatar_selection.module:571;830
+msgid "Name"
+msgstr ""
+
+#: avatar_selection.module:572;831
+msgid "Image name or title which will be displayed when hovering over the image.  It's also used in conjunction with the weight setting for sorting the avatars."
+msgstr ""
+
+#: avatar_selection.module:577;837
+msgid "Weight"
+msgstr ""
+
+#: avatar_selection.module:579;839
+msgid "Avatars with a lower weight appear before higher weighted avatars in lists."
+msgstr ""
+
+#: avatar_selection.module:583;845
+msgid "Permissions"
+msgstr ""
+
+#: avatar_selection.module:588;850
+msgid "User Roles"
+msgstr ""
+
+#: avatar_selection.module:590;853
+msgid "Only the checked roles will be able to see this avatar icon; if no roles are checked, access will not be restricted."
+msgstr ""
+
+#: avatar_selection.module:595;859
+msgid "Organic Groups"
+msgstr ""
+
+#: avatar_selection.module:597;862
+msgid "Only users in the checked organic groups will be able to see this avatar icon; if no groups are checked, access will not be restricted."
+msgstr ""
+
+#: avatar_selection.module:646
+msgid "There is a total of %count avatars configured."
+msgstr ""
+
+#: avatar_selection.module:673
+msgid "User Role"
+msgstr ""
+
+#: avatar_selection.module:673;686
+msgid "Number of Avatars"
+msgstr ""
+
+#: avatar_selection.module:674;677;687;690
+msgid "edit"
+msgstr ""
+
+#: avatar_selection.module:675
+msgid "Available to all roles"
+msgstr ""
+
+#: avatar_selection.module:686
+msgid "Organic Group"
+msgstr ""
+
+#: avatar_selection.module:688
+msgid "Available to all groups"
+msgstr ""
+
+#: avatar_selection.module:731
+msgid "There are no avatars configured."
+msgstr ""
+
+#: avatar_selection.module:759
+msgid "Role: %name"
+msgstr ""
+
+#: avatar_selection.module:769
+msgid "Organic Group: %name"
+msgstr ""
+
+#: avatar_selection.module:777
+msgid "Select an avatar to edit"
+msgstr ""
+
+#: avatar_selection.module:786
+msgid "Edit"
+msgstr ""
+
+#: avatar_selection.module:873;935;1068
+msgid "Delete"
+msgstr ""
+
+#: avatar_selection.module:899
+msgid "Must be a number."
+msgstr ""
+
+#: avatar_selection.module:937
+msgid "Please select images to delete."
+msgstr ""
+
+#: avatar_selection.module:953
+msgid "The uploaded file was not an image."
+msgstr ""
+
+#: avatar_selection.module:959
+msgid "The uploaded image is too large; the maximum file size is %size kB."
+msgstr ""
+
+#: avatar_selection.module:962
+msgid "The uploaded image is too large; the maximum dimensions are %dimensions pixels."
+msgstr ""
+
+#: avatar_selection.module:987
+msgid "Configuration has been updated."
+msgstr ""
+
+#: avatar_selection.module:1016
+msgid "Scan complete: %added new avatars found. %deleted avatars removed."
+msgstr ""
+
+#: avatar_selection.module:1029
+msgid "New image saved."
+msgstr ""
+
+#: avatar_selection.module:1033
+msgid "Uploaded file does not appear to be a valid image file. Please try again."
+msgstr ""
+
+#: avatar_selection.module:1039
+msgid "Directory not writable: !dir"
+msgstr ""
+
+#: avatar_selection.module:1065
+msgid "Image updated."
+msgstr ""
+
+#: avatar_selection.module:1072
+msgid "Image deleted."
+msgstr ""
+
+#: avatar_selection.module:1219
+msgid "« first"
+msgstr ""
+
+#: avatar_selection.module:1220
+msgid ". previous"
+msgstr ""
+
+#: avatar_selection.module:1254
+msgid "next ."
+msgstr ""
+
+#: avatar_selection.module:1255
+msgid "last »"
+msgstr ""
+
+#: avatar_selection.module:36
+msgid "administer avatar selection"
+msgstr ""
+
+#: avatar_selection.module:36
+msgid "access avatars"
+msgstr ""
+
+#: avatar_selection.module:0
+msgid "avatar_selection"
+msgstr ""
+
+#: avatar_selection.install:17
+msgid "User Pictures option is disabled.  You will need to enable this option before you can use the Avatar Selection module.  You may configure this setting at the <a href=\"@url\">User settings</a> page."
+msgstr ""
+
+#: avatar_selection.info:0
+msgid "Manages configuration of a default list of avatar icons that a
+user can use instead of uploading a picture."
+msgstr ""
+
+

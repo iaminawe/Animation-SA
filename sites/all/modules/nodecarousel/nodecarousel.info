@@ -1,0 +1,11 @@
+; $Id: nodecarousel.info,v 1.4.2.4 2008/04/19 23:10:04 jcfiala Exp $
+name = NodeCarousel
+description = "Displays a series of nodes in a slide or parade fashion, using the jCarousel jQuery extension"
+dependencies = jcarousel
+package = User Interface
+
+; Information added by drupal.org packaging script on 2008-04-20
+version = "5.x-1.x-dev"
+project = "nodecarousel"
+datestamp = "1208650193"
+

@@ -1,0 +1,28 @@
+@CHARSET "UTF-8";
+.fullname-type {
+  color: #fff;  
+}
+
+.fullname-type.required span.form-required {
+  color: #ff0;
+}
+
+.fullname-field {
+  clear: right;
+}
+
+.cck-fullname-prefix .form-required, .cck-fullname-first .form-required, .cck-fullname-middle .form-required, .cck-fullname-last .form-required, .cck-fullname-suffix .form-required {
+  color: #ff0;
+}
+
+.cck-fullname-prefix .form-item, .cck-fullname-first .form-item, .cck-fullname-middle .form-item, .cck-fullname-last .form-item, .cck-fullname-suffix .form-item {
+  float: left;
+}
+
+.cck-fullname-prefix2 .form-required, .cck-fullname-first2 .form-required, .cck-fullname-middle2 .form-required, .cck-fullname-last2 .form-required, .cck-fullname-suffix2 .form-required {
+  color: #ff0;
+}
+
+.cck-fullname-prefix2 .form-item, .cck-fullname-first2 .form-item, .cck-fullname-middle2 .form-item, .cck-fullname-last2 .form-item, .cck-fullname-suffix2 .form-item {
+  float: left;
+}

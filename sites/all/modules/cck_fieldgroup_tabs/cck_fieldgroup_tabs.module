@@ -1,0 +1,164 @@
+<?php
+// $Id: cck_fieldgroup_tabs.module,v 1.1.2.4 2008/04/30 23:12:58 nedjo Exp $
+
+/**
+ * @file
+ * Add tabs display option for CCK fieldgroups.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function cck_fieldgroup_tabs_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/cck-fieldgroup-tabs',
+      'title' => t('CCK Fieldgroup Tabs'),
+      'description' => t('Configuration for CCK fieldgroup tabs'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('cck_fieldgroup_tabs_admin_settings')
+    );
+  }
+  return $items;
+}
+
+/**
+ * Admin settings.
+ */
+function cck_fieldgroup_tabs_admin_settings() {
+  $form = array();
+  $form['cck_fieldset_tabs_residual'] = array(
+    '#type' => 'radios',
+    '#title' => t('Basics tab'),
+    '#description' => t('Enable this option to give nodes with tabs a new tab containing all fields (e.g., node title and body) not already on a tab.'),
+    '#options' => array(t('Disabled'), t('Enabled')),
+    '#default_value' => variable_get('cck_fieldset_tabs_residual', 0),
+  );
+  $form['cck_fieldset_tabs_residual_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Tab title'),
+    '#description' => t('Enter a title for the "Basics" tab.'),
+    '#default_value' => variable_get('cck_fieldset_tabs_residual_title', t('Basics')),
+  );
+  $form = system_settings_form($form);
+  return $form;
+}
+
+/*
+ * Implementation of hook_form_alter()
+ */
+function cck_fieldgroup_tabs_form_alter($form_id, &$form) {
+  if (isset($form['type']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    // Content module loads a dummy node form. If we alter that form, content_admin_field_overview_form breaks.
+    // The cck_dummy_node_form attribute has not yet made it into the stable release of CCK.
+    // if (isset($form['#node']) && isset($form['#node']->cck_dummy_node_form) && $form['#node']->cck_dummy_node_form) {
+    // For now, test arg.
+    if (arg(0) == 'admin') {
+      return;
+    }
+    foreach (fieldgroup_groups($form['type']['#value']) as $group_name => $group) {
+      if (isset($form[$group_name]) && $group['settings']['form']['style'] == 'tabs') {
+        // Add a tabset if not already added.
+        if (!isset($form['fieldgroup_tabs'])) {
+          $form['fieldgroup_tabs'] = array(
+            '#type' => 'tabset',
+            '#weight' => $group['weight'],
+          );
+        }
+        // Otherwise, reset the weight if lower than what's already set.
+        // This ensures the tabset has the weight of the lowest fieldgroup
+        // it includes.
+        else if ($group['weight'] < $form['fieldgroup_tabs']['#weight']) {
+          $form['fieldgroup_tabs']['#weight'] = $group['weight'];
+        }
+        $element = $form[$group_name];
+        $element['#type'] = 'tabpage';
+        unset($element['#collapsible'], $element['#collapsed']);
+        $form['fieldgroup_tabs'][$group_name] = $element;
+        unset($form[$group_name]);
+      }
+    }
+    if (isset($form['fieldgroup_tabs']) && variable_get('cck_fieldset_tabs_residual', FALSE)) {
+      // Add residual content to a tab if desired.
+      $title = t(variable_get('cck_fieldset_tabs_residual_title', t('Basics')));
+      $residual = array(
+        '#type' => 'tabpage',
+        // Pass the value through t() if needed.
+        '#title' =>  t($title != t('Basics') ? $title : 'Basics'),
+        '#weight' => -20,
+      );
+      foreach (element_children($form) as $key) {
+        if ($key != 'fieldgroup_tabs' && (!isset($form[$key]['#type']) || !in_array($form[$key]['#type'], array('button', 'submit', 'value', 'hidden')))) {
+          $residual[$key] = $form[$key];
+          unset($form[$key]);
+        }
+      }
+      $form['fieldgroup_tabs']['fieldgroup_tabs_basic'] = $residual;
+    }
+  }
+  else if ($form_id == 'content_admin_display_overview_form') {
+    $groups = fieldgroup_groups($form['type_name']['#value']);
+    foreach ($groups as $group_name => $group) {
+      foreach (_content_admin_display_contexts() as $key => $title) {
+        $form['groups'][$group_name][$key]['#options']['tabs'] = t('tabs');
+      }
+    }
+  }
+  else if ($form_id == 'fieldgroup_edit_group_form') {
+    $form['settings']['form']['style']['#options']['tabs'] = t('tabs');
+  }
+}
+
+function cck_fieldgroup_tabs_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      $context = $teaser ? 'teaser' : 'full';
+      foreach (fieldgroup_groups($node->type) as $group_name => $group) {
+        // $node->content[$group_name] will be set only if there was visible content.
+        if (isset($node->content[$group_name]) && $group['settings']['display'][$context] == 'tabs') {
+          // Add a tabset if not already added.
+          if (!isset($node->content['fieldgroup_tabs'])) {
+            $node->content['fieldgroup_tabs'] = array(
+              '#type' => 'tabset',
+              '#weight' => $group['weight'],
+            );
+          }
+          // Otherwise, reset the weight if lower than what's already set.
+          // This ensures the tabset has the weight of the lowest fieldgroup
+          // it includes.
+          else if ($group['weight'] < $node->content['fieldgroup_tabs']['#weight']) {
+            $node->content['fieldgroup_tabs']['#weight'] = $group['weight'];
+          }
+          $element = $node->content[$group_name];
+          $element['#type'] = 'tabpage';
+          $element['#weight'] = $group['weight'];
+          // Title is required for tabs.
+          $element['#title'] = t(check_plain($group['label']));
+          $node->content['fieldgroup_tabs'][$group_name] = $element;
+          unset($node->content[$group_name]);
+        }
+      }
+      if (isset($node->content['fieldgroup_tabs'])) {
+        // Add residual content to a tab if desired.
+        if (variable_get('cck_fieldset_tabs_residual', FALSE)) {
+          $title = t(variable_get('cck_fieldset_tabs_residual_title', t('Basics')));
+          $residual = array(
+            '#type' => 'tabpage',
+            '#title' =>  t($title != t('Basics') ? $title : 'Basics'),
+            '#weight' => -20,
+          );
+          foreach (element_children($node->content) as $key) {
+            if ($key != 'fieldgroup_tabs') {
+              $residual[$key] = $node->content[$key];
+              unset($node->content[$key]);
+            }
+          }
+          $node->content['fieldgroup_tabs']['fieldgroup_tabs_basic'] = $residual;
+        }
+        // Explicitly build, as drupal_render won't invoke form element #process callbacks.
+        $node->content['fieldgroup_tabs'] = form_builder('tabset', $node->content['fieldgroup_tabs']);
+      }
+      break;
+  }
+}

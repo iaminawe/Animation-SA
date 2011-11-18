@@ -1,0 +1,7 @@
+; $Id: signwriter.info,v 1.1 2006/11/27 02:21:39 wrunt Exp $
+name = Signwriter
+description = Allows you to use custom truetype fonts for headings.
+
+
+; version added by drupal.org packaging script on 2006-11-27
+version = "5.x-1.1"

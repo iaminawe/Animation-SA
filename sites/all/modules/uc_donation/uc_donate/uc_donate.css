@@ -1,0 +1,15 @@
+/* $Id: uc_donate.css,v 1.1 2008/05/02 00:36:05 greenskin Exp $ */
+#donate_update{
+  padding: 0px 4px;
+  float: left;
+  font-size: .80em;
+  display: inline;
+  background-color: #F5F1E1;
+  color: #38505C;
+  font-family: Arial, "MS Trebuchet", sans-serif;
+  cursor: pointer;
+}
+#donate_update:hover{
+  background-color: #38505C;
+  color: #F5F1E1;
+}

@@ -1,0 +1,30 @@
+<?php
+// $Id: vfs_ranking_nodetype.install,v 1.1.2.2 2008/01/17 15:35:40 douggreen Exp $
+
+function vfs_ranking_nodetype_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("
+        CREATE TABLE IF NOT EXISTS {vfs_ranking_nodetype} (
+          type VARCHAR(50) NOT NULL,
+          search_weight INT  NOT NULL DEFAULT 1,
+          PRIMARY KEY (type)
+        )
+      ");
+      break;
+    case 'pgsql':
+      db_query("
+        CREATE TABLE {vfs_ranking_nodetype} (
+          type VARCHAR(50) NOT NULL,
+          search_weight INTEGER NOT NULL DEFAULT 1,
+          PRIMARY KEY (type)
+        )
+      ");
+      break;
+  }
+}
+
+function vfs_ranking_nodetype_uninstall() {
+  db_query('DROP TABLE {vfs_ranking_nodetype}');
+}

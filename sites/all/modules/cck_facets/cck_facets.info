@@ -1,0 +1,6 @@
+; $Id: cck_facets.info,v 1.5 2008/04/23 14:15:01 davidlesieur Exp $
+name = CCK Facets
+description = "Provides basic functionality for modules that expose CCK fields as facets."
+dependencies = content faceted_search search
+package = Faceted Search
+

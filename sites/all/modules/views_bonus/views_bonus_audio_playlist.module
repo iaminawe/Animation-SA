@@ -1,0 +1,90 @@
+<?php
+// $Id: views_bonus_audio_playlist.module,v 1.1.2.4 2008/05/10 15:29:20 dmitrig01 Exp $
+
+function views_bonus_audio_playlist_views_style_plugins() {
+  if (file_exists('./' . drupal_get_path('module', 'audio') .'/flash_mp3_player/')) {
+    $items['audio_playlist'] = array(
+      'name' => t('Audio: Playlist'),
+      'theme' => 'views_bonus_audio_playlist',
+      'summary_theme' => 'views_summary',
+    );
+  }
+  return $items;
+} 
+
+function theme_views_bonus_audio_playlist($view, $nodes, $type) {
+  if (isset($_GET['playlist'])) {
+    return views_bonus_audio_playlist($view, $nodes, $type);
+  }
+  else {
+    return views_bonus_audio_view($view, $nodes, $type);
+  }
+}
+
+function views_bonus_audio_view($view, $nodes, $type) {
+  global $base_url;
+
+  $flash_mp3_player = $base_url .'/'. drupal_get_path('module', 'audio') .'/flash_mp3_player/';
+  $options = array_merge((array) $options, array(
+    'file' => url($view->real_url, 'playlist', NULL, true),
+  ));
+
+  $url = url($flash_mp3_player . 'mp3player.swf');
+  if ($options) {
+    $flashvars = drupal_query_string_encode($options);
+  }
+
+  $output = <<<EOF
+<object 
+  classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" 
+  width="300" 
+  height="200" 
+  id="mp3player" 
+  codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0" 
+>
+  <param 
+    name="movie" 
+    value="$url" 
+  />
+  <param 
+    name="flashvars" 
+    value="$flashvars" 
+  />
+  <embed 
+    src="$url" width="300" height="200" name="mp3player"
+    flashvars="$flashvars" 
+    type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" 
+  />
+</object>
+EOF;
+
+  return $output;
+}
+
+function views_bonus_audio_playlist($view, $nodes, $type) {
+  $output = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
+  $output .= "<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">\n";
+  $output .= "  <title>" . views_get_title($view, $type) . "</title>\n";
+  $output .= "  <trackList>\n";
+  foreach ($nodes as $n) {
+    $node = node_load($n->nid);
+    $output .= theme('views_bonus_audio_track_xml', $node);
+  }
+  $output .= "  </trackList>\n";
+  $output .= "</playlist>\n";
+  drupal_set_header('Content-Type: text/xml; charset=utf-8');
+  print $output;
+  exit;
+}
+
+function theme_views_bonus_audio_track_xml($node) {
+  $output .= "    <track>\n";
+  $output .= "      <annotation>" . check_plain($node->title) . "</annotation>\n";
+  $output .= "      <title>" . check_plain($node->audio_tags['title']) . "</title>\n";
+  $output .= "      <track>" . check_plain($node->audio_tags['track']) . "</track>\n";
+  $output .= "      <location>" . check_url($node->url_play) . "?" . $node->audio_fileinfo['fileformat'] . "</location>\n";
+  $output .= "      <info>" . url("node/$node->nid", NULL, NULL, TRUE) . "</info>\n";
+  $output .= "      <identifier>" . $node->nid . "</identifier>\n";
+  $output .= "    </track>\n";
+  return $output;
+}

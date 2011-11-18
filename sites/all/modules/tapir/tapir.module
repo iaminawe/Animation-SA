@@ -1,0 +1,373 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Implements an API for the dynamic configuration and display of tables.
+ *
+ * TAPIr defines a tables API that can be used for dynamic table generation.
+ * Tables are defined in their own builder functions and rendered using the
+ * function tapir_get_table
+ *
+ * Development sponsored by the Ubercart project.  http://www.ubercart.org
+ */
+
+/*******************************************************************************
+ * Hook Functions
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_menu().
+ */
+function tapir_menu($may_cache) {
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/tapir',
+      'title' => t('Configure tables'),
+      'callback' => 'tapir_master_list',
+      'access' => user_access('edit tables'),
+      'description' => t('View and configure the dynamic tables on your site.'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  else {
+    $tables = module_invoke_all('table_settings');
+    foreach ($tables as $table) {
+      $path = isset($table['path']) ? $table['path'] : 'admin/settings/tapir';
+      $items[] = array(
+        'path' => $path .'/'. $table['id'],
+        'title' => isset($table['menu title']) ? $table['menu title'] : $table['id'],
+        'callback' => 'tapir_edit',
+        'callback arguments' => array($table['id'], $path, $table['preview']),
+        'access' => isset($table['access']) ? user_access($table['access']) : user_access('edit tables'),
+        'description' => t('Configure the fields and settings for !table_id.', array('!table_id' => $table['id'])),
+        'type' => ((!isset($table['path']) && variable_get('tapir_table_menu_items', FALSE)) || $table['menu item'] === TRUE) ? MENU_NORMAL_ITEM : MENU_CALLBACK,
+      );
+      $items[] = array(
+        'path' => $path .'/'. $table['id'] .'/view',
+        'title' => t('View !table_id', array('!table_id' => $table['id'])),
+        'callback' => 'tapir_view',
+        'callback arguments' => array($table['id'], $path),
+        'access' => isset($table['access']) ? user_access($table['access']) : user_access('edit tables'),
+        'description' => t('View !table_id with the current settings.', array('!table_id' => $table['id'])),
+        'type' => MENU_CALLBACK,
+      );
+    }
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function tapir_perm() {
+  return array('edit tables');
+}
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+/**
+ * Display a list of all dynamic tables defined in enabled modules.
+ */
+function tapir_master_list() {
+  $output = '<p>'. t("Click on a table's ID to configure the display of that table:") .'</p>'
+           .'<p>'. tapir_table_list() .'</p><br />'
+           .'<p>'. t('Use the form below to adjust the TAPIr settings:') .'</p>'
+           . drupal_get_form('tapir_settings_form');
+
+  return $output;
+}
+
+/**
+ * Build the settings form for the TAPIr module.
+ */
+function tapir_settings_form() {
+  $form['tapir_table_menu_items'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show table settings pages in this path as menu items.'),
+    '#default_value' => variable_get('tapir_table_menu_items', FALSE),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Display the edit page for the table specified by $table_id.
+ */
+function tapir_edit($table_id, $path, $preview = TRUE) {
+  if (!function_exists($table_id)) {
+    return t('Error generating settings form for table %table_id.', array('%table_id' => $table_id));
+  }
+
+  $null = NULL;
+  $fields = array_merge($table_id('fields', $null), module_invoke_all('table_alter', $table_id, 'fields', $null));
+  if (!is_array($fields)) {
+    return t('No fields have been defined for this column.');
+  }
+  for ($i = 0; $i < count($fields); $i++) {
+    $fields[$i]['weight'] = variable_get($table_id .'_'. $fields[$i]['name'] .'_weight', $fields[$i]['weight']);
+  }
+  usort($fields, '_tapir_field_sort');
+
+  $output .= '<p>'. drupal_get_form('tapir_edit_form', $table_id, $fields) .'</p>';
+
+  if ($preview !== FALSE) {
+    $output .= '<p>'. l(t('View table'), $path .'/'. $table_id .'/view') .'</p>';
+  }
+
+  if (user_access('edit tables')) {
+    $output .= '<p>'. l(t('Table master list'), 'admin/settings/tapir') .'</p>';
+  }
+
+  return $output;
+}
+
+/**
+ * Build the settings form for an individual table.
+ */
+function tapir_edit_form($table_id, $fields) {
+  foreach ($fields as $field) {
+    $form['field_'. $field['name']][$table_id .'_'. $field['name'] .'_name'] = array(
+      '#value' => check_plain($field['title'])
+    );
+    if ($field['locked'] == TRUE) {
+      $form['field_'. $field['name']][$table_id .'_'. $field['name'] .'_enabled'] = array(
+        '#type' => 'checkbox',
+        '#default_value' => $field['enabled'],
+        '#disabled' => TRUE,
+        '#value' => $field['enabled'],
+      );
+    }
+    else {
+      $form['field_'. $field['name']][$table_id .'_'. $field['name'] .'_enabled'] = array(
+        '#type' => 'checkbox',
+        '#default_value' => variable_get($table_id .'_'. $field['name'] .'_enabled', $field['enabled']),
+      );
+    }
+    $form['field_'. $field['name']][$table_id .'_'. $field['name'] .'_title'] = array(
+      '#type' => 'textfield',
+      '#default_value' => variable_get($table_id .'_'. $field['name'] .'_title', $field['title']),
+      '#size' => 32,
+    );
+    $form['field_'. $field['name']][$table_id .'_'. $field['name'] .'_weight'] = array(
+      '#type' => 'weight',
+      '#default_value' => variable_get($table_id .'_'. $field['name'] .'_weight', $field['weight']),
+    );
+  }
+
+  $form[$table_id . '_footer'] = array(
+    '#title' => t('Display the table footer.'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get($table_id . '_footer', TRUE),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Theme the table settings form to display compactly in a table.
+ */
+function theme_tapir_edit_form($form) {
+  foreach (element_children($form) as $field) {
+    if (substr($field, 0, 6) == 'field_') {
+      $row = array();
+      foreach (array_keys($form[$field]) as $key) {
+        if (substr($key, 0, 1) != '#') {
+          $row[] = drupal_render($form[$field][$key]);
+        }
+      }
+      $rows[] = $row;
+    }
+  }
+
+  $header = array(t('Field'), t('Enable'), t('Title'), t('Weight'));
+  $output .= '<p>'. theme('table', $header, $rows) .'</p>'
+            .'<p>'. drupal_render($form) .'</p>';
+
+  return $output;
+}
+
+/**
+ * Preview a table with its current settings, mostly used for debugging.
+ */
+function tapir_view($table_id, $path) {
+  $output = '<p>'. tapir_get_table($table_id, NULL) .'</p>'
+           .'<p>'. l(t('Back to settings'), $path .'/'. $table_id) .'</p>';
+
+  return $output;
+}
+
+/*******************************************************************************
+ * Module and Helper Functions
+ ******************************************************************************/
+
+/**
+ * Generate a list of defined tables that link to their edit forms.
+ *
+ * When no arguments are passed, this function generates a table of every
+ * table defined by TAPIr in the enabled modules.  This is how the table is
+ * generated at admin/settings/tapir.
+ *
+ * The path for a table's settings page is auto-generated by TAPIr to be
+ * admin/settings/tapir/table_id where table_id is the ID of the table as
+ * defined by TAPIr.  The path may be specified as any_path/table_id in a
+ * module's implementation of TAPIr hook_table_settings().  To generate a list
+ * of tables whose path (not including the table_id) matches a certain set of
+ * paths, you may pass them in as a list of string arguments.
+ *
+ * For example, if hook_table_settings() defines the path of a few tables as
+ * module/tables, you can generate a list of these tables by calling this
+ * function with the following line:
+ *
+ * $output = tapir_table_list('module/tables');
+ *
+ * You can generate a list for as many paths as you wish in this way.
+ *
+ * @param ...
+ *   A list of paths for which you want to display the tables.
+ * @return
+ *   A string containing the HTML of a themed table that displays available
+ *   Table IDs as links to their settings pages along with a short description
+ *   of the table as defined in the module's implementation of the TAPIr
+ *   hook_table_settings().
+ */
+function tapir_table_list() {
+  $args = func_get_args();
+
+  $tables = module_invoke_all('table_settings');
+  foreach ($tables as $table) {
+    $access = isset($table['access']) ? user_access($table['access']) : user_access('edit tables');
+    if ($access && (count($args) == 0 || in_array($table['path'], $args))) {
+      $path = isset($table['path']) ? $table['path'] : 'admin/settings/tapir';
+      $rows[] = array(l($table['id'], $path .'/'. $table['id']), $table['description']);
+    }
+  }
+
+  $header = array(t('Table ID'), t('Description'));
+  $output .= theme('table', $header, $rows);
+
+  return $output;
+}
+
+/**
+ * Build a table based on its current configuration for display on a page.
+ *
+ * The heart and soul of TAPIr, this function is responsible for gathering all
+ * the information about a table and serving it up properly.  All a developer
+ * needs to do is pass along the ID of the table they want to build and this
+ * function will create the appropriate header and row data by including only
+ * enabled fields and ordering them by their weight.
+ *
+ * @param $table_id
+ *   The ID of the table you wish to build.  The ID must match the name of the
+ *   builder function for that table, and it must have a corresponding entry
+ *   in TAPIr hook_table_settings() for a settings form to be generated for it.
+ * @param $arg
+ *   Argument that is passed on to the table building function.  Must pass a
+ *   variable set to NULL if this is not needed to get around a PHP 5 change. :(
+ * @return
+ *   A string containing the HTML of the dynamically generated table.
+ */
+function tapir_get_table($table_id, &$arg) {
+  if (!function_exists($table_id)) {
+    return '';
+  }
+
+  $fields = array_merge($table_id('fields', $arg), _tapir_invoke_all('table_alter', $table_id, 'fields', $arg));
+  if (!is_array($fields)) {
+    return '';
+  }
+  for ($i = 0; $i < count($fields); $i++) {
+    $fields[$i]['weight'] = variable_get($table_id .'_'. $fields[$i]['name'] .'_weight', $fields[$i]['weight']);
+  }
+  usort($fields, '_tapir_field_sort');
+  $table_data = $table_id('data', $arg);
+  if (!is_array($table_data)) {
+    $table_data = array();
+  }
+  $data = array_merge($table_data, _tapir_invoke_all('table_alter', $table_id, 'data', $arg));
+  $attributes = $table_id('attributes', $arg);
+
+  foreach ($fields as $field) {
+    if (variable_get($table_id .'_'. $field['name'] .'_enabled', $field['enabled']) == TRUE) {
+      if (!is_array($field['attributes'])) {
+        $field['attributes'] = array();
+      }
+      $header[] = array_merge(array('data' => variable_get($table_id .'_'. $field['name'] .'_title', $field['title'])), $field['attributes']);
+      for ($i = 0; $i < count($data[$field['name']]); $i++) {
+        $rows[$i]['data'][] = $data[$field['name']][$i];
+      }
+    }
+  }
+
+  if (isset($data['#attributes'])) {
+    for ($i = 0; $i < count($data['#attributes']); $i++) {
+      $rows[$i] = array_merge($rows[$i], $data['#attributes'][$i]);
+    }
+  }
+
+  if (isset($data['#footer']) && variable_get($table_id . '_footer', TRUE)) {
+    $rows[] = $data['#footer'];
+  }
+
+  $output = theme('table', $header, $rows, $attributes);
+
+  return $output;
+}
+
+function tapir_get_header($table_id, $arg){
+  if (!function_exists($table_id)) {
+    return;
+  }
+
+  $fields = array_merge($table_id('fields', $arg), _tapir_invoke_all('table_alter', $table_id, 'fields', $arg));
+  if (!is_array($fields)) {
+    return '';
+  }
+  for ($i = 0; $i < count($fields); $i++) {
+    $fields[$i]['weight'] = variable_get($table_id .'_'. $fields[$i]['name'] .'_weight', $fields[$i]['weight']);
+  }
+  usort($fields, '_tapir_field_sort');
+
+  foreach ($fields as $field) {
+    if (variable_get($table_id .'_'. $field['name'] .'_enabled', $field['enabled']) == TRUE) {
+      if (!is_array($field['attributes'])) {
+        $field['attributes'] = array();
+      }
+      $header[] = array_merge(array('data' => variable_get($table_id .'_'. $field['name'] .'_title', $field['title'])), $field['attributes']);
+    }
+  }
+  return $header;
+}
+
+/**
+ * Sort the fields of a table by weight using this function with usort().
+ */
+function _tapir_field_sort($a, $b) {
+  if ($a['weight'] == $b['weight']) {
+    return 0;
+  }
+
+  return ($a['weight'] > $b['weight']) ? 1 : -1;
+}
+
+/**
+ * Perform an invoke_all but pass in the $data by reference.
+ */
+function _tapir_invoke_all($hook, $table_id, $op, &$arg) {
+  $return = array();
+  foreach (module_implements($hook) as $module) {
+    $function = $module .'_'. $hook;
+    $result = $function($table_id, $op, $arg);
+    if (isset($result) && is_array($result)) {
+      $return = array_merge($return, $result);
+    }
+    else if (isset($result)) {
+      $return[] = $result;
+    }
+  }
+
+  return $return;
+}

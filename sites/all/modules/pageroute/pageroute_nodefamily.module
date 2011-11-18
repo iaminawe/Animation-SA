@@ -1,0 +1,234 @@
+<?php
+// $Id: pageroute_nodefamily.module,v 1.2.2.11 2008/09/25 11:35:03 fago Exp $
+
+/**
+ * @file
+ * Creates node relations by using the nodefamily module for all nodes created trough one route
+ */
+
+
+/*
+ * TODO:
+ * Module still in development, for now
+ * it's just possible to associate a pageroute with a node type,
+ * and the progress will be tracked through the states module
+ */
+
+/*
+ * Implementation of hook_menu()
+ * Overwrite node/ID/edit to redirect to the pageroute for editing...
+ */
+function pageroute_nodefamily_menu($may_cache) {
+  global $user;
+
+  if (!$may_cache && arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == 'edit') {
+    $node = node_load(arg(1));
+    $families = variable_get('pageroute_nodefamilies', array());
+    $items = array();
+    if (isset($families[$node->type])) {
+      $path = $families[$node->type] .'/'. $node->nid;
+      $arguments = ($node->uid != $user->uid && user_access('administer nodes')) ? array($path .'/'. $node->uid) : array($path);
+      if (isset($_REQUEST['destination'])) {
+        $arguments[] = drupal_get_destination();
+        unset($_REQUEST['destination']);
+      }
+
+      $items[] = array('path' => 'node/'. arg(1) .'/edit', 'title' => t('Edit'),
+        'callback' => 'drupal_goto',
+        'callback arguments' => $arguments,
+        'access' => node_access('update', $node),
+        'weight' => 1,
+        'type' => MENU_LOCAL_TASK);
+    }
+    return $items;
+  }
+}
+
+/*
+ * Implementation of hook_form_alter()
+ */
+function pageroute_nodefamily_form_alter($form_id, &$form) {
+  /*
+   * pageroute_ui integration
+   */
+  if ($form_id == 'pageroute_ui_route_edit') {
+    //determine default_value
+    $families = variable_get('pageroute_nodefamilies', array());
+    $type = array_search($form['route']['#value']->path, $families);
+
+    $form['nodefamily'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Nodefamily'),
+      '#collapsible' => TRUE,
+      '#description' => t('You can use this pageroute for the creation and editing of nodefamilies. '.
+                          'Just associate this route with a content type, which will be the nodefamily\'s head.'),
+      '#weight' => 1,
+    );
+    $form['nodefamily']['content-type'] = array(
+      '#type' => 'select',
+      '#title' => t('Content type'),
+      '#options' => array(0 => '--') + node_get_types('names'),
+      '#default_value' => $type,
+      '#description' => t('Associate the chosen content type with this route.'),
+    );
+    $form['#validate']['pageroute_nodefamily_route_validate'] = array();
+    $form['#submit']['pageroute_nodefamily_route_submit'] = array();
+  }
+  else if ($form_id == pageroute_ui_route_delete_confirm) {
+    $form['#submit']['pageroute_nodefamily_route_deleted'] = array();
+  }
+  /*
+   * alter the tab-like submit buttons of pageroute
+   */
+  if (isset($form['page']['#value']) && $form['page']['#value']->route->options['track_user']) {
+    $page = $form['page']['#value'];
+
+    //track the user progress already when the form is shown, if the user is able to skip the form
+    if (isset($form['buttons']['cancel'])) {
+      $form['buttons']['cancel']['#after_build'] = array('pageroute_nodefamily_after_build_cancel');
+    }
+  }
+}
+
+function pageroute_nodefamily_after_build_cancel($form_element, &$form_values) {
+  global $page;
+
+  pageroute_nodefamily_track_user_progress($page);
+  return $form_element;
+}
+
+function pageroute_nodefamily_route_validate($form_id, $form_values, $form) {
+  $families = variable_get('pageroute_nodefamilies', array());
+  if (isset($families[$form_values['content-type']])) {
+    if ($form_values['route']->new || $form_values['route']->path != $families[$form_values['content-type']]) {
+      form_set_error('content-type', t('This content type has already an associated pageroute. You can associate each content type with at most one pageroute.'));
+    }
+  }
+}
+
+function pageroute_nodefamily_route_submit($form_id, $form_values) {
+  if (isset($form_values['content-type'])) {
+    $families = variable_get('pageroute_nodefamilies', array());
+    if ($type = array_search($form_values['route']->path, $families)) {
+      unset($families[$type]);
+    }
+    if ($form_values['content-type']) {
+      $families[$form_values['content-type']] = $form_values['path'];
+    }
+    variable_set('pageroute_nodefamilies', $families);
+    if (module_exists('states')) {
+      states_clear_machine_cache();
+    }
+  }
+}
+
+function pageroute_nodefamily_route_deleted($form_id, $form_values) {
+  $families = variable_get('pageroute_nodefamilies', array());
+  if ($type = array_search($form_values['route']->path, $families)) {
+    unset($families[$type]);
+    variable_set('pageroute_nodefamilies', $families);
+    if (module_exists('states')) {
+      states_clear_machine_cache();
+    }
+  }
+}
+
+
+/*
+ * Integration with workflow-ng's state module
+ * Implementation of hook_states()
+ */
+function pageroute_nodefamily_states() {
+  $families = variable_get('pageroute_nodefamilies', array());
+  $machines = array();
+  foreach ($families as $content_type => $path) {
+    $result = db_query("SELECT * FROM {pageroute_routes} WHERE path = '%s'", $path);
+    if ($route = db_fetch_object($result)) {
+      $route->options = unserialize($route->options);
+      if ($route->options['track_user']) {
+        pageroute_update_page_index($route);
+        $pages = array_keys($route->page_index);
+        array_pop($pages); //remove the last page
+
+        $machines['pageroute_nf_'. $content_type] = array(
+          '#label' => 'Nodefamily '. node_get_types('name', $content_type). ' creation state',
+          '#attribute_name' => 'pageroute',
+          '#entity' => 'node',
+          '#types' => array($content_type),
+          //Note that 'Not completed' is an invalid page_name, so we can use it safely here
+          '#states' => array_merge(array('Not completed'), $pages),
+          '#init_state' => 'Not completed',
+        );
+      }
+    }
+  }
+  return $machines;
+}
+
+/*
+ * Implementation of hook_pagerouteapi()
+ */
+function pageroute_nodefamily_pagerouteapi($op, &$a2, $form_values) {
+  global $user;
+  /*
+   * if there is no nid argument for lonely nodefamilies, we prepopulate the nid argument for the given user
+   */
+  if ($op == 'boot') {
+    $route = $a2;
+    $families = variable_get('pageroute_nodefamilies', array());
+    if ($type = array_search($route->path, $families)) {
+      $arg = pageroute_arg($route, 1);
+      if (!isset($arg) || (!$arg && is_numeric($arg))) {
+        $uid = pageroute_arg($route, 2);
+        $uid = (isset($uid) && $user->uid != $uid) ? $uid : $user->uid;
+        if (nodefamily_content_type_get_max($type) == 1 && is_numeric($uid)) {
+          if (($node = node_load(array('type' => $type, 'uid' => $uid))) && node_access('update', $node)) {
+            pageroute_add_new_arg($route, $node->nid, 1);
+          }
+        }
+      }
+    }
+  }
+  /*
+   * track the state of the nodefamily
+   */
+  else if ($op == 'target') {
+    pageroute_nodefamily_track_user_progress($a2);
+  }
+}
+
+/*
+ * Tracks the user progress on the nodefamily
+ */
+function pageroute_nodefamily_track_user_progress($page) {
+  if (module_exists('states') && $page->route->options['track_user']) {
+    $families = variable_get('pageroute_nodefamilies', array());
+    if (($type = array_search($page->route->path, $families)) && is_numeric(pageroute_page_get_nid($page))) {
+      if ($node = node_load(pageroute_page_get_nid($page))) {
+        $state = $node->states['pageroute'];
+        if ($node->type == $type && isset($state)) {
+          $page_index = $page->route->page_index;
+          if ($page_index[$page->name] !== FALSE && (!isset($page_index[$state]) || $page_index[$state] < $page_index[$page->name])) {
+            if (!$page->options['neighbours']['forward']) {
+              states_machine_set_state($node, 'pageroute_nf_'. $type, NULL);
+            }
+            else {
+              states_machine_set_state($node, 'pageroute_nf_'. $type, $page->name);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Gets the state of the nodefamily edited by the current active route
+ */
+function pageroute_nodefamily_get_state($route, $page = NULL) {
+  $nid = isset($page) ? pageroute_page_get_nid($page) : pageroute_arg($route, 1);
+  //load the nodefamily node, on which the state is tracked
+  if ($node = is_numeric($nid) ? node_load($nid) : FALSE) {
+    return $node->states['pageroute'];
+  }
+}

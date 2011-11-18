@@ -1,0 +1,29 @@
+Readme
+------
+
+This is an HTML correcting module. The filter scans the input and makes sure
+all HTML tags are properly nested and closed.
+
+Note: The filter only checks against basic syntax, not against the HTML
+      specification. Non-existant tags or entities will pass as correct.
+      
+
+
+Installation
+------------
+
+1. Copy the htmlcorrector.module to the Drupal modules/ directory. Drupal should
+   automatically detect it.
+
+2. Enable the module in "administer" > "modules".
+
+3. Go to "administer" > "input formats" and enable and configure the module
+   for the desired input format(s).
+   
+   
+
+Author
+------
+
+Steven Wittens <unconed@drop.org>
+

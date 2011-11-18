@@ -1,0 +1,52 @@
+<?php
+// $Id: menu_block.install,v 1.3 2008/08/04 19:56:56 johnalbin Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function menu_block_uninstall() {
+  foreach (variable_get('menu_block_enabled_blocks', array()) AS $delta => $enabled) {
+    variable_del("menu_block_{$delta}_mid");
+    variable_del("menu_block_{$delta}_level");
+    variable_del("menu_block_{$delta}_depth");
+    variable_del("menu_block_{$delta}_expanded");
+  }
+  variable_del('menu_block_enabled_blocks');
+}
+
+/**
+ * Implements hook_install().
+ */
+function menu_block_install() {
+  drupal_set_message(t('To add menu blocks to the administer blocks page, enable them on the <a href="@url">administer menu blocks page</a>.', array('@url' => url('admin/build/menu-block'))));
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Pre-1.0 versions used a different naming convention for block names. Convert
+ * the old names to the new format. An unfortunate side effect of this renaming
+ * is that it disables all the previously enabled blocks.
+ */
+function menu_block_update_5100() {
+  $delta = 0;
+  $enabled_blocks = array();
+
+  // Find the old enabled blocks.
+  foreach (variable_get('menu_block_enabled_blocks', array()) AS $old_delta => $enabled) {
+    list($mid, $level) = explode('-', $old_delta);
+    if ($enabled) {
+      $enabled_blocks[++$delta] = TRUE;
+      variable_set("menu_block_{$delta}_mid", $mid);
+      variable_set("menu_block_{$delta}_level", $level);
+      variable_set("menu_block_{$delta}_depth", variable_get("menu_block_depth_{$mid}_{$level}", 0));
+      variable_set("menu_block_{$delta}_expanded", variable_get("menu_block_expanded_{$mid}_{$level}", 0));
+    }
+    // Remove any of the old-style variables.
+    variable_del("menu_block_depth_{$mid}_{$level}");
+    variable_del("menu_block_expanded_{$mid}_{$level}");
+  }
+  variable_set('menu_block_enabled_blocks', $enabled_blocks);
+
+  return array(0 => array('success' => TRUE, 'query' => t('A pre-release version of Menu block has been detected. All menu blocks from the pre-release version have been given a new delta and are no longer placed in any block regions; their block placement should be re-configured immediately.')));
+}

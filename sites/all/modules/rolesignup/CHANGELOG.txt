@@ -1,0 +1,1 @@
+01-12-2006 Almost a remake of the way this module works.  It now sets a session and uses the normal form.  This means that other modules that change the register page will still work.  The role is defined in a session now, so form_alter can't change it.

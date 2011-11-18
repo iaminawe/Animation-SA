@@ -1,0 +1,10 @@
+name = Bonus: lineage nested
+description = "View type that displays summaries as nested taxonomy trees. Provides a new default view at administer >> views"
+dependencies = views lineage taxonomy
+package = Views
+
+; Information added by drupal.org packaging script on 2008-05-10
+version = "5.x-1.2-alpha2"
+project = "views_bonus"
+datestamp = "1210435225"
+

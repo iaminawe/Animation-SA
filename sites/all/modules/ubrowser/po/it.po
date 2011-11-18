@@ -1,0 +1,202 @@
+# LANGUAGE translation of Drupal (ubrowser.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# No version information was available in the source files.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Ubrowser\n"
+"POT-Creation-Date: 2007-10-27 10:40+0200\n"
+"PO-Revision-Date: 2007-10-27 11:06+0100\n"
+"Last-Translator: Nicola Sanino <nicolasanino@criterianet.net>\n"
+"Language-Team: Italian <criteria@criterianet.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Poedit-Language: Italian\n"
+"X-Poedit-Country: ITALY\n"
+
+#: ubrowser.module:28
+msgid "Browse taxonomy"
+msgstr "Sfoglia tassonomia"
+
+#: ubrowser.module:29
+msgid "Browse taxonomy like a file tree."
+msgstr "Sfoglia la tassonomia come un albero di file."
+
+#: ubrowser.module:37
+msgid "Search nodes"
+msgstr "Cerca nodi"
+
+#: ubrowser.module:38
+msgid "Display search results in the node box."
+msgstr "Mostra risultati di ricerca nel box del nodo."
+
+#: ubrowser.module:46
+msgid "Category browser"
+msgstr "Browser di categoria"
+
+#: ubrowser.module:47
+msgid "Browse nodes in your vocabularies using uBrowser."
+msgstr "Sfoglia i nodi nei tuoi vocabolari utilizzanod uBrowser."
+
+#: ubrowser.module:59
+msgid "Display nodes"
+msgstr "Mostra nodi"
+
+#: ubrowser.module:60
+msgid "Display the child nodes of a taxonomy term."
+msgstr "Mostra i nodi figli di un termine della tassonomia."
+
+#: ubrowser.module:106
+msgid "Make your choices and click display."
+msgstr "Fai le tue scelte e clicca su mostra."
+
+#: ubrowser.module:109
+msgid "PHP to build this uBrowser on a page:"
+msgstr "PHP usato per costruire questo uBrowser in una pagina:"
+
+#: ubrowser.module:190
+msgid "No terms found."
+msgstr "Nessun termine trovato."
+
+#: ubrowser.module:236
+msgid "Select a !category"
+msgstr "Seleziona una !category"
+
+#: ubrowser.module:299;329
+msgid "Select a !category..."
+msgstr "Seleziona una !category..."
+
+#: ubrowser.module:303
+msgid "!Category contains !count !nodes!punctuation"
+msgstr "!Category contiene !count !nodes!punctuation"
+
+#: ubrowser.module:352
+msgid "Select a !nodesg"
+msgstr "Seleziona un !nodesg"
+
+#: ubrowser.module:386
+msgid "Search yielded no results for:"
+msgstr "La ricerca non ha prodotto alcun risultato:"
+
+#: ubrowser.module:391
+msgid "Search yielded 1 result:"
+msgstr "La ricerca ha prodotto 1 risultato:"
+
+#: ubrowser.module:403
+msgid "Search yielded !count results:"
+msgstr "La ricerca ha prodotto !count risultati:"
+
+#: ubrowser.module:437
+msgid "Search"
+msgstr "Cerca"
+
+#: ubrowser.module:466
+msgid "View"
+msgstr "Mostra"
+
+#: ubrowser.module:474
+msgid "Select"
+msgstr "Seleziona"
+
+#: ubrowser.module:482
+msgid "Close"
+msgstr "Chiudi"
+
+#: ubrowser.module:589;927
+msgid "Display uBrowser"
+msgstr "Mostra uBrowser"
+
+#: ubrowser.module:703
+msgid "Vocabulary"
+msgstr "Vocabolario"
+
+#: ubrowser.module:704
+msgid "Select which vocabulary to browse."
+msgstr "Seleziona quale vocabolario sfogliare."
+
+#: ubrowser.module:718
+msgid "Filter by node type"
+msgstr "Filtra per tipo di nodo"
+
+#: ubrowser.module:731
+msgid "Filter results for the following node types"
+msgstr "Filtra i risultati per i seguenti tipi di nodo"
+
+#: ubrowser.module:732
+msgid "Selecting none will display all nodes."
+msgstr "Selezionandone nessuno verranno mostrati tutti i nodi."
+
+#: ubrowser.module:752
+msgid "Select button Javascript"
+msgstr "Seleziona pulsante Javascript"
+
+#: ubrowser.module:753
+msgid "Leave blank for no select button."
+msgstr "Lascia vuoto per nessun pulsante di selezione."
+
+#: ubrowser.module:768
+msgid "Display options"
+msgstr "Mostra opzioni"
+
+#: ubrowser.module:776
+msgid "Display node IDs"
+msgstr "Mostra gli ID nodo"
+
+#: ubrowser.module:789
+msgid "Display the search form"
+msgstr "Mostra il form di ricerca"
+
+#: ubrowser.module:802
+msgid "Display view button"
+msgstr "Mostra il pulsante di visualizzazione"
+
+#: ubrowser.module:815
+msgid "View nodes in new window"
+msgstr "Mostra i nodi nella finestra di visualizzazione"
+
+#: ubrowser.module:828
+msgid "Display close button"
+msgstr "Mostra il pulsante di chiusura"
+
+#: ubrowser.module:841
+msgid "Allow multiple node selection"
+msgstr "Permetti selezione di nodi multipli"
+
+#: ubrowser.module:853
+msgid "CSS class name"
+msgstr "Nome class CSS"
+
+#: ubrowser.module:854
+msgid "Add a CSS class to the browser."
+msgstr "Aggiungi una classe CSS al browser."
+
+#: ubrowser.module:861
+msgid "Alter display terms"
+msgstr "Alter termini di visualizzazione"
+
+#: ubrowser.module:873
+msgid "category"
+msgstr "categoria"
+
+#: ubrowser.module:889
+msgid "node"
+msgstr "nodo"
+
+#: ubrowser.module:905
+msgid "nodes"
+msgstr "nodi"
+
+#: ubrowser.module:1010
+msgid "You must include at least one positive keyword with @count characters or more."
+msgstr "Devi includere almeno una parola positiva con @count o pi&ugrave; caratteri."
+
+#: ubrowser.info:2
+msgid "uBrowser"
+msgstr "uBrowser"
+
+#: ubrowser.info:3
+msgid "Browse taxonomy like a file tree for easy node selection."
+msgstr "Sfoglia la tassonomia come un albero di file per una facile selzione dei nodi."
+

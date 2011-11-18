@@ -1,0 +1,102 @@
+# translation of login_destination-es.po to Spanish
+# $Id: es.po,v 1.1.2.1 2008/01/24 15:29:01 marvil07 Exp $
+# Spanish translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from file: n/a
+#
+# Marco Antonio Villegas Vega <marvil07@gmail.com>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: login_destination-es\n"
+"POT-Creation-Date: 2008-01-24 09:48-0500\n"
+"PO-Revision-Date: 2008-01-24 10:11-0500\n"
+"Last-Translator: Marco Antonio Villegas Vega <marvil07@gmail.com>\n"
+"Language-Team: Spanish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: login_destination.module:35
+msgid "Login destination"
+msgstr "Destino al ingresar al sistema"
+
+#: login_destination.module:36
+msgid "Configure where user will go after login."
+msgstr "Configurar dónde irá el usurario luego de ingresar al sistema."
+
+#: login_destination.module:56
+msgid "URL destination settings"
+msgstr "Opciones de la URL de destino"
+
+#: login_destination.module:57
+msgid "This is to specify where exactly user should be redirected upon login."
+msgstr "Ésto es para especificar exactamente hacia dónde debe ser redirigido el usuario luego de ingresar al sistema."
+
+#: login_destination.module:63
+msgid "Static URL"
+msgstr "URL estática"
+
+#: login_destination.module:64;88
+#, fuzzy
+msgid "PHP snippet (experts only)"
+msgstr "PHP snippet (sólo expertos)"
+
+#: login_destination.module:70
+msgid "URL"
+msgstr "URL"
+
+#: login_destination.module:73
+msgid "<b>Static URL mode:</b> Enter a static path. Example paths are %ex1 or %ex2."
+msgstr "<b>Modo URL estática:</b> Ingrese una dirección estática. ejemplos de rutas son %ex1 o %ex2."
+
+#: login_destination.module:74
+msgid "<b>PHP snippet mode:</b> Enter PHP code to evaluate path. It should return string value (<b>NO %php tags!</b>)."
+msgstr "<b>Modo PHP snippet:</b> Ingrese código PHP para evaluar la ruta. Debería devolver un valor de tipo cadena (<b>NO incluya etiquetas %php !</b>)."
+
+#: login_destination.module:79
+msgid "Redirection condition settings"
+msgstr "Opciones para la condición de redirección"
+
+#: login_destination.module:80
+msgid "Set the condition to determine whether redirection should happen or not."
+msgstr "Establecer la condición para determinar si la redirección debe suceder o no."
+
+#: login_destination.module:86
+msgid "Always"
+msgstr "Siempre"
+
+#: login_destination.module:87
+msgid "List of paths"
+msgstr "Lista de rutas"
+
+#: login_destination.module:94
+msgid "Redirect condition"
+msgstr "Condición de redirección"
+
+#: login_destination.module:97
+msgid "<b>Always:</b> Redirection happens always. Redirect condition field is ignored."
+msgstr "<b>Siempre:</b> La redirección sucede siempre. El campo de condición de redirección se ignora."
+
+#: login_destination.module:98
+msgid "<b>List of paths mode:</b> Enter a list of paths, one path per one line. Redirection will happen only when logging from specified pages. Example paths are %ex1 or %ex2."
+msgstr "<b>Modo de lista de rutas:</b> Ingrese una lista de rutas, una ruta por línea. La redirección sucederá sólo cuando se esté ingresando al sistema desde las páginas especificadas. Ejemplos de rutas son %ex1 o %ex2."
+
+#: login_destination.module:99
+msgid "<b>PHP snippet mode:</b> Enter PHP code to find should redirection happen or not (<b>NO %php tags!</b>). It should return boolean value."
+msgstr "<b>Modo PHP snippet :</b> Ingrese código PHP para determinar si la redirección deberá suceder o no (<b>NO ingrese etiquetas %php !</b>). Deberá devolver un valor booleano."
+
+#: login_destination.module:0
+#, fuzzy
+msgid "login_destination"
+msgstr "login_destination"
+
+#: login_destination.info:0
+msgid "Login Destination"
+msgstr "Destino al ingresar al sistema"
+
+#: login_destination.info:0
+msgid "Controls which URL users will be redirected upon login."
+msgstr "Controla a qué URL serán redireccionados los usuarios luego de ingresar al sistema. "
+

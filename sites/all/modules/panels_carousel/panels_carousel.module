@@ -1,0 +1,161 @@
+<?php
+// $Id $
+
+/**
+ * @file
+ * Definition of the 'carousel' panel style.
+ */
+
+//----------------------------------------------------------------------------
+// Panels hooks.
+
+/**
+ * Implementation of hook_panels_panel_style_info().
+ */
+function panels_carousel_panels_panel_style_info() {
+  return array(
+    'carousel' => array(
+      'title' => t('Carousel'),
+      'description'       => t('Presents the panes in a carousel.'),
+      'render panel'      => 'panels_carousel_style_render_panel',
+      'settings form'     => 'panels_carousel_style_settings_form',
+      'settings validate' => 'panels_carousel_style_settings_validate',
+    ),
+  );
+}
+
+/**
+ * Render callback.
+ */
+function theme_panels_carousel_style_render_panel($display, $panel_id, $panes, $settings) {
+  $output = '';
+
+  // Add the JS to make jCarousel do its thing!
+  jcarousel_add();
+  drupal_add_js(drupal_get_path('module', 'panels_carousel') .'/panels_carousel.js');
+
+  // Save the settings for the carousel, these will be used by the JS.
+  drupal_add_js(
+    array(
+      'jcarousel' => array(
+        $panel_id => array(
+          'selector' => ".panels-mini-$panel_id",
+          'settings' => array(
+            'animation' => (isset($settings['animation'])) ? intval($settings['animation']) : 750,
+            'auto' => (isset($settings['auto'])) ? intval($settings['auto']) : 0,
+            'easing' => 'QuartEaseOut',
+            'scroll' => (isset($settings['scroll'])) ? intval($settings['scroll']) : 1,
+            'vertical' => ($settings['orientation'] == 'vertical'),
+            'visible' => (isset($settings['visible'])) ? intval($settings['visible']) : 1,
+            'wrap' => ($settings['wrap'] != 'none') ? $settings['wrap'] : NULL,
+          ),
+        ),
+      ),
+    ),
+    'setting'
+  );
+  
+  // Add the CSS for the skin that will be used.
+  $skin = 'default'; // @TODO: as soon as another skin is contributed, the user should be able to select which skin to use.
+  drupal_add_css(drupal_get_path('module', 'panels_carousel') ."/skins/$skin/skin.css");
+
+  // Render the items of the carousel.
+  $items = array();
+  foreach ($panes as $pane_id => $pane) {
+    $items[] = theme('panels_pane', $pane, FALSE, $display);
+  }
+  $output .= theme('item_list', $items, NULL, 'ul', array('class' => "jcarousel jcarousel-skin-$skin panels-mini-$panel_id"));
+  
+  return $output;
+}
+
+/**
+ * Settings form callback.
+ */
+function panels_carousel_style_settings_form($settings) {
+  $form = array();
+  $form['orientation'] = array(
+    '#type' => 'select',
+    '#title' => t('Orientation'),
+    '#options' => array('horizontal' => t('Horizontal'), 'vertical' => t('Vertical')),
+    '#description' => t(
+      'Specifies wether the carousel appears in horizontal or vertical
+      orientation. Changes the carousel from a left/right style to a
+      up/down style carousel.'
+    ),
+    '#default_value' => (isset($settings['orientation'])) ? $settings['orientation'] : 'horizontal',
+  );
+  $form['visible'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Visible items'),
+    '#description' => t('The number of items that will be visible.'),
+    '#size' => 5,
+    '#default_value' => (isset($settings['visible'])) ? $settings['visible'] : 1,
+  );
+  $form['scroll'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Scrolled items'),
+    '#description' => t('The number of items to scroll by.'),
+    '#size' => 5,
+    '#default_value' => (isset($settings['scroll'])) ? $settings['scroll'] : 1,
+  );
+  $form['auto'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Autoscroll'),
+    '#size' => 5,
+    '#description' => t(
+      'Specifies how many seconds to periodically autoscroll the content.
+      If set to 0 (default) then autoscrolling is turned off.'
+    ),
+    '#default_value' => (isset($settings['auto'])) ? $settings['auto'] : 0,
+  );
+  $form['animation'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Animation speed'),
+    '#size' => 10,
+    '#description' => t(
+      'The speed of the scroll animation in milliseconds. If set to 0,
+      animation is turned off.'
+    ),
+    '#default_value' => (isset($settings['animation'])) ? $settings['animation'] : 750,
+  );
+  $form['wrap'] = array(
+    '#type' => 'select',
+    '#title' => t('Wrap style'),
+    '#description' => t(
+      'Specifies whether to wrap at the first/last item (or both) and jump
+      back to the start/end. Options are "first", "last" or "both" as
+      string. For a circular carousel, choose "circular".'
+    ),
+    '#options' => array(
+      'none' => t('None'),
+      'first' => t('First'),
+      'last' => t('Last'),
+      'both' => t('Both'),
+      'circular' => t('Circular'),
+    ),
+    '#default_value' => (isset($settings['wrap'])) ? $settings['wrap'] : 'none',
+  );
+  return $form;
+}
+
+/**
+ * Settings form validation callback.
+ */
+function panels_carousel_style_settings_validate($settings, $form, $form_values) {
+  if (!is_numeric($form_values['animation']) || $form_values['animation'] < 0) {
+    form_error($form['animation'], t('The speed animation setting must be numeric and cannot be negative.'));
+  }
+  if (!is_numeric($form_values['auto']) || $form_values['auto'] < 0) {
+    form_error($form['auto'], t('The autoscroll setting must be numeric and cannot be negative.'));
+  }
+  if (!in_array($form_values['orientation'], array('horizontal', 'vertical'))) {
+    form_error($form['orientation'], t('The orientation is invalid, it must be either <em>horizontal</em> or <em>vertical</em>.'));
+  }
+  if (!is_numeric($form_values['scroll']) || $form_values['scroll'] < 1) {
+    form_error($form['scroll'], t('The number of items to scroll by must be numeric and at least 1.'));
+  }
+  if (!is_numeric($form_values['visible']) || $form_values['visible'] < 1) {
+    form_error($form['visible'], t('The number of visible items must be numeric and at least 1.'));
+  }
+}

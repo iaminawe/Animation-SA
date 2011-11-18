@@ -1,0 +1,4 @@
+name = Global Redirect Admin
+description = Provides a seperate administration module for Global Redirect for configuring option
+dependencies = globalredirect
+package = Global Redirect

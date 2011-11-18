@@ -1,0 +1,50 @@
+<?php
+// $Id: views_bonus_sparkline.module,v 1.1.2.2 2008/05/10 14:08:30 dmitrig01 Exp $
+
+function views_bonus_sparkline_views_style_plugins() {
+  $items['bonus_sparkline'] = array(
+    'name' => t('Bonus: Sparkline View'),
+    'theme' => 'views_bonus_view_sparkline',
+    'validate' => 'views_ui_plugin_validate_list',
+    'needs_fields' => true,
+  );
+  return $items;
+}
+
+function theme_views_bonus_view_sparkline($view, $nodes, $type) {
+  $fields = _views_get_fields();
+  $content = '<div class="view-sparklines view-sparklines-' . $view->name . '">';
+  
+  $fields = _views_get_fields();
+  $elements = sparkline_elements();
+  $output = array();
+
+  // Set default style.
+  $style = isset($view->sparkline_style) ? $view->sparkline_style : 'bar';
+  // Some misc. bits to customize. 
+  $caption_position = isset($view->caption_position) ? $view->caption_position : 'title';
+  $height = isset($view->height) ? $view->height : 20;
+  $width = isset($view->width) ? $view->height : 'auto';
+
+  foreach ($view->field as $field) {
+    if ($fields[$field['id']]['visible'] !== FALSE) {
+      $output[$field[queryname]] = $elements['sparkline_'. $style];
+    
+      if ($field['label']) {
+        $output[$field[queryname]]["#$caption_position"] = $field['label'];
+      }
+      $output[$field[queryname]]['#height'] = $height;
+      $output[$field[queryname]]['#width'] = $width;
+
+      foreach($nodes as $node) {
+        $data = views_theme_field('views_handle_field', $field['queryname'], $fields, $field, $node, $view);
+        $output[$field[queryname]]['#data'][] = is_numeric($data) ? $data : 0;
+      }
+    }
+  }
+
+  $content .= drupal_render($output);
+  $content .= '</div>';
+  
+  return $content;
+}

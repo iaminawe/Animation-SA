@@ -1,0 +1,865 @@
+<?php
+// $Id: pageroute.module,v 1.39.2.33 2007/11/06 15:52:28 fago Exp $
+
+/**
+ * @file
+ * Allows the creation of pageroutes.
+ */
+
+/*
+ * some defines used for determing the redirect target
+ */
+define('PAGEROUTE_BACK', -1);
+define('PAGEROUTE_CURRENT', 0);
+define('PAGEROUTE_FORWARD', 1);
+define('PAGEROUTE_NONE', FALSE);
+/*
+ * tabs config defines
+ */
+define('PAGEROUTE_BUTTON_TABS', 1);
+define('PAGEROUTE_MENU_TABS', 2);
+
+// include own page type implementations
+include_once(drupal_get_path('module', 'pageroute') .'/pageroute_pages.inc');
+
+/*
+ * Get a list of all pageroute page types.
+ * @param $op One of list, base, or all.
+ */
+function pageroute_get_types($op = 'list') {
+  static $type_list, $type_base, $types;
+
+  if (!isset($type_list)) {
+    $page_types = module_invoke_all('pageroute_info');
+    foreach ($page_types as $type_id => $type) {
+      $type_list[$type_id] = $type['name'];
+      $type_base[$type_id] = $type['base'];
+      $types[$type_id] = $type;
+    }
+  }
+  switch ($op) {
+    case 'list':
+      return $type_list;
+    case 'base':
+      return $type_base;
+    default:
+      return $types;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function pageroute_menu($may_cache) {
+  global $user, $_menu;
+
+  if ($may_cache) {
+    $items = array();
+    $result = db_query("SELECT * FROM {pageroute_routes}");
+
+    while ($route = db_fetch_object($result)) {
+      $route->options = unserialize($route->options);
+      $access = array_intersect(array_keys($user->roles), $route->options['access']['allowed_roles']) ? TRUE : FALSE;
+      $items[$route->prid] = array(
+        'path' => $route->path,
+        'title' => $route->path,
+        'callback' => 'pageroute_show_route',
+        'access' =>  $access,
+        'type' => MENU_NORMAL_ITEM,
+      );
+      if ($access) {
+        //add the route as argument
+        pageroute_update_page_index($route);
+        $items[$route->prid]['callback arguments'] = array($route);
+      }
+    }
+    return $items;
+  }
+  /*
+   * We print drupal menu tabs for pages !$may_cache so we can generate the tabs
+   * with proper pageroute path arguments appended
+   */
+  else if (!$may_cache) {
+    //Search, if we are inside a pageroute by using the cached menu items in $_menu
+    $path = $_GET['q'];
+    while ($path && !isset($_menu['callbacks'][$path])) {
+      $path = substr($path, 0, strrpos($path, '/'));
+    }
+    if ($_menu['callbacks'][$path]['callback'] == 'pageroute_show_route') {
+      //we are inside a pageroute
+      $route = $_menu['callbacks'][$path]['callback arguments'][0];
+      if ($route->options['tabs'] == PAGEROUTE_MENU_TABS) {
+        $page_name = _pageroute_init_route($route);
+        $path_arguments = _pageroute_get_path_argument($route);
+
+        foreach ($route->pages as $index => $data) {
+          if (!isset($data['no_tab']) || !$data['no_tab']) {
+            $items[] = array(
+              'path' => $route->path .'/'. $data['name'] . $path_arguments,
+              'title' => $data['title'] ? $data['title'] : $data['name'],
+              'callback' => 'pageroute_show_route',
+              'callback arguments' => array($route),
+              'access' =>  isset($route->page_access[$data['name']]) ? $route->page_access[$data['name']] : TRUE,
+              'type' => MENU_LOCAL_TASK,
+              'weight' => $index,
+            );
+          }
+        }
+      }
+    }
+    return $items;
+  }
+}
+
+/*
+ * Gets the substring, that contains all pageroute arguments to the routes path
+ */
+function _pageroute_get_path_argument($route) {
+
+  $path_arguments = '';
+  $i = 1;
+  while (($arg = pageroute_arg($route, $i)) != NULL) {
+    $path_arguments .= '/'. $arg;
+    $i++;
+  }
+  return $path_arguments;
+}
+
+/*
+ * Initializes a route: take care for the arg_offset and then boot!
+ * @return $page_name
+ */
+function _pageroute_init_route(&$route) {
+  //get the page name
+  $page_name = pageroute_arg($route, 0);
+  if (!isset($route->page_index[$page_name])) {
+      //this page name doesn't even exist, so we interprete it as argument
+      $route->options['arg_offset']--;
+  }
+  //allow modules to customize runtime page access and other stuff
+  pageroute_invoke_all('boot', $route, $page_name);
+  return $page_name;
+}
+
+/*
+ * Shows the given route
+ */
+function pageroute_show_route(&$route) {
+  global $page;
+
+  //if menu tabs are used, the route has already been initialized
+  if ($route->options['tabs'] != PAGEROUTE_MENU_TABS) {
+    $page_name = _pageroute_init_route($route);
+  }
+  else {
+    $page_name = pageroute_arg($route, 0);
+  }
+  if (!pageroute_page_access($route, $page_name)) {
+    $page_name = pageroute_get_default_page_name($route);
+    if ($route->options['tabs'] == PAGEROUTE_MENU_TABS) {
+      //we have to redirect directly to the path so that the tab system can determine the active tab
+      drupal_goto($route->path. '/'. $page_name . _pageroute_get_path_argument($route), pageroute_get_new_destination($route));
+    }
+  }
+  if (isset($route->page_index[$page_name])) {
+    $page = pageroute_load_page($page_name, $route);
+
+    //add css
+    $path = drupal_get_path('module', 'pageroute') .'/pageroute.css';
+    drupal_add_css($path, 'module', 'all', FALSE);
+
+    if ($page->title) {
+      drupal_set_title(check_plain($page->title));
+    }
+    return drupal_get_form('pageroute_page_'. $page_name .'_form', $route, $page);
+  }
+  else {
+    return t('There are no pages defined for this pageroute.');
+  }
+}
+
+/*
+ * Implementation of hook_forms()
+ */
+function pageroute_forms() {
+  global $page;
+
+  $forms = array();
+  //just add the ids of all pages of the active route
+  if (isset($page) && isset($page->route)) {
+    foreach(array_keys($page->route->page_index) as $page_name) {
+      $forms['pageroute_page_'. $page_name .'_form'] = array(
+        'callback' => 'pageroute_page_form',
+      );
+    }
+  }
+  return $forms;
+}
+
+/*
+ * Returns the form array of a page by invoking the page type's implementation
+ */
+function pageroute_page_form($route, $page) {
+  $bases = pageroute_get_types('base');
+  $function = $bases[$page->type] .'_page_'. $page->type;
+
+  if (function_exists($function)) {
+    //for most page types the arg_offset will always be 1, so we default to one
+    $page->arg_offset = 1;
+
+    pageroute_invoke_all('show', $page);
+
+    //add tabs, buttons and other pageroute stuff
+    pageroute_decorate($form, $page);
+
+    //first submit the subforms, then the pageroute form
+    $form['#submit'] = array(
+      'subform_element_submit' => array(),
+      'pageroute_page_form_submit_prepare_target' => array(),
+      'pageroute_page_form_submit_redirect' => array(),
+    );
+    $form = $function($route, $page, $form);
+    return $form;
+  }
+  else {
+    return array(
+      'error' => array(
+        '#type' => 'markup',
+        '#value' => t('Error while generationg the page. Perhaps a module is missing.'),
+      ),
+    );
+  }
+}
+
+/*
+ * Prepare for the submit function. This is also a #submit callback
+ * It will determine the redirect target.
+ */
+function pageroute_page_form_submit_prepare_target($form_id, &$form_values) {
+  $page = &$form_values['page'];
+
+  if ($form_values['page_op']) {
+    //a pageroute back/forward button has been pressed
+    $target = $form_values['page_op'] == t($page->options['back']) ? PAGEROUTE_BACK : PAGEROUTE_FORWARD; 
+  }
+  else if ($page->route->options['tabs']) {
+    foreach (array_keys($page->route->page_index) as $page_name) {
+      if ($form_values['tabs_op_'. $page_name]) {
+        //a tab-like submit button has been pressed
+        $target = pageroute_create_path($page, $page_name);
+      }
+    }
+  }
+
+  if (isset($target)) {
+    $form_values['target'] = $target;
+  }
+  //let the page type customize the target
+  $return_value = pageroute_invoke($page, 'target', $form_values);
+  if (isset($return_value)) {
+    $form_values['target'] = $return_value;
+  }
+  //let other modules force another target
+  $return_value = pageroute_invoke_all('target', $page, $form_values);
+  if (isset($return_value)) {
+    $form_values['target'] = $return_value;
+  }
+}
+
+/*
+ * Submit function for all pageroute forms.
+ * Redirect to the set target.
+ */
+function pageroute_page_form_submit_redirect($form_id, &$form_values) {
+  $page = &$form_values['page'];
+
+  //clear the drupal messages
+  pageroute_clear_messages($page);
+
+  //track how far the user has ever gone through the route using the states module
+  pageroute_track_user_progress($page);
+
+  //get the redirect path for the target
+  $path = pageroute_get_path_for_redirect_target($page, $form_values['target']);
+
+  if (isset($path)) {
+    if ($destination = pageroute_get_new_destination($page->route)) {
+      //handle the destination parameter
+      if ($form_values['target'] == PAGEROUTE_FORWARD && !$page->options['neighbours']['forward']) {
+        //this was the last page - redirect to the destination
+        return parse_url(urldecode(pageroute_get_new_destination($page->route, FALSE)));
+      }
+      return array($path, $destination);
+    }
+    return $path;
+  }
+}
+
+/*
+ * Generates a path for the given redirect target, which
+ * may be already a path or a defined target constant 
+ */
+function pageroute_get_path_for_redirect_target($page, $target) {
+  if (is_numeric($target)) {
+    switch ($target) {
+      case PAGEROUTE_BACK:
+        $back = $page->options['neighbours']['back'];
+        while ($back && !pageroute_page_access($page->route, $back)) {
+          $index = $page->route->page_index[$back];
+          $back = $page->route->pages[$index - 1]['name'];
+        }
+        if ($back) {
+          return pageroute_create_path($page, $back);
+        }
+        break;
+      case PAGEROUTE_CURRENT:
+        return pageroute_get_path($page);
+      case PAGEROUTE_FORWARD:
+        if (!$page->options['neighbours']['forward']) {
+          return pageroute_get_redirect_path($page);
+        }
+        else {
+          $forward = $page->options['neighbours']['forward'];
+          while ($forward && !pageroute_page_access($page->route, $forward)) {
+            $index = $page->route->page_index[$forward];
+            $forward = $page->route->pages[$index + 1]['name'];
+          }
+          if ($forward) {
+            return pageroute_create_path($page, $forward);
+          }
+        }
+        return pageroute_get_redirect_path($page);
+    }
+  }
+  else if ($target == PAGEROUTE_NONE) {
+    return NULL;
+  }
+  //else the target is already a ready to use path
+  return $target;
+}
+
+/*
+ * If set, this functions keeps the destination parameter from being applied throuugh drupal_goto.
+ * In this case it returns the destination parameter for the next page. Note that the destination
+ * parameter is saved so you can call this function more times without loosing the destination.
+ * It will never urlencode the destination
+ * 
+ * @$query If the returned destination parameter should be suitable for use as query parameter
+ */
+function pageroute_get_new_destination($route, $query = TRUE) {
+  static $destination;
+
+  if (!isset($destination) && $route->options['destination'] && isset($_REQUEST['destination'])) {
+    $destination = $_REQUEST['destination']; //don't urlencode!
+    unset($_REQUEST['destination']);
+  }
+  if (isset($destination)) {
+    return $query ? 'destination='. $destination : $destination;
+  }
+}
+
+/*
+ * Determines the redirect path, to which the user will be routed after the pageroute
+ */
+function pageroute_get_redirect_path($page) {
+  if (!empty($page->route->options['redirect_path'])) {
+    return strtr($page->route->options['redirect_path'], array(
+      '!nid' => intval(pageroute_page_get_nid($page)),
+      '!uid' => intval(pageroute_page_get_uid($page)),
+    ));
+  }
+  if ($nid = pageroute_page_get_nid($page)) {
+    if (is_numeric($nid)) {
+      return 'node/'. $nid;
+    }
+  }
+  if ($uid = pageroute_page_arg($page, 1)) {
+    if (is_numeric($uid)) {
+      return 'user/'. $uid;
+    }
+  }
+  return '<front>';
+}
+
+
+/*
+ * Wrapper around arg()
+ * Get the next arguments after the route path with $index >= 1
+ * (Argument 0 is usually the page name)
+ */
+function pageroute_arg(&$route, $index) {
+  if (isset($route->_new_arg[$index])) {
+    return $route->_new_arg[$index];
+  }
+  else {
+    return arg($route->options['arg_offset'] + $index);
+  }
+}
+
+/*
+ * Wrapper around arg()
+ * Get the next argument after all page arguments
+ * @param $index Starting with 0
+ */
+function pageroute_page_arg($page, $index) {
+  return pageroute_arg($page->route, $page->arg_offset + $index);
+}
+
+/*
+ * Allows pages to add new arguments.
+ * They will be used for the generation of the next path.
+ */
+function pageroute_add_new_arg(&$route, $arg, $index) {
+  $i = 0;
+  while ($i < $index && is_null(pageroute_arg($route, $i))) {
+    $route->_new_arg[$i] = 0;
+    $i++;
+  }
+  $route->_new_arg[$index] = $arg;
+}
+
+/*
+ * The second page argument is the uid, for which the page should be loaded.
+ * This function shall be used to get it
+ *
+ * @param $page The page object
+ * @param $permission An optional permission, which will be used for access checking, if the
+ *   pageroute is used for not the active user. If the access check fails, the active user's uid
+ *   will be returned.
+ */
+function pageroute_page_get_uid($page, $permission = FALSE) {
+  global $user;
+  $uid = pageroute_page_arg($page, 1);
+  if (is_numeric($uid) && $uid) {
+    if ($uid != $user->uid && $permission && user_access($permission)) {
+      return $uid;
+    }
+    else if (!$permission) {
+      return $uid;
+    }
+  }
+  return $user->uid;
+}
+
+/*
+ * Returns the first page argument, the node id
+ */
+function pageroute_page_get_nid($page) {
+  $arg = pageroute_page_arg($page, 0);
+  return is_numeric($arg) ? $arg : NULL;
+}
+
+
+/*
+ * Gets the default path of the current page
+ */
+function pageroute_get_path(&$page) {
+  return pageroute_create_path($page, $page->name);
+}
+
+/*
+ * Creates a path while keeping all arguments
+ * @param $page The page object of the current page
+ * @param $next The string, e.g. page name for the next page
+ */
+function pageroute_create_path(&$page, $next) {
+  
+  $path = array($page->route->path, $next);
+  
+  $arg = pageroute_page_arg($page, $index = 0);
+  while (isset($arg)) {
+    $path[] = $arg;
+    $arg = pageroute_page_arg($page, ++$index);
+  }
+  return implode('/', $path);  
+}
+
+/*
+ * Loads the page list for a route
+ */
+function pageroute_update_page_index(&$route) {
+  $result = db_query("SELECT * FROM {pageroute_pages} WHERE prid = %d ORDER BY weight, name", $route->prid);
+
+  $index = 0; $route->pages = array(); $route->page_index = array(); $route->page_access = array();
+  while ($page = db_fetch_object($result)) {
+    $page->options = unserialize($page->options);
+
+    if (isset($page->options['activated']) && !$page->options['activated']) {
+      //add deactivated pages to the page_index, but don't give them an index
+      //so this pages are reachable, but we won't route to them
+      $route->page_index[$page->name] = FALSE;
+      continue;
+    }
+
+    $route->pages[$index] = array('name' => $page->name, 'title' => $page->title, 'type' => $page->type);
+    if ($route->options['tabs'] && isset($page->options['no_tab']) && $page->options['no_tab']) {
+      $route->pages[$index]['no_tab'] = TRUE;
+    }
+    $route->page_index[$page->name] = $index;
+    $index++;
+  }
+}
+
+
+/*
+ * Invokes hook_pagerouteapi()
+ * 
+ * Currently available operations:
+ *   (*) boot: The route has just been invoked
+ *   (*) show: This is called before a page is rendered.
+ *   (*) target: The redirect target is calculated and may be forced to another value!
+ */
+function pageroute_invoke_all($op, &$a2, $a3 = NULL) {
+  foreach (module_implements('pagerouteapi') as $module) {
+    $function = $module .'_pagerouteapi';
+    $result = $function($op, $a2, $a3);
+    if (isset($result)) {
+      $return = $result;
+    }
+  }
+  return $return;
+}
+
+/*
+ * Invokes a page type specific implementation, if it exists
+ * @param $page The page object or the page's type
+ * @param $op The operation that should be invoked
+ */
+function pageroute_invoke($page, $op, $arg1 = NULL) {
+  $type = is_object($page) ? $page->type : $page;
+  $bases = pageroute_get_types('base');
+  $function = $bases[$type] .'_page_'. $type .'_'. $op;
+  if (function_exists($function)) {
+    if (is_object($page)) {
+      return $function($page->route, $page, $arg1);
+    }
+    else {
+      return $function($arg1);
+    }
+  }
+}
+
+
+/*
+ * Add tabs, buttons and other necessary properties to the form.
+ */
+function pageroute_decorate(&$form, $page, $button_name = 'page_op') {
+  //initialize the redirect target with its default value
+  $types = pageroute_get_types('all');
+  $default_target = isset($types[$page->type]['default_target']) ? $types[$page->type]['default_target'] : PAGEROUTE_CURRENT;
+  $form['target'] = array('#type' => 'value', '#value' => $default_target);
+  $form['page'] = array('#type' => 'value', '#value' => $page);
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  $id = 'pageroute-page-'. $page->route->path .'-'. $page->name .'-form'; //generate a unique id
+  $form['#id'] = preg_replace('/[^A-Za-z0-9:.-]/', '-', $id);
+  pageroute_add_tabs($form, $page);
+  pageroute_add_buttons($form, $page, $button_name);
+  pageroute_get_new_destination($page->route); //make sure that the destination parameter get's removed in any case
+}
+
+/*
+ * Add the pageroute buttons to a given form.
+ */
+function pageroute_add_buttons(&$form, $page, $button_name = 'page_op') {
+  //get the right options first
+  $options = pageroute_invoke($page, 'options');
+  $options = (isset($options)) ? $options : $page->options;
+
+  foreach (array('back', 'forward') as $key => $name) {
+    if (!$options[$name]) {
+      continue; //this button has been disabled
+    }
+    //apply page type specific settings if available
+    if (!isset($options['show_route_buttons'])) {
+      if (!$page->options['neighbours'][$name] && $name == 'back') {
+        continue; //there is no previous page, so don't show the button
+      }
+    }
+    else if (!$options['show_route_buttons']) {
+        continue;
+    }
+    $form['buttons'][$name]['#attributes']['class'] = 'pageroute-'. $name;
+    $form['buttons'][$name]['#type'] = 'submit';
+    $form['buttons'][$name]['#value'] = t($options[$name]);
+    $form['buttons'][$name]['#name'] = $button_name;
+    $form['buttons'][$name]['#weight'] = 10 + $key;
+  }
+  if (isset($options['cancel']) && $options['cancel']) {
+    //also add an cancel link that links to the default redirect target
+    $form['buttons']['cancel']['#process']['pageroute_process_cancel_link'] = array($options['cancel'], $form['target']['#value']); 
+  }
+  if ($form['buttons']) {
+    $form['buttons']['#prefix'] = '<span class="pageroute_buttons">';
+    $form['buttons']['#suffix'] = '</span>';
+    $form['buttons']['#weight'] = 50;
+  }
+}
+
+/*
+ * #proccess function for the cancel link
+ * We have to do this with #process, because the page type implementation needs to have the possibility to
+ * adapt $page->arg_offset before we can get the right redirect targets
+ * Note that we also track the user progress as soon as this gets built - as the user can cancel this form
+ * he isn't forced to submit it before he can proceed
+ */
+function pageroute_process_cancel_link($form_element, $form_values, $cancel, $target) {
+  global $page;
+
+  pageroute_track_user_progress($page);
+  $link = l(t($cancel), pageroute_get_path_for_redirect_target($page, $target), array(), pageroute_get_new_destination($page->route));
+  $form_element += array('#value' => $link, '#weight' => 9);
+  return $form_element;
+}
+
+
+/*
+ * Add the pageroute tabs to a given form.
+ */
+function pageroute_add_tabs(&$form, $page)  {
+
+  if ($page->route->options['tabs'] != PAGEROUTE_BUTTON_TABS || $page->route->tabs_displayed) {
+    return;
+  }
+  //mark as displayed
+  $page->route->tabs_displayed = TRUE;
+
+  foreach ($page->route->pages as $index => $data) {
+    if ((!isset($data['no_tab']) || !$data['no_tab'])) {
+      $form['tabs'][$data['name']] = array(
+        '#type' => 'submit',
+        '#value' => $data['title'] ? $data['title'] : $data['name'],
+        '#name' => 'tabs_op_'. $data['name'],
+      );
+      if (!pageroute_page_access($page->route, $data['name'])) {
+        $form['tabs'][$data['name']]['#attributes'] = array('class' => 'distant');
+        $form['tabs'][$data['name']]['#disabled']   = TRUE;        
+      }
+      else if ($data['name'] == $page->name) {
+        $form['tabs'][$data['name']]['#attributes'] = array('class' => 'active');
+      }
+    }
+  }
+  $form['tabs']['#weight'] = -100;
+  $form['tabs']['#theme'] = 'pageroute_route_tabs';
+}
+
+/*
+ * Themes the tab-like submit buttons of a route.
+ * @param $elements The form elements of the tabs
+ */
+function theme_pageroute_route_tabs($elements) {
+  $elements['#prefix'] = '<div class="pageroute-tabs">';
+  $elements['#suffix'] = '</div>';
+  return drupal_render($elements);
+}
+
+/*
+ * Gets the $page object from the database
+ * @params $page_name The page's name
+ * @params $route The page's route
+ */
+function pageroute_load_page($page_name, $route) {
+  $page = db_fetch_object(db_query("SELECT * FROM {pageroute_pages} WHERE name = '%s' AND prid = %d", $page_name, $route->prid));
+  $page->route = &$route;
+  $page->options = unserialize($page->options);
+  return $page;
+}
+
+/*
+ * Exits properly by invoking hook_exit before exiting
+ */
+function pageroute_exit_now() {
+  module_invoke_all('exit');
+  exit;
+}
+
+/*
+ * Implementation of hook_form_alter().
+ * Apply the settings for node edit/add forms used in a page type and add the help text
+ */
+function pageroute_form_alter($form_id, &$form) { 
+  global $page;
+
+  if (isset($form['type']) && pageroute_page_uses_content_type($page, $form['type']['#value'])
+      && ($form_id == 'node_form' || $form_id == $form['type']['#value'] .'_node_form')) {
+    //this is a node form viewed during a pageroute
+
+    //add help text, because node.module only shows that for node/add/* forms
+    $type = node_get_types('type', $page->options['content-type']);
+    if ($type->help) {
+      $form['help'] = array(
+        '#prefix' => '<div class="help">', // the same as in theme_help()
+        '#value'  => '<p>'. filter_xss_admin($type->help) .'</p>',
+        '#suffix' => '</div>',
+        '#weight' => -90,
+      );
+    }
+
+    //get the options and apply them to the form
+    $options = pageroute_invoke($page, 'options');
+    $options = (isset($options)) ? $options : $page->options;
+
+    foreach (array('preview', 'submit') as $name) {
+      if (!$options[$name]) {
+        unset($form[$name]);
+      }
+    }
+    if ($options['nodelete'] && $form['delete']) {
+      unset($form['delete']);
+    }
+  }
+}
+
+/*
+ * Returns if the page makes use of the given content type
+ */
+function pageroute_page_uses_content_type($page, $content_type) {
+  return $content_type == $page->options['content-type'] || (is_array($page->options['content-type']) && in_array($content_type, $page->options['content-type']));
+}
+
+/*
+ * Clears the drupal messages, if configured and the current page doesn't prevent it
+ */
+function pageroute_clear_messages($page) {
+  if ($page->route->options['no_messages']) {
+    $options = pageroute_invoke($page, 'options');
+    $options = (isset($options)) ? $options : $page->options;
+    if (!isset($options['show_messages']) || !$options['show_messages']) {
+      unset($_SESSION['messages']['status']);
+    }
+  }
+}
+
+/*
+ * Tracks how far the user has ever gone through the route using the states module
+ * We'll track only uncompleted pageroutes, 
+ * so if the user has completed a route we unset the state machine value
+ */
+function pageroute_track_user_progress(&$page) {
+  global $user;
+
+  if ($page->route->options['track_user'] && module_exists('states')) {
+    //get the right user object
+    $uid = pageroute_page_get_uid($page);
+    $account = ($user->uid != $uid && user_access('administer nodes') && is_numeric($uid)) ? user_load(array('uid' => $uid)) : $user;
+    $state = states_entity_get_machine_state($account, 'pageroute_'. $page->route->prid);
+    $page_index = $page->route->page_index;
+    //also check the page_name, so that only activated pages are set
+    if (isset($state) && $page_index[$page->name] !== FALSE && (!isset($page_index[$state]) || $page_index[$state] < $page_index[$page->name])) {
+      //pageroute completed ?
+      $state = $page->options['neighbours']['forward'] ? $page->name : NULL;
+      states_machine_set_state($account, 'pageroute_'. $page->route->prid, $state);
+      //also update the page access immediately, so that pageroute can route accordingly
+      pageroute_set_page_access_by_state($page->route, $state);
+    }
+  }
+}
+
+/*
+ * Implementation of hook_states()
+ */
+function pageroute_states() {
+  $machines = array();
+  $result = db_query("SELECT * FROM {pageroute_routes}");
+  while ($route = db_fetch_object($result)) {
+    $route->options = unserialize($route->options);
+
+    if ($route->options['track_user']) {
+      pageroute_update_page_index($route);
+      $pages = array_keys($route->page_index);
+      array_pop($pages); //remove the last page
+
+      $machines['pageroute_'. $route->prid] = array(
+        '#label' => 'Uncompleted pageroute: '. $route->path, 
+        '#entity' => 'user',
+        '#roles' => array_filter($route->options['access']['allowed_roles']),
+        '#states' => array_merge(array('Not started'), $pages),
+        '#init_state' => 'Not started',
+        '#path' => $route->path,
+      );
+    }
+  }
+  return $machines;
+}
+
+/*
+ * Checks if this is a valid page and if access to the page shall be granted
+ */
+function pageroute_page_access($route, $page_name) {
+  if (!isset($route->page_index[$page_name])) {
+    return FALSE;
+  }
+  if (isset($route->page_access[$page_name]) && $route->page_access[$page_name] === FALSE) {
+    return FALSE;
+  }
+  return TRUE;
+}
+  
+/*
+ * Returns the default page's name for this route and user
+ * Usually this is the first page, except for the case that user tracking
+ * with the states module is activated and the user has already gone through
+ * some pages 
+ */
+function pageroute_get_default_page_name($route) {
+  $index = 0; //this means load the first page
+
+  if ($route->options['track_user'] && module_exists('states')) {
+    if ($state = pageroute_get_user_state($route)) {
+      if (isset($route->page_index[$state])) {
+        $index = $route->page_index[$state] + 1;
+      }
+    }
+    if (module_exists('pageroute_nodefamily') && $state = pageroute_nodefamily_get_state($route)) {
+      if (isset($route->page_index[$state])) {
+        $index = $route->page_index[$state] + 1;
+      }
+    }
+  }
+  //get the page name
+  if (isset($route->pages[$index]) && $route->page_access[$route->pages[$index]['name']] !== FALSE) {
+    return $route->pages[$index]['name'];
+  }
+  else {
+    return $route->pages[0]['name'];
+  }
+}
+
+/*
+ * Gets the state of the user for which we go through the current active route
+ */
+function pageroute_get_user_state($route, $page = NULL) {
+  global $user;
+  //get the right user object
+  $uid = isset($page) ? pageroute_page_get_uid($page) : pageroute_arg($route, 2);
+  $account = ($user->uid != $uid && user_access('administer nodes') && is_numeric($uid)) ? user_load(array('uid' => $uid)) : $user;
+  return states_entity_get_machine_state($account, 'pageroute_'. $route->prid);
+}
+
+/*
+ * Implementation of hook_pagerouteapi()
+ * If user progress verification with the help of the states module is turned on,
+ * we deny access to all pages after the next page
+ */
+function pageroute_pagerouteapi($op, &$route, $page_name) {
+  if ($op == 'boot' && module_exists('states') && $route->options['track_user']) {
+    if ($state = pageroute_get_user_state($route)) {
+      pageroute_set_page_access_by_state($route, $state);
+    }
+  }
+}
+
+/*
+ * Denies access to all pages after the next page
+ */
+function pageroute_set_page_access_by_state(&$route, $state) {
+  $page_index = $route->page_index;
+  $valid_index = isset($page_index[$state]) ? $page_index[$state] + 1 : 0;
+
+  $route->page_access = array();
+  foreach ($page_index as $name => $index) {
+    if ($index > $valid_index) {
+      $route->page_access[$name] = FALSE;
+    }
+  }
+}

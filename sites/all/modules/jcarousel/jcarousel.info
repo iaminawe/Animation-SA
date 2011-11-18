@@ -1,0 +1,11 @@
+; $Id: jcarousel.info,v 1.1.2.2 2007/08/14 22:26:15 wimleers Exp $
+name = jCarousel
+description = This module allows developers and themers to make use of the jCarousel jQuery plugin.
+package = User Interface
+dependencies = jquery_update
+
+; Information added by drupal.org packaging script on 2008-07-30
+version = "5.x-1.3"
+project = "jcarousel"
+datestamp = "1217434818"
+

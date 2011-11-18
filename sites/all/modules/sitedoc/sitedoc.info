@@ -1,0 +1,9 @@
+; $Id: sitedoc.info,v 1.5 2007/06/19 13:02:37 nancyw Exp $
+name = Site Documentation
+description = "Displays various pieces of information about this Drupal installation."
+
+; Information added by drupal.org packaging script on 2008-09-16
+version = "5.x-1.9"
+project = "sitedoc"
+datestamp = "1221573934"
+

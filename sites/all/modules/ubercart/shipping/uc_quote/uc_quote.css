@@ -1,0 +1,38 @@
+/* table.checkout-shipping {
+  width: 50%;
+}
+ */
+.form-item .description {
+  /* Fix the inheritance from table rows. */
+  white-space: normal;
+}
+
+.solid-border#quote {
+  margin-top: 1em;
+}
+
+.quote-button {
+  cursor: pointer;
+  font-weight: bold;
+  color: rgb(0, 0, 125);
+}
+
+img.icon {
+  position: relative;
+  top: 2px;
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.quote-error {
+  display: inline;
+}
+
+.quote-notes {
+  margin-left: 25px;
+}
+
+.node-form .product-shipping .form-text {
+  display: inline;
+  width: auto;
+}

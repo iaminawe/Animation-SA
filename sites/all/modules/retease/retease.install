@@ -1,0 +1,11 @@
+<?php
+// $Id: retease.install,v 1.1.2.1 2008/01/19 19:26:26 douggreen Exp $
+
+/**
+ * Implementation of hook_uninstall.
+ */
+function retease_uninstall() {
+  variable_del('retease_cron_started');
+  variable_del('retease_cron_lastnid');
+  variable_del('retease_cron_limit');
+}

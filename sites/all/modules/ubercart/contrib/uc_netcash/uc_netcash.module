@@ -1,0 +1,245 @@
+<?php
+// $Id$
+
+// Inspired by Uber's 2CheckOut module
+
+/**
+ * @file
+ * Integrates netcash.co.za's redirected payment service.
+ */
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_netcash_menu($may_cache) {
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'cart/netcash/complete',
+      'title' => t('Order complete'),
+      'callback' => 'uc_netcash_complete',
+      'access' => user_access('access content'),
+      'type' => MENU_CALLBACK,
+    );
+    $items[] = array(
+      'path' => 'cart/netcash/finalize',
+      'title' => t('Order complete'),
+      'callback' => 'uc_netcash_finalize',
+      'access' => user_access('access content'),
+      'type' => MENU_CALLBACK,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_netcash_form_alter($form_id, &$form) {
+  if ($form_id == 'uc_cart_checkout_review_form' && ($order_id = intval($_SESSION['cart_order'])) > 0) {
+    $order = uc_order_load($order_id);
+
+    if ($order->payment_method == 'netcash') {
+      unset($form['submit']);
+      $form['#prefix'] = '<table style="display: inline; padding-top: 1em;"><tr><td>';
+      $form['#suffix'] = '</td><td>'. drupal_get_form('uc_netcash_form', $order) .'</td></tr></table>';
+    }
+  }
+}
+
+
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_netcash_payment_method() {
+  $path = base_path() . drupal_get_path('module', 'uc_netcash');
+
+  $methods[] = array(
+    'id' => 'netcash',
+    'name' => t('netcash'),
+    'title' => variable_get('uc_netcash_method_title', t('Credit card on a secure server:')),
+    'review' => t('Credit card'),
+    'desc' => t('Redirect to netcash to pay by credit card.'),
+    'callback' => 'uc_payment_method_netcash',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+/**
+ * Callback for netcash payment method settings.
+ */
+function uc_payment_method_netcash($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+      if (variable_get('uc_netcash_check', FALSE)) {
+        if ($_SESSION['pay_method'] == 'CK') {
+          $sel[2] = ' selected="selected"';
+        }
+        else {
+          $sel[1] = ' selected="selected"';
+        }
+        unset($_SESSION['pay_method']);
+        $details = '<div class="form-item"><b>'. t('Select your payment type:')
+                  .'</b> <select name="pay_method" class="form-select" id="edit-pay-method">'
+                  .'<option value="CC"'. $sel[1] .'>'. t('Credit card') .'</option>'
+                  .'<option value="CC"'. $sel[2] .'>'. t('Online check') .'</option></select></div>';
+      }
+      return $details;
+
+    case 'cart-process':
+      $_SESSION['pay_method'] = $_POST['pay_method'];
+      return;
+
+    case 'settings':
+      $form['uc_netcash_pin'] = array(
+        '#type' => 'textfield',
+        '#title' => t('PIN Number'),
+        '#description' => t('DIFFERENT to what you use to log in at Netcash.co.za! Eg: 654321'),
+        '#default_value' => variable_get('uc_netcash_pin', '654321'),
+        '#size' => 16,
+      );
+      $form['uc_netcash_terminal_no'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Terminal Number'),
+        '#description' => t('Your Netcash terminal number.  eg: 0291'),
+        '#default_value' => variable_get('uc_netcash_terminal_no', '0291'),
+        '#size' => 16,
+      );
+      $form['uc_netcash_username'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Username'),
+        '#description' => t('DIFFERENT to what you use to log in at Netcash.co.za! Eg: John Doe'),
+        '#default_value' => variable_get('uc_netcash_username', 'John Doe'),
+        '#size' => 16,
+      );
+      $form['uc_netcash_password'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Password'),
+        '#description' => t('DIFFERENT to what you use to log in at Netcash.co.za! Eg: TestPassword34'),
+        '#default_value' => variable_get('uc_netcash_password', 'TestPassword34'),
+        '#size' => 16,
+      );
+      $form['uc_netcash_method_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Payment method title'),
+        '#default_value' => variable_get('uc_netcash_method_title', t('Credit card on a secure server:')),
+      );
+      $form['uc_netcash_method_title_icons'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Show credit card icons beside the payment method title.'),
+        '#default_value' => variable_get('uc_netcash_method_title_icons', TRUE),
+      );
+      $form['uc_netcash_checkout_button'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Order review submit button text'),
+        '#description' => t('Provide netcash specific text for the submit button on the order review page.'),
+        '#default_value' => variable_get('uc_netcash_checkout_button', t('Submit Order')),
+      );
+      return $form;
+  }
+}
+
+// Form to build the submission to netcash.co.za.
+function uc_netcash_form($order) {
+  // action
+  $form['#action'] = 'https://gateway.netcash.co.za/vvonline/ccnetcash.asp';
+
+  // hidden fields
+  $data = array(
+    'm_1' => variable_get('uc_netcash_username', 'testuser'),
+    'm_2' => variable_get('uc_netcash_password', 'testpass'),
+    'm_3' => variable_get('uc_netcash_pin', '654321'),
+    'p1'  => variable_get('uc_netcash_terminal_no', '0291'),
+    'p2'  => $order->order_id,
+    'p3'  => variable_get('uc_store_name', 'Miscellaneous').": Order #{$order->order_id}",
+    'p4'  => uc_currency_format($order->order_total, FALSE, FALSE, '.'),
+    'm_9' => $order->primary_email
+    /*,
+    'm_4' => 'anything',
+    'm_5' => 'anything',
+    'm_6' => 'anything'
+    */
+  );
+  foreach ($data as $name => $value) {
+    $form[$name] = array('#type' => 'hidden', '#value' => $value);
+  }
+
+  // submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('uc_netcash_checkout_button', t('Submit Order')),
+  );
+
+  return $form;
+}
+
+function uc_netcash_complete($cart_id = 0) {
+  watchdog('netcash', t('Receiving new order notification for order !order_id.', array('!order_id' => $_GET['Reference'])));
+
+  $order = uc_order_load($_GET['Reference']);
+
+  if ($order === FALSE || uc_order_status_data($order->order_status, 'state') != 'in_checkout') {
+    print t('An error has occurred during payment.  Please contact us to ensure your order has submitted.');
+    exit();
+  }
+
+  if ($_GET["Reason"]) {
+    drupal_set_message(t("Your payment failed (!reason).  Please try again later.", array('!reason', $_GET["Reason"])));
+    uc_order_comment_save($order->order_id, 0, t("!type payment failed at netcash.co.za. (!reason)", array('!type' => t('Credit card'), '!reason' => $_GET["Reason"])));
+  }
+  else {
+    $comment = t('Paid by !type, netcash.co.za order #!order.', array('!type' => t('credit card'), '!order' => $_GET['Reference']));
+    uc_payment_enter($order->order_id, 'netcash', $order->order_total, $order->uid, NULL, $comment);
+  }
+
+  // Empty that cart...
+  uc_cart_empty($cart_id);
+  
+  $url = 'cart/netcash/finalize/'. $order->order_id;
+
+  // Javascript redirect on the finalization page.
+  $output = '<script type="text/javascript">window.location = "'. url($url, NULL, NULL, TRUE) .'";</script>';
+
+  // Text link for users without Javascript enabled.
+  $output .= l('Click to complete checkout.', $url, array(), NULL, NULL, TRUE);
+
+  print $output;
+  exit();
+}
+
+function uc_netcash_finalize() {
+  $order = uc_order_load(arg(3));
+
+  // Add a comment to let sales team know this came in through the site.
+  uc_order_comment_save($order->order_id, 0, t('Order created through website.'), 'admin');
+
+  $output = uc_cart_complete_sale($order, variable_get('uc_new_customer_login', FALSE));
+
+  $page = variable_get('uc_cart_checkout_complete_page', '');
+
+  // as per Ryan's advice :D - http://www.ubercart.org/forum/development/5519/update_status_function#comment-21701
+  unset($_SESSION['pay_method']);
+
+  if (!empty($page)) {
+    drupal_goto($page);
+  }
+
+  return $output;
+}

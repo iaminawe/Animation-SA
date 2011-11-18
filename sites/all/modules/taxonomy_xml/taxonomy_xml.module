@@ -1,0 +1,411 @@
+<?php
+/* $Id: taxonomy_xml.module,v 1.7 2007/07/03 06:59:32 nicolash Exp $ */
+
+/**
+  Copyright (c) 2007  Nicolas Haase <nicolas.haase@team.ourbrisbane.com>  
+  Copyright (c) 2006  Sami Khan <sami@etopian.com>
+  Copyright (c) 2005  Sheldon Rampton <sheldon@prwatch.org>
+                                                                                
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License.
+*/
+
+/** 
+ * @file taxonomy_xml.module
+ * This module makes it possible to import and export taxonomies
+ * as XML documents.
+ */
+
+
+/**
+ * Implementation of hook_help().
+ */
+function taxonomy_xml_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Makes it possible to import and export taxonomy terms via XML.');
+    case 'admin/content/taxonomy/import':
+      return t("You can upload a vocabulary and/or taxonomy terms from a properly-formatted XML document. If you want to add the terms to an existing vocabulary, ".
+	  "use the \"Target vocabulary\" selector below. If you select \"determined by source file,\" the add to vocabulary will be specified by the XML document itself. ".
+	  "(To avoid duplications, already-existing terms will not be added.)");
+    case 'admin/content/taxonomy/export':
+      return t("You can export XML documents for each vocabulary and its terms in this website's !taxonomies. Choose the vocabulary from the list below.",
+			   array('!taxonomies' => l(t("taxonomies"), "admin/help/taxonomy")));
+    case 'admin/help#taxonomy_xml':
+      return t("This module makes it possible to import and export vocabularies and taxonomy terms via XML (requires taxonomy.module). ".
+               "Once installed and enabled, it module provides a list of downloadable XML documents for each vocabulary at !downloads. To import a vocabulary, use !upload.",
+			   array('!downloads' => l(t("taxonomy XML"), "admin/taxonomy/export"), '!upload' => l("administer &raquo; categories &raquo; import", "admin/taxonomy/import", array(), NULL, NULL, FALSE, TRUE)));
+  }
+}
+
+/** 
+ * Implementation of hook_menu: Define menu links.
+ * 
+ * @note See hook_menu for a description of parameters and return values.
+ */
+function taxonomy_xml_menu($may_cache) {
+  if (!module_exists('taxonomy')) {
+    return;
+  }
+  $items = array();
+  if ($may_cache) {
+    $items[] = array('path' => 'admin/content/taxonomy/export',
+      'title' => t('Export'),
+      'access' => user_access('administer taxonomy'),
+      'callback' => 'taxonomy_xml_export',
+      'type' => MENU_LOCAL_TASK);
+    $items[] = array('path' => 'admin/content/taxonomy/import',
+      'title' => t('Import'),
+      'access' => user_access('administer taxonomy'),
+      'callback' => 'taxonomy_xml_import',
+      'type' => MENU_LOCAL_TASK);
+  }
+  $items[] = array('path' => 'taxonomy_xml',
+    'title' => t('Taxonomy XML'),
+    'callback' => 'taxonomy_xml_file',
+    'access' => true,
+    'type' => MENU_CALLBACK);
+  return $items;
+}
+
+/**
+ * taxonomy_xml_export
+ * 
+ * Outputs an unordered list of all available vocabularies for export
+ * 
+ * @return An unordered HTML list
+ */
+function taxonomy_xml_export() {
+  // return the list of vocabularies
+  $output = '';
+  $vocabularies = module_invoke('taxonomy', 'get_vocabularies');
+  
+  if(empty($vocabularies)){
+    $output .= t('There are no vocabularies present');
+  }
+  else{
+    $output .= "\n<ul>";
+    foreach ($vocabularies as $vocabulary) {
+      $output .= "\n\t<li>". l($vocabulary->name, "taxonomy_xml/$vocabulary->vid") . '</li>';
+    }
+    $output .= "\n</ul>";
+  }
+  return $output;
+}
+
+/**
+ * taxonomy_xml_file
+ */
+function taxonomy_xml_file() {
+  $vid = arg(1);
+  
+  //retriving Vocabulary name
+  $vocabulary = (array) (module_invoke('taxonomy', 'get_vocabulary', $vid));
+  $vname = strtolower(str_replace(' ','',trim($vocabulary['name'])));
+  unset($vocabulary);
+  
+  $file = taxonomy_xml_create($vid);
+  
+  if (!empty($_SERVER['HTTP_USER_AGENT']) && (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE 5.5') || strpos($_SERVER['HTTP_USER_AGENT'], 'Opera'))) {
+    header('Content-Type: application/dummy');
+  }
+  else {
+    header('Content-Type: application/octet-stream');
+  }
+  if (headers_sent()) {
+    echo 'Some data has already been output to browser, can\'t send file';
+  }
+  header('Content-Length: ' . strlen($file));
+  header("Content-Disposition: attachment; filename=taxonomy_$vname.xml");
+  echo $file;
+}
+
+/**
+ * Menu callback for the import page.
+ */
+function taxonomy_xml_import() {
+  return drupal_get_form('taxonomy_xml_import_form');
+}
+
+/**
+ * Imports the actual XML.
+ */
+function taxonomy_xml_import_form_validate($form_id, $form_values) {
+  if ($file = file_check_upload('xml')) {
+    $fd = fopen($file->filepath, "rb");
+    if (!$fd) {
+      form_set_error('xml', t('Vocabulary import failed: file %filename cannot be read.', array('%filename' => $file->filename)));
+    }
+    else {
+      $info = fstat($fd);
+      $len = $info["size"];
+      $text = fread($fd, $len);
+
+      fclose($fd);
+      drupal_set_message(t('Loaded file %filename.', array('%filename' => $file->filename)));
+      taxonomy_xml_parse($text, $form_values['vid'], $form_values['term'], $form_values['duplicate']);
+    }
+  }
+  else {
+    form_set_error('xml', t('Vocabulary import failed: file was not uploaded.'));
+  }
+}
+
+/**
+ * Builds the import form.
+ */
+function taxonomy_xml_import_form() {
+  $vocs[0] = t('<Determined by source file>');
+  foreach (module_invoke('taxonomy', 'get_vocabularies') as $vid => $voc) {
+    $vocs[$vid] = $voc->name;
+  }
+  $form['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('Target vocabulary'),
+    '#default_value' => 0,
+    '#options' => $vocs,
+    '#description' => t('The vocabulary into which terms should be loaded.'),
+  );
+/*
+  $form['term'] = array(
+    '#type' => 'checkbox',
+    '#title' => ('Select a term from the vocabulary.'),
+    '#description' => t("Allows a selection of a term in the vocabulary to be the parent of the imported taxonomy."),
+  );*/
+  $form['xml'] = array(
+    '#type' => 'file',
+    '#title' => t('File to import'),
+    '#description' => t('Click "Browse..." to select an XML document to upload.'),  
+  );
+  $form['duplicate'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow duplicate terms'),
+    '#description' => t('If you want to keep the same term in different positions in the vocabulary hierarchy, check this'),
+    '#default_value' => 0,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+  $form['#attributes'] = array('enctype' => 'multipart/form-data');
+
+  return $form;
+}
+
+/**
+ * taxonomy_xml_create
+ * @param $vid
+ *   Which vocabulary to generate the tree for.
+ *
+ * @param $parent
+ *   The term ID under which to generate the tree. If 0, generate the tree
+ *   for the entire vocabulary.
+ *
+ * @param $depth
+ *   Internal use only.
+ *
+ * @param $max_depth
+ *   The number of levels of the tree to return. Leave NULL to return all levels.
+ *
+ * @return
+ *   The text of an XML document.
+ */
+function taxonomy_xml_create($vid, $parent = 0, $depth = -1, $max_depth = NULL) {
+  $output = '<?xml version="1.0" standalone="no"?>' . "\n";
+  $output .= '<!DOCTYPE taxonomy SYSTEM "taxonomy.dtd">' . "\n";
+  $tree = module_invoke('taxonomy', 'get_tree', $vid, $parent, $depth, $max_depth);
+  if ($tree) {
+    $vocabulary = module_invoke('taxonomy', 'get_vocabulary', $vid);
+    $output .= "<vocabulary>\n";
+    foreach ($vocabulary as $key => $value) {
+      if (is_array($value)) {
+        $output .= "<$key>" . check_plain(implode(',', $value)) . "</$key>";
+      }
+      else {
+        $output .= "<$key>" . check_plain($value) . "</$key>";
+      }
+    }
+    foreach ($tree as $term) {
+      
+      $synonyms = taxonomy_get_synonyms($term->tid);
+      $output .= "<term>";
+      foreach ($term as $key => $value) {
+        if ($key == 'parents') {
+          foreach ($value as $parent) {
+            $output .= "<parent>" . check_plain($parent) . "</parent>";
+          }
+        }
+        else {
+          $output .= "<$key>" . check_plain($value) . "</$key>";
+        }
+      }
+      if ($synonyms) {
+        $output .= "<synonyms>";
+        $output .= implode("\n", $synonyms);
+        $output .= "</synonyms>";
+      }
+      $output .= "</term>";
+    }
+    $output .= "</vocabulary>\n";
+  }
+  return $output;
+}
+
+/**
+ * Call-back function used by the XML parser.
+ */
+function taxonomy_xml_element_start($parser, $name, $attributes) {
+  global $term, $element, $tag;
+
+  switch ($name) {
+    case 'vocabulary':
+      $element = $name;
+      break;
+    case 'term':
+      $element = $name;
+      $term += 1;
+  }
+  $tag = $name;
+}
+
+/**
+ * Call-back function used by the XML parser.
+ */
+function taxonomy_xml_element_end($parser, $name) {
+  global $element;
+
+  switch ($name) {
+    case 'vocabulary':
+    case 'term':
+      $element = '';
+  }
+}
+
+/**
+ * Call-back function used by the XML parser.
+ */
+function taxonomy_xml_element_data($parser, $data) {
+  global $vocabulary, $element, $terms, $term, $image, $tag;
+
+  switch ($element) {
+    case 'term':
+      if ($tag == 'parent') {
+        if (trim($data)) {
+          $terms[$term][$tag][] = $data;
+        }
+      }
+      else {
+        $terms[$term][$tag] .= trim($data);
+      }
+      break;
+    default:
+      $vocabulary[$tag] .= trim($data);
+  }
+}
+
+function taxonomy_xml_parse(&$data, $vid = 0, $parent_tid = NULL, $duplicate = 0) {
+  global $terms, $vocabulary;
+
+  // Unset the global variables before we use them:
+  unset($GLOBALS['element'], $GLOBALS['term'], $GLOBALS['tag']);
+  $terms = array();
+  $vocabulary = array();
+  $new_terms = array();
+
+  // parse the data:
+  $xml_parser = drupal_xml_parser_create($data);
+  xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, false); //
+  xml_set_element_handler($xml_parser, 'taxonomy_xml_element_start', 'taxonomy_xml_element_end');
+  xml_set_character_data_handler($xml_parser, 'taxonomy_xml_element_data');
+
+  if (!xml_parse($xml_parser, $data, 1)) {
+    watchdog('error', t('Taxonomy_xml: failed to parse file: %error at line %line.', array('%error' => xml_error_string(xml_get_error_code($xml_parser)), '%line' => xml_get_current_line_number($xml_parser))));
+    drupal_set_message(t('Failed to parse file: %error at line %line.', array('%error' => xml_error_string(xml_get_error_code($xml_parser)), '%line' => xml_get_current_line_number($xml_parser))), 'error');
+  }
+  xml_parser_free($xml_parser);
+
+  
+  // If an existing vocabulary has been chosen or has the same name as the vocabulary being added,
+  // terms should be added to the existing vocabulary. Otherwise a new vocabulary should be created.
+  
+  if ($vid == 0) {
+    $name = $vocabulary['name'];
+    $vid = db_result(db_query("SELECT vid FROM {vocabulary} WHERE LOWER('%s') LIKE LOWER(name)", trim($name)));
+    if ($vid) {
+      $vocabulary = (array) (module_invoke('taxonomy', 'get_vocabulary', $vid));
+    }
+    else {
+      unset($vocabulary['vid']);
+      
+      // The node type array for a vocab has the type name as the key and the value set to 1
+      // so we have to slightly modify the array
+      $node_types = explode(',', $vocabulary['nodes']);
+      $vocabulary['nodes'] = array();
+      foreach ($node_types as $type) {
+        $vocabulary['nodes'][$type] = 1;
+      }
+      taxonomy_save_vocabulary($vocabulary);
+    }
+  }
+  else {
+    $vocabulary = (array) (module_invoke('taxonomy', 'get_vocabulary', $vid));
+  }
+  
+  // Get the maximum depth of terms
+  foreach ($terms as $term) {
+    $term_depth[] = $term['depth'];
+  }
+  // Import terms in order of depth
+  for ($i=0;$i<=max($term_depth);$i++) {
+    foreach ($terms as $term) {
+      if ($term['depth'] != $i) {
+        continue;
+      }
+      $term['vid'] = $vocabulary['vid'];
+      $term['old_tid'] = $term['tid'];
+      unset($term['tid']);
+      if (is_array($term['parent'])) {
+        foreach ($term['parent'] as $key => $value) {
+          if ($value) {
+            $term['parent'][$key] = $new_tid[$value];
+          }
+        }
+      }
+  	  $term_exists = false;
+  	  if ($duplicate == 0) {
+  	    $existing_terms = module_invoke('taxonomy', 'get_term_by_name', $term['name']);
+  	    if (count($existing_terms > 0)) {
+  	      foreach ($existing_terms as $existing_term) {
+  	        if ($existing_term->vid == $term['vid']) {
+  	          $term_exists = true;
+  	          // Map the term tid from the imported XML file to the tid in term_data database table
+  	          $new_tid[$term['old_tid']] = $existing_term->tid;
+  	          $skipped_terms[$existing_term->name] = 1;
+  	        }
+  	      }
+  	    }
+  	  }
+      // If the term doesn't already exist in this vocabulary, add it.
+      if (!$term_exists){
+        taxonomy_save_term($term);
+        // Map the term tid from the imported XML file to the tid in term_data database table
+        $new_tid[$term['old_tid']] = $term['tid'];
+        $new_terms[] = $term['name'];
+      }
+    }
+  
+    $output .= t('Vocabulary %name: ', array('%name' => $vocabulary['name']));
+    if ($new_terms) {
+      $output .= t('Added term(s) %terms', array('%terms' => implode(', ', $new_terms)));
+    }
+    else {
+      $output .= t('No terms added.');
+    }
+    if ($skipped_terms) {
+      $output .= t('Ignored duplicate term(s) %terms', array('%terms' => implode(', ', array_keys($skipped_terms))));
+    }
+    drupal_set_message($output);
+  }
+}
+?>

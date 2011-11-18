@@ -1,0 +1,61 @@
+<?php
+// $Id: globalredirect.install,v 1.1.2.3 2008/12/22 11:22:22 njt1982 Exp $
+
+/**
+ * @file
+ *  This is the GlobalRedirect install file which configures the system during install.
+ */
+
+
+/**
+ * Implementation of hook_install().
+ * Configures the site - currently only changing the weight of the module to be the last to run.
+ */
+function globalredirect_install() {
+  db_query("UPDATE {system} SET weight = 1500 WHERE name = 'globalredirect'");
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ * Removes instances of variable settings
+ */
+function globalredirect_uninstall() {
+  variable_del('globalredirect_deslash');
+  variable_del('globalredirect_trailingzero');
+  variable_del('globalredirect_nonclean2clean');
+}
+
+
+/**
+ *  This update changes Global Redirect to run as the last hook - this is important to make sure all other modules have had their say first.
+ */
+function globalredirect_update_1() {
+  $ret = array();
+
+  $ret[] = update_sql("UPDATE {system} SET weight = 1500 WHERE name = 'globalredirect'");
+
+  return $ret;
+}
+
+
+/**
+ * Update to fix the silly deslash typo mistake
+ */
+function globalredirect_update_5100() {
+  $deslash = variable_get('globalredirect_deslah', NULL);
+  $ret = array();
+
+  if (is_null($deslash)) {
+    $ret[] = array('success' => TRUE, 'query' => 'There was no "deslah" option to fix... Nothing to do. Issue #348120 does not apply.');
+  }
+  else {
+    variable_set('globalredirect_deslash', $deslash);
+    variable_del('globalredirect_deslah');
+
+    $ret[] = array('success' => TRUE, 'query' => 'Issue #348120 applies. Copied setting over to correct name. Your deslash settings should work now.');
+  }
+
+  return $ret;
+}
+

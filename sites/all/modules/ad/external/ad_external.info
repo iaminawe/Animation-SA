@@ -1,0 +1,11 @@
+; $Id: ad_external.info,v 1.1.2.1 2007/10/19 00:36:36 jeremy Exp $
+name = External Ad
+package = Ad
+dependencies = ad
+description = Enhances the ad module to support externally hosted ads.  Typically combined with IFrames.
+
+; Information added by drupal.org packaging script on 2009-02-11
+version = "5.x-1.7"
+project = "ad"
+datestamp = "1234387502"
+

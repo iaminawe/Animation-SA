@@ -1,0 +1,168 @@
+<?php
+// $Id: views_bonus_summary_combo.module,v 1.1.2.7 2008/05/10 15:26:38 dmitrig01 Exp $
+
+function views_bonus_summary_combo_views_style_plugins() {
+  $items['summary_combo'] = array(
+    'name' => t('Bonus: Summary + full view'),
+    'theme' => 'views_bonus_summary_combo',
+    'summary_theme' => 'views_bonus_summary_combo_summary',
+  );
+  return $items;
+}
+
+// Merlin comment: This plugin should provide validation, since it requires
+// an argument to work.
+
+// --------------------------------------------------------------------------
+// Combo theme with summary on top and full view below
+/**
+ *  Combo full page theme
+ *  $level, $args, and $summary are only available if called by summary view
+ */
+function theme_views_bonus_summary_combo($view, $nodes, $type, $level = NULL, $args = NULL, $summary = FALSE) {
+  $teasers = TRUE;
+  $links = TRUE;
+  
+  // keep the title from displaying both in the summary and full view
+  drupal_set_title($title);
+  unset($view->page_title);
+  // create page bottom first -- may be either a full view or a summary view
+  // it is possible to have several levels of summary views if multiple arguments set to summary are used
+  if ($summary && $level == 0 && isset($view->argument[0])) {
+    // don't display bottom if it will be same top level summary view displayed on top
+    $bottom = '';
+  }
+  elseif ($summary) {
+    // a summary view on the bottom of the page should be the regular summary view
+    $bottom = theme('views_summary', $view, $type, $level, $nodes, $args);
+  }
+  else {
+    // otherwise display the full view
+    $bottom = theme('views_view_nodes', $view, $nodes, $view->page_type, $teasers, $links);
+  } 
+  // the summary view on the top of the page should always be the top level summary view
+  // create this only after bottom view has been generated to avoid wiping out values from the original view
+  
+  if (isset($view->argument[0])) {
+    $summary = views_build_view('items', $view, array(), false, $view->nodes_per_page);
+    $top = theme('views_bonus_summary_combo_top', $view, $summary['items']);
+  }
+  return $top . $bottom;
+}
+/**
+ * The combo summary theme, a wrapper function to send summary page theme 
+ * through the full page theme
+ * passing along $level, $args, and setting $summary = TRUE
+ */
+function theme_views_bonus_summary_combo_summary($view, $type, $level, $nodes, $args) {
+  return theme_views_bonus_summary_combo($view, $nodes, $type, $level, $args, TRUE);
+}
+/**
+ * Style the summary list to be wide (side by side) instead of long when used 
+ * above the full view
+ * @return item list adapted with | separator and css to display list inline
+ */
+function theme_views_bonus_summary_combo_top($view, $nodes) {
+  drupal_add_css(drupal_get_path('module', 'views_bonus_summary_combo') .'/views_bonus.css');
+  // Groups of letters.
+  $groups = array();
+  // Iterate through all nodes.
+  foreach ($nodes as $node) {
+    // Add the node under the group.
+    $group[$node->letter][] = $node;
+  }
+
+  // Iterate through all groups.
+  foreach ($group as $group_nodes) {
+    // Add the link.
+    $items[] = views_get_summary_link($view->argument[0]['type'], $group_nodes[0], $view->url)  ."&nbsp;(". count($group_nodes) .")&nbsp;";
+  }
+  if ($items) {
+    return '<div id="views_bonus_summary_top">'. implode(' | ', $items) .'</div>';
+  }
+}
+
+function views_bonus_summary_combo_views_default_views() {
+  $view = new stdClass();
+  $view->name = 'taxonomy_directory';
+  $view->description = t('First letter of term on top and related view on bottom of each page.');
+  $view->access = array ();
+  $view->view_args_php = '';
+  $view->page = TRUE;
+  $view->page_title = t('Directory');
+  $view->page_header = '';
+  $view->page_header_format = '3';
+  $view->page_footer = '';
+  $view->page_footer_format = '1';
+  $view->page_empty = '';
+  $view->page_empty_format = '1';
+  $view->page_type = 'summary_combo';
+  $view->url = 'directory';
+  $view->use_pager = TRUE;
+  $view->nodes_per_page = '50';
+  $view->menu = TRUE;
+  $view->menu_title = t('Directory');
+  $view->menu_tab = FALSE;
+  $view->menu_tab_default = FALSE;
+  $view->menu_weight = '';
+  $view->sort = array(
+    array(
+      'tablename' => 'term_data',
+      'field' => 'weight',
+      'sortorder' => 'ASC',
+      'options' => '',
+    ),
+    array(
+      'tablename' => 'node',
+      'field' => 'sticky',
+      'sortorder' => 'DESC',
+      'options' => '',
+    ),
+    array(
+      'tablename' => 'node',
+      'field' => 'created',
+      'sortorder' => 'DESC',
+      'options' => '',
+    ),
+  );
+  $view->argument = array(
+    array(
+      'type' => 'taxletter',
+      'argdefault' => '6',
+      'title' => '%1',
+      'options' => '1',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+    array(
+      'type' => 'taxletter',
+      'argdefault' => '6',
+      'title' => '%2',
+      'options' => '',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+  );
+  $view->field = array(
+    array(
+      'tablename' => 'node',
+      'field' => 'title',
+      'label' => '',
+      'handler' => 'views_handler_field_nodelink',
+      'sortable' => '1',
+    ),
+  );
+  $view->filter = array(
+    array(
+      'tablename' => 'node',
+      'field' => 'status',
+      'operator' => '=',
+      'options' => '',
+      'value' => '1',
+    ),
+  );
+  $view->exposed_filter = array ();
+  $view->requires = array('term_data', 'node');
+  $views[$view->name] = $view;
+  return $views;
+}

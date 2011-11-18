@@ -1,0 +1,30 @@
+<?php
+// $Id: sitedoc.install,v 1.8 2008/02/18 15:28:36 nancyw Exp $
+
+/**
+ * Implementation of hook_install() 
+ *
+ * Called when the module is enabled.
+ * This code only logs a message because we don't need to create any tables.
+ */
+function sitedoc_install() {
+  global $user;
+  drupal_set_message(t('The Site Documentation module was installed. You may want to go to the <a href="!settings">settings page now</a>.', array('!settings' => url('admin/settings/sitedoc'))));
+}
+
+/**
+ * Implementation of hook_uninstall()
+ *
+ * Called when the uninstall tab is used.
+ * This code will delete the settings variable, clear the menu cache, and log a message.
+ */
+function sitedoc_uninstall() {
+  global $user;
+
+// Delete system variables 
+  variable_del('sitedoc_settings');
+
+  cache_clear_all('*', 'cache_menu', TRUE);
+
+  drupal_set_message('Site Documentation module removed.');
+}

@@ -1,0 +1,26 @@
+<?php
+
+function job_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $result = db_query("
+        CREATE TABLE {job} (
+          nid         INT NOT NULL default '0',
+          uid         INT NOT NULL default '0',
+          resume_nid  INT NOT NULL default '0',
+          timestamp   INT NOT NULL default '0',
+          status      INT NOT NULL default '0',
+          PRIMARY KEY (nid, uid),
+          KEY         (nid),
+          KEY         (uid)
+        ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      break;
+  }
+}
+
+function job_update_1() {
+  // Prior to 5.x, there were no tables at all. So, with 5.x, 
+  // we create them.
+  job_install();
+}

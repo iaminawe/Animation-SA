@@ -1,0 +1,5 @@
+; $Id: faceted_search_views.info,v 1.2 2008/04/22 17:21:26 davidlesieur Exp $
+name = Faceted Search Views
+description = "Allows to use Views to display Faceted Search results."
+dependencies = faceted_search faceted_search_ui search views
+package = Faceted Search

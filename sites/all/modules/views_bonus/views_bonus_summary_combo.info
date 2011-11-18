@@ -1,0 +1,10 @@
+name = Bonus: summary + full view
+description = "View type puts a summary on top and an argument below."
+dependencies = views
+package = Views
+
+; Information added by drupal.org packaging script on 2008-05-10
+version = "5.x-1.2-alpha2"
+project = "views_bonus"
+datestamp = "1210435225"
+

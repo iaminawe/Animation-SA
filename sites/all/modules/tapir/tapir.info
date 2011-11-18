@@ -1,0 +1,11 @@
+; $Id$
+name = Tables API
+description = Allow modules to define dynamic tables and display them on your site.
+package = Development
+
+
+; Information added by drupal.org packaging script on 2008-10-11
+version = "5.x-1.6"
+project = "tapir"
+datestamp = "1223742024"
+

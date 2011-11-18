@@ -1,0 +1,10 @@
+; $Id: nodefamily.info,v 1.1.2.1 2007/06/18 23:06:53 dww Exp $
+name = "Node Family"
+description = "Builds node families based on content types and author information."
+package = "Node Profile"
+
+; Information added by drupal.org packaging script on 2008-06-10
+version = "5.x-1.4"
+project = "nodefamily"
+datestamp = "1213098919"
+

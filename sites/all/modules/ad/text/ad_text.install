@@ -1,0 +1,74 @@
+<?php
+// $Id: ad_text.install,v 1.2.2.2.2.4 2007/06/08 14:56:04 jeremy Exp $
+
+/**
+ * Ad_text module database schema.
+ * Copyright (c) 2005-2006 Jeremy Andrews <jeremy@kerneltrap.org>.  
+ * All rights reserved.
+ */
+
+function ad_text_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      /**
+       * The ad_text table stores each line of the actual text ad.
+       */
+      db_query("CREATE TABLE {ad_text} (
+        aid INT NOT NULL DEFAULT '0' PRIMARY KEY,
+
+        url VARCHAR(255) NOT NULL DEFAULT '',
+        adheader VARCHAR(255) NOT NULL DEFAULT '',
+        adbody TEXT NOT NULL DEFAULT ''
+      );");
+      break;
+
+    case 'mysql':
+    case 'mysqli':
+    default:
+
+      /**
+       * The ad_text table stores each line of the actual text ad.
+       */
+      db_query("CREATE TABLE {ad_text} (
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        url VARCHAR(255) NOT NULL DEFAULT '',
+        adheader VARCHAR(255) NOT NULL DEFAULT '',
+        adbody TEXT NULL,
+
+        PRIMARY KEY (aid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+
+  }
+
+  drupal_set_message(t('The necessary ad_text module tables have been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad_text module.
+ */
+function ad_text_uninstall() {
+  // Delete all ad_text content.
+  $result = db_query("SELECT aid FROM {ad_text}");
+  while ($aid = db_result($result)) {
+    node_delete($aid);
+  }
+
+  // Drop all ad_text module tables.
+  db_query('DROP TABLE {ad_text}');
+}
+
+/**
+ * Convert to utf8 character set for all tables to allow for proper 
+ * internationalization.
+ */
+function ad_text_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      break;
+    default:
+      $ret[] = update_sql("ALTER TABLE {ad_text} CONVERT TO CHARACTER SET utf8");
+  }
+  return $ret;
+}

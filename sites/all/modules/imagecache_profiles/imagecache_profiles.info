@@ -1,0 +1,10 @@
+; $Id: imagecache_profiles.info,v 1.1 2007/12/27 14:57:34 v1nce Exp $
+name = Imagecache Profile Pictures
+description = Utilizes imagecache presets for user profile pictures.
+package = Image
+dependencies = imagecache
+; Information added by drupal.org packaging script on 2008-06-18
+version = "5.x-1.4"
+project = "imagecache_profiles"
+datestamp = "1213759819"
+

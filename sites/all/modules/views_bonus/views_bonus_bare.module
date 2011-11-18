@@ -1,0 +1,25 @@
+<?php
+// $Id: views_bonus_bare.module,v 1.1.2.1 2008/05/10 14:48:11 dmitrig01 Exp $
+
+function views_bonus_plain_views_style_plugins() {
+  $items['bonus_plain'] = array(
+    'name' => t('Bonus: Plain View'),
+    'theme' => 'views_bonus_view_plain',
+    'validate' => 'views_ui_plugin_validate_list',
+    'needs_fields' => true,
+  );
+  return $items;
+}
+
+function theme_views_bonus_view_plain($view, $nodes, $type) {
+  $fields = _views_get_fields();
+  $output = array();
+  foreach ($nodes as $node) {
+    foreach ($view->field as $field) {
+      if (!isset($fields[$field['id']]['visible']) && $fields[$field['id']]['visible'] !== FALSE) {
+        $output[] = views_theme_field('views_handle_field', $field['queryname'], $fields, $field, $node, $view);
+      }
+    }
+  }
+  return implode(' ', $output);
+}

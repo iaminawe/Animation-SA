@@ -1,0 +1,11 @@
+; $Id: sitemenu.info,v 1.1.2.2 2007/06/18 23:07:03 dww Exp $
+name = Site menu
+description = Provides a block and sitemap from categories
+dependencies = taxonomy
+
+
+; Information added by drupal.org packaging script on 2008-04-04
+version = "5.x-1.x-dev"
+project = "sitemenu"
+datestamp = "1207267903"
+

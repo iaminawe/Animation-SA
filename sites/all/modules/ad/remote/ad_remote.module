@@ -1,0 +1,114 @@
+<?php
+// $Id: ad_remote.module,v 1.1.4.9 2009/01/29 06:26:04 jeremy Exp $
+
+/**
+* @file
+ * Enhances the ad module to providing cut-and-paste source snippets allowing 
+ * ads to be easily displayed on remote websites.  This module is a proof of 
+ * concept.
+ *
+ * Copyright (c) 2007-2008.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.  All rights reserved.
+ */
+
+/**
+ * Drupal _perm hook.
+ */
+function ad_remote_perm() {
+  return array('host remote advertisements');
+}
+
+/**
+ * Drupal _menu hook.
+ */
+function ad_remote_menu($may_cache) {
+  global $user;
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => "ad_remote",
+      'title' => 'Remote ads',
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('ad_remote_form'),
+      'access' => user_access('host remote advertisements', $user));
+  }
+
+  return $items;
+}
+
+/**
+ * A simple page providing source snippets for displaying ads on remote 
+ * websites.  
+ */
+function ad_remote_form() {
+  global $user;
+
+  $form = array();
+
+  $form['overview'] = array(
+    '#type' => 'markup',
+    '#value' => t('Use the following options to build a source snippet for displaying ads on your website.'),
+    '#weight' => -16,
+  );
+
+  $form['group'] = taxonomy_form(_ad_get_vid(), 0, t('Select one or more groups to display ads from.'));
+
+  $form['quantity'] = array(
+    '#type' => 'select',
+    '#title' => t('Quantity'),
+    '#options' => drupal_map_assoc(array(1,2,3,4,5,6,7,8,9,10,15,20,25,50)),
+    '#default_value' => isset($_POST['quantity']) ? $_POST['quantity'] : 1,
+    '#description' => t('Select the maximum number of unique ads that should be displayed together.'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Generate code snippet'),
+  );
+
+  return $form;
+}
+
+/**
+ * Prepare quantity and group.
+ */
+function ad_remote_form_submit($form_id, $form_values) {
+  global $user;
+
+  if (isset($form_values['quantity'])) {
+    // Sanity chacke, be sure quantity is an integer.
+    $quantity = (int)$form_values['quantity'];
+  }
+  if (!$quantity) {
+    // Must display at least one advertisement.
+    $quantity = 1;
+  }
+  $group = NULL;
+  if (is_array($form_values['group']) && !empty($form_values['group'])) {
+    if ($form_values['group'][0] == 0) {
+      unset($form_values['group'][0]);
+    }
+    $group = implode(',', $form_values['group']);
+    // Sanity check, be sure group is only numbers and commas.
+    $group = preg_replace('/[^0-9,]/', '', $group);
+  }
+  if (!$group) {
+    $group = 0;
+  }
+  $output = '<div class="ad_remote">';
+
+  // Instructions.
+  $output .= '<div class="instructions">';
+  $output .= t('Insert the following source snippet into your web page to display ads hosted on this web site.  Include the entire snippet, and do not modify it in any way.');
+  $output .= '</div>';
+ 
+
+  // Output the actual source snippet.
+  $output .= '<div class="snippet">';
+  $hostid = ad_host_id_create($user->uid);
+  $output .= '<br />&lt;!--'. t('start') .'--&gt;<br />'. htmlentities(ad($group, $quantity, array('raw' => 1, 'hostid' => $hostid))) .'<br />&lt;!--'. t('end') .'--&gt;';
+  $output .= '</div></div>';
+  print theme('page', $output);
+}
+

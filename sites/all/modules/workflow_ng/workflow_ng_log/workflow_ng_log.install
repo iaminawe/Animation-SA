@@ -1,0 +1,96 @@
+<?php
+// $Id: workflow_ng_log.install,v 1.1.2.4 2008/07/29 15:19:37 fago Exp $
+
+/*
+ * Implementation of hook_install()
+ */
+function workflow_ng_log_install() {
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("CREATE TABLE if not exists {workflow_ng_log_user} (
+        mid int unsigned NOT NULL auto_increment,
+        uid int unsigned NOT NULL default '0',
+        type varchar(255),
+        category varchar(255),
+        message longtext NOT NULL,
+        time int NOT NULL default '0',
+        PRIMARY KEY (mid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      db_query("CREATE TABLE if not exists {workflow_ng_log_node} (
+        mid int unsigned NOT NULL auto_increment,
+        nid int unsigned NOT NULL default '0',
+        type varchar(255),
+        category varchar(255),
+        message longtext NOT NULL,
+        time int NOT NULL default '0',
+        PRIMARY KEY (mid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {workflow_ng_log_user} (
+        mid serial CHECK (mid >= 0),
+        uid int_unsigned NOT NULL default '0',
+        type varchar(255),
+        category varchar(255),
+        message text NOT NULL,
+        time integer,
+        PRIMARY KEY (mid)
+      )");
+      db_query("CREATE TABLE {workflow_ng_log_node} (
+        mid serial CHECK (mid >= 0),
+        nid int_unsigned NOT NULL default '0',
+        type varchar(255),
+        category varchar(255),
+        message text NOT NULL,
+        time integer,
+        PRIMARY KEY (mid)
+      )");
+      break;
+    default:
+      break;
+  }
+}
+
+/*
+ * Implementation of hook_uninstall()
+ */
+function workflow_ng_log_uninstall() {
+  db_query("DROP TABLE {workflow_ng_log_user}");
+  db_query("DROP TABLE {workflow_ng_log_node}");
+}
+
+/**
+ * Clear the menu cache
+ */
+function workflow_ng_log_update_5001() {
+  cache_clear_all('*', 'cache_menu', TRUE);
+  return array();
+}
+
+/**
+ * Warn users using raw input in messages, as this isn't supported any more.
+ */
+function workflow_ng_log_update_5002() {
+  $str = t('!warn The workflow-ng "Per Entity Logs" module changed to not escape the output of log messages, so one can use HTML there. As an affect messages containing raw user input are unsafe! This is the case if you are using replacement patterns that are marked to contain raw user input for your log messages. If you do so clear all previous log messages and change it use safe replacement patterns! To clear previous log messages, disable the module, then uninstall it and enable it again afterwards.',
+    array('!warn' => '<strong class="error">'. t('Warning'). '</strong>'));
+  $ret[] = array('success' => TRUE, 'query' => $str);
+  return $ret;
+}
+
+/**
+ * Remove log messages of already deleted entities.
+ */
+function workflow_ng_log_update_5003() {
+  $ret = array();
+  $result = db_query("SELECT mid FROM {workflow_ng_log_node} w LEFT JOIN {node} n ON n.nid = w.nid WHERE n.nid IS NULL");
+  while ($row = db_fetch_object($result)) {
+    $ret[] = update_sql("DELETE FROM {workflow_ng_log_node} WHERE mid = ". $row->mid);
+  }
+  $result = db_query("SELECT mid FROM {workflow_ng_log_user} w LEFT JOIN {users} u ON u.uid = w.uid WHERE u.uid IS NULL");
+  while ($row = db_fetch_object($result)) {
+    $ret[] = update_sql("DELETE FROM {workflow_ng_log_user} WHERE mid = ". $row->mid);
+  }
+  return $ret;
+}

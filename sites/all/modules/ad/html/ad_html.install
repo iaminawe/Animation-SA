@@ -1,0 +1,58 @@
+<?php
+// $Id: ad_html.install,v 1.1.2.1 2007/10/22 20:26:48 jeremy Exp $
+
+/**
+ * Ad_html module database schema.
+ * Copyright (c) 2007 Jeremy Andrews <jeremy@kerneltrap.org>.  
+ * All rights reserved.
+ */
+
+function ad_html_install() {
+  switch ($GLOBALS['db_type']) {
+
+    case 'mysql':
+    case 'mysqli':
+    default:
+
+      /**
+       * The ad_html table stores the html ad.
+       */
+      db_query("CREATE TABLE {ad_html} (
+        aid INT(10) UNSIGNED NOT NULL DEFAULT '0',
+
+        html TEXT NULL,
+
+        PRIMARY KEY (aid)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+
+    case 'pgsql':
+      /**
+       * The ad_html table stores the html ad.
+       */
+      db_query("CREATE TABLE {ad_html} (
+        aid INT NOT NULL DEFAULT '0' PRIMARY KEY,
+
+        html TEXT NOT NULL DEFAULT ''
+      );");
+      break;
+
+
+  }
+
+  drupal_set_message(t('The necessary ad_html module tables have been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad_html module.
+ */
+function ad_html_uninstall() {
+  // Delete all ad_html content.
+  $result = db_query("SELECT aid FROM {ad_html}");
+  while ($aid = db_result($result)) {
+    node_delete($aid);
+  }
+
+  // Drop all ad_html module tables.
+  db_query('DROP TABLE {ad_html}');
+}

@@ -1,0 +1,11 @@
+; $Id: content_taxonomy_views_hs.info,v 1.1.2.1 2008/07/07 09:10:24 mh86 Exp $
+name = Hierarchical Select Content Taxonomy Views
+description = Use Hierarchical Select for Content Taxonomy exposed filters in Views.
+dependencies = hierarchical_select views content_taxonomy
+package = Views
+
+; Information added by drupal.org packaging script on 2008-07-07
+version = "5.x-1.x-dev"
+project = "content_taxonomy"
+datestamp = "1215432192"
+

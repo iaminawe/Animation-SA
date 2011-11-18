@@ -1,0 +1,215 @@
+<?php
+// $Id: views_bonus_lineage_tree.module,v 1.2.2.3 2007/05/22 11:24:28 karens Exp $
+
+function views_bonus_lineage_tree_views_style_plugins() {
+  $items['lineage_tree'] = array(
+    'name' => t('Lineage: Nested taxonomy summary'),
+    'theme' => 'views_bonus_lineage_tree',
+    'summary_theme' => 'views_bonus_lineage_tree_summary',
+    'needs_fields' => TRUE,
+  );
+  return $items;
+}
+
+// --------------------------------------------------------------------------
+// Nested taxonomy tree summary view (displays teaser view for full page)
+/**
+ *  Nested taxonomy tree plugin displays teasers for full view
+ *  Override theme to display something else
+ */
+function theme_views_bonus_lineage_tree($view, $nodes, $type) {
+  $teasers = true;
+  $links = true;
+  return theme('views_view_nodes', $view, $nodes, $type, $teasers, $links);
+}
+/**
+ *  Nested taxonomy tree plugin summary view
+ *  This is the theme that creates the nested taxonomy view
+ */
+function theme_views_bonus_lineage_tree_summary($view, $type, $level, $nodes, $args) {
+  // if lineage info is missing or this summary has no tid, bail out to normal summary view
+  if (!array_key_exists('tid', $nodes[0])) {
+    return theme('views_summary', $view, $type, $level, $nodes, $args);
+  }
+
+  $trees = array();
+  foreach ($nodes as $node) {
+    // get terms for each node, add depth to term info
+    // and create sorted array of values
+    $term = taxonomy_get_term($node->tid);
+    $node->depth = $node->term_lineage_depth ? $node->term_lineage_depth : -1;
+    $items[$term->vid][$node->tid] = $node;
+  }
+
+  $output = '<ul>';
+  foreach ($items as $vid => $terms) {
+    $last_depth = -1;
+    foreach ($terms as $term) {
+
+      // Adjust the depth of the <ul> based on the change
+      // in $term->depth since the $last_depth.
+      if ($term->depth > $last_depth) {
+        $output .= "\n" . '<ul>' . "\n";
+      }
+      else if ($term->depth < $last_depth) {
+
+      for ($i = 0; $i < ($last_depth - $term->depth); $i++) {
+          $output .= '</li>' . "\n";
+          $output .= '</ul>' . "\n";
+        }
+      }
+      else {
+        $output .= '</li>' . "\n";
+      }
+      // Display the $term.
+      $output .= '<li>';
+
+      $output .= views_get_summary_link($view->argument[$level]['type'], $term, $view->real_url)
+      .' ('. $term->num_nodes .')';
+
+      // Reset $last_depth in preparation for the next $term.
+      $last_depth = $term->depth;
+    }
+    // Bring the depth back to where it began, -1.
+    if ($last_depth > -1) {
+      for ($i = 0; $i < ($last_depth + 1); $i++) {
+        $output .= '</li>' . "\n";
+        $output .= '</ul>' . "\n";
+      }
+    }
+  }
+  $output .= '</ul>';
+  return $output;
+}
+/**
+ *  This handler provides a way to limit a taxonomy tree listing to a specific branch of the tree
+ */
+function views_bonus_lineage_tree_branch_arg($op, &$query, $argtype, $arg = '') {
+  switch($op) {
+    case 'summary':
+      // join in the lineage table to get hierarchy info for nested tree view of options
+      // and the term_data table to get the term name for each lineage item
+      $query->add_table('term_node');
+      $query->add_table('term_lineage', false, 1, array('left' => array('table' => 'term_node', 'field' => 'tid'), 'right' => array('field' => 'tid')));
+      $query->add_table('term_data', false, 1, array('left' => array('table' => 'term_lineage', 'field' => 'tid'), 'right' => array('field' => 'tid')));
+      $query->add_field('tid', 'term_lineage', 'tid');
+      $query->add_field('depth', 'term_lineage', 'term_lineage_depth');
+      $query->add_field('lineage', 'term_lineage', 'term_lineage_lineage');
+      $query->add_where('term_lineage.tid IS NOT NULL');
+
+      $fieldinfo['field'] = "term_data.name";
+      $fieldinfo['fieldname'] = 'name';
+      return $fieldinfo;
+      break;
+    case 'sort':
+      $query->add_orderby('term_lineage', 'lineage', $argtype);
+      break;
+    case 'filter':
+      // filter for any lineage that contains the requested value
+      $query->add_field('lineage', 'term_lineage');
+      $query->add_where("term_lineage.lineage LIKE '%s'", "%$arg\n%");
+      break;
+    case 'link':
+      return l($query->name, "$arg/$query->name");
+    case 'title':
+      return check_plain($query);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Implementation of hook_views_query_alter()
+/*
+function views_bonus_lineage_tree_query_alter(&$query, &$view, $summary, $level) {
+  if ($view->page_type == 'lineage_tree' && module_exist('lineage') && module_exist('taxonomy') && $summary) {
+    // these must be in taxonomy tree query for it to work correctly
+    if (!in_array('term_lineage.depth', $query->fields)) {
+      $query->add_field('depth', 'term_lineage', 'term_lineage_depth');
+    }
+    if (!in_array('term_lineage.lineage', $query->fields)) {
+      $query->add_field('lineage', 'term_lineage', 'term_lineage_lineage');
+    }
+    if (!in_array('term_lineage_lineage ASC', $query->orderby)) {
+      $query->add_orderby('term_lineage', 'lineage', 'ASC');
+    }
+  }
+}
+*/
+
+function views_bonus_lineage_tree_views_arguments() {
+  $arguments = array();
+  $arguments = array(
+  'lineage_branch' => array(
+    'name' => t('Lineage: Term Branch'),
+    'handler' => 'views_bonus_lineage_tree_branch_arg',
+    'help' => t('The argument will limit a view to terms that descend from a selected term name. Use it as a top-level selector for a branch and follow it with a taxonomy term name argument to view the selected branch of the taxonomy tree.'),
+  ),
+  );
+  return $arguments;
+}
+
+function views_bonus_lineage_tree_views_default_views() {
+    // this default view provides an example of the lineage tree plugin summary view
+    $view = new stdClass();
+    $view->name = 'taxonomy_tree';
+    $view->description = t('Bonus Pack: Nested, hierarchical taxonomy view. Select a branch in the first argument to view only that branch.');
+    $view->access = array ();
+    $view->view_args_php = '';
+    $view->page = TRUE;
+    $view->page_title = t('tree');
+    $view->page_header = '';
+    $view->page_header_format = '1';
+    $view->page_footer = '';
+    $view->page_footer_format = '1';
+    $view->page_empty = '';
+    $view->page_empty_format = '1';
+    $view->page_type = 'lineage_tree';
+    $view->url = 'tree';
+    $view->use_pager = TRUE;
+    $view->nodes_per_page = '999';
+    $view->menu = TRUE;
+    $view->menu_title = t('tree');
+    $view->menu_tab = FALSE;
+    $view->menu_tab_default = FALSE;
+    $view->menu_weight = '';
+    $view->sort = array (
+    array (
+      'tablename' => 'term_lineage',
+      'field' => 'lineage',
+      'sortorder' => 'ASC',
+      'options' => '',
+    ),
+    );
+    $view->argument = array (
+    array (
+      'type' => 'lineage_branch',
+      'argdefault' => '4',
+      'title' => '%1',
+      'options' => '',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+    array (
+      'type' => 'taxletter',
+      'argdefault' => '4',
+      'title' => '%2',
+      'options' => '',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+    );
+    $view->field = array ();
+    $view->filter = array (
+    array (
+      'tablename' => 'node',
+      'field' => 'status',
+      'operator' => '=',
+      'options' => '',
+      'value' => '1',
+    ),
+    );
+    $view->exposed_filter = array ();
+    $view->requires = array(term_lineage, node);
+    $views[$view->name] = $view;
+
+  return $views;
+}

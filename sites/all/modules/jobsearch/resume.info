@@ -1,0 +1,8 @@
+name = Resume
+description = "Allows job seekers to post resumes and use them to apply for jobs posted."
+
+; Information added by drupal.org packaging script on 2008-03-08
+version = "5.x-2.0"
+project = "jobsearch"
+datestamp = "1205004610"
+

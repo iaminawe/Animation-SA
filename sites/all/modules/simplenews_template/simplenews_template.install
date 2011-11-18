@@ -1,0 +1,31 @@
+<?php
+
+// $Id: simplenews_template.install,v 1.3 2008/10/19 09:15:48 tbarregren Exp $
+
+
+/**
+ * @file
+ * Installs Simplenews Template.
+ */
+
+
+function simplenews_template_uninstall() {
+
+  global $conf;
+
+  // Delete variables.
+  if (!($result = _simplenews_template_install_db_query("SELECT name FROM {variable} WHERE name LIKE 'simplenews_template_%'"))) return;
+  while ($row = db_fetch_array($result)) {
+    unset($conf[$row['name']]);
+  }
+  if (!($result = _simplenews_template_install_db_query("DELETE FROM {variable} WHERE name LIKE 'simplenews_template_%'"))) return;
+  cache_clear_all('variables', 'cache');
+
+}
+
+function _simplenews_template_install_db_query($sql) {
+  if (!($result = db_query($sql))) {
+    drupal_set_mesage("Simplenews Template failed to execute following SQL-query: $sql");
+  }
+  return $result;
+}

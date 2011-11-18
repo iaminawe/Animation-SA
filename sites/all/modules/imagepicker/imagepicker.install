@@ -1,0 +1,137 @@
+<?php
+// $Id: imagepicker.install,v 1.2.2.6 2008/09/03 09:24:48 hutch Exp $
+// $Name: DRUPAL-5--1-4 $
+
+function imagepicker_install() {
+  // Create a directory structure so that usernames would be divided by letters.
+  $drupaldir = str_replace('/', DIRECTORY_SEPARATOR, getcwd()) . DIRECTORY_SEPARATOR;
+  $dir = $drupaldir . file_directory_path() . DIRECTORY_SEPARATOR .'imagepicker';
+
+  if (file_check_directory($dir, TRUE)) {
+    $dirlist = range('a', 'z');
+    array_push($dirlist, 'others');
+
+    foreach ($dirlist AS $v) {
+      $newdir = $dir . DIRECTORY_SEPARATOR . $v;
+      if (! file_check_directory($newdir, TRUE)) {
+        drupal_set_message(t('Directory creation for the Imagepicker module was unsuccessful.'), 'error');
+      }
+    }
+    $errors = drupal_get_messages('error');
+    if (! count($errors)) {
+      // clear
+      drupal_get_messages();
+      drupal_set_message(t('Directory creation for the Imagepicker module was successful.'), '');
+    }
+    else {
+      foreach ($errors['error'] as $error) {
+        drupal_set_message($error, 'error');
+      }
+    }
+
+    $created1 = db_query("INSERT INTO {sequences} (name, id) VALUES ('imagepicker_img_id', 0);");
+
+    switch ($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+        $created2 = db_query("
+          CREATE TABLE IF NOT EXISTS {imagepicker} (
+          `img_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `uid` int(10) unsigned NOT NULL default '0',
+          `img_name` varchar(255) NOT NULL default '',
+          `img_title` varchar(255) NOT NULL default '',
+          `img_description` varchar(255) NOT NULL default '',
+          `img_date` timestamp NOT NULL,
+          PRIMARY KEY (`img_id`),
+          KEY `uid` (`uid`)
+          )
+        ");
+        $created3 = db_query("
+          CREATE TABLE IF NOT EXISTS {imagepicker_user_groups} (
+            `gid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+            `uid` int(10) unsigned  NOT NULL default '0',
+            `group_name` varchar(255) NOT NULL default '',
+            `group_description` varchar(255) default NULL,
+            `state` tinyint(4) unsigned NOT NULL default '0',
+            PRIMARY KEY  (`gid`),
+            KEY `uid` (`uid`)
+            )
+        ");
+        $created4 = db_query("
+          CREATE TABLE IF NOT EXISTS {imagepicker_group_images} (
+          `gid` int(10) unsigned NOT NULL default '0',
+          `img_id` int(10) unsigned NOT NULL default '0')
+        ");
+        break;
+
+/*
+      case 'pgsql':
+        db_query("
+          CREATE TABLE {imagepicker} (
+          img_id integer UNIQUE,
+          uid integer NOT NULL,
+          img_name varchar(255) NOT NULL,
+          img_title varchar(255) NULL,
+          img_description varchar(255) NULL,
+          img_date timestamp DEFAULT current_timestamp,
+          CONSTRAINT imagepicker_uid INDEX(uid)
+        );
+      ");
+      break;
+ */
+    }
+    if (!$created1 || !$created2 || !$created3 || !$created4) {
+      drupal_set_message(t('Table installation for the Imagepicker module was unsuccessful.'), 'error');
+    }
+    else {
+      drupal_set_message(t('Table installation for the Imagepicker module was successful. Go to Site Configuration to set preferences.'), '');
+    }
+  }
+  else {
+    drupal_set_message(t('Directory creation for the Imagepicker module was unsuccessful.'), 'error');
+  }
+}
+
+function imagepicker_uninstall() {
+  db_query('DROP TABLE {imagepicker};');
+  db_query('DROP TABLE {imagepicker_user_groups};');
+  db_query('DROP TABLE {imagepicker_group_images};');
+  db_query("DELETE FROM {sequences} WHERE name = 'imagepicker_img_id';");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'imagepicker_%';");
+}
+
+function imagepicker_update_1() {
+  $ret = array();
+  $sql = "ALTER TABLE {imagepicker} CHANGE img_id img_id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT";
+  $ret[] = update_sql($sql);
+  return $ret;
+}
+function imagepicker_update_2() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $created1 = db_query("
+        CREATE TABLE IF NOT EXISTS {imagepicker_user_groups} (
+          `gid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+          `uid` int(10) unsigned  NOT NULL default '0',
+          `group_name` varchar(255) NOT NULL default '',
+          `group_description` varchar(255) default NULL,
+          `state` tinyint(4) unsigned NOT NULL default '0',
+          PRIMARY KEY  (`gid`),
+          KEY `uid` (`uid`)
+          )
+      ");
+      $created2 = db_query("
+        CREATE TABLE IF NOT EXISTS {imagepicker_group_images} (
+        `gid` int(10) unsigned NOT NULL default '0',
+        `img_id` int(10) unsigned NOT NULL default '0')
+      ");
+      break;
+  }
+  if (!$created1 || !$created2) {
+    drupal_set_message(t('Table installation for the Imagepicker module was unsuccessful.'), 'error');
+  }
+  else {
+    drupal_set_message(t('Table installation for the Imagepicker module was successful.'), '');
+  }
+}

@@ -1,0 +1,148 @@
+<?php
+// $Id: pageroute.install,v 1.9.2.1 2007/04/29 18:33:02 fago Exp $
+
+function pageroute_install() {
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("CREATE TABLE if not exists {pageroute_routes} (
+        prid int(10) unsigned NOT NULL,
+        path varchar(127) NOT NULL,
+        options mediumtext NOT NULL,
+        PRIMARY KEY(prid)
+      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
+
+      db_query("CREATE TABLE if not exists {pageroute_pages} (
+        prid int(10) unsigned NOT NULL,
+        name varchar(63) NOT NULL,
+        type varchar(32) NOT NULL,
+        title varchar(255) NOT NULL,
+        options mediumtext NOT NULL,
+        weight tinyint(4) NOT NULL,
+        PRIMARY KEY(prid, name)
+      ) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;");
+
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {pageroute_routes} (
+        prid integer NOT NULL,
+        path varchar(127) NOT NULL,
+        options text NOT NULL,
+        PRIMARY KEY(prid)
+      )");
+
+      db_query("CREATE TABLE {pageroute_pages} (
+        prid integer NOT NULL,
+        name varchar(63) NOT NULL,
+        type varchar(32) NOT NULL,
+        title varchar(255) NOT NULL,
+        options text NOT NULL,
+        weight smallint NOT NULL,
+        PRIMARY KEY(prid, name)
+      )");
+
+    default:
+      break;
+  }
+}
+
+function pageroute_uninstall() {
+  db_query("DROP TABLE {pageroute_pages}");
+  db_query("DROP TABLE {pageroute_routes}");
+}
+
+function pageroute_update_1() {
+  $ret = array();
+  db_add_column($ret, 'pageroute_routes', 'options', 'varchar(255) NOT NULL');
+  return $ret;
+}
+
+function pageroute_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("ALTER TABLE {pageroute_pages} CHANGE `options` `options` mediumtext");
+    break;
+    case 'pgsql':
+      db_change_column($ret, 'pageroute_pages', 'options', 'options', 'text', array("not null" => TRUE));
+    break;
+  }
+  return $ret;
+}
+
+function pageroute_update_3() {
+  $lonely_node_types = pageroute_ui_get_lonely_node_types();
+  if (!$lonely_node_types) {
+    return array();
+  }
+
+  $result = db_query("SELECT * FROM {pageroute_pages}");
+
+  while ($page = db_fetch_object($result)) {
+    $page->options = unserialize($page->options);
+    if (in_array($page->options['content-type'], array_keys($lonely_node_types))) {
+      db_query("UPDATE {pageroute_pages} SET type = %d WHERE prid = %d AND name = '%s'",
+               NODE_MANAGE_LONELY, $page->prid, $page->name);
+    }
+  }
+  return array();
+}
+
+function pageroute_update_4() {
+  $ret = array();
+  $ret[] = update_sql("ALTER TABLE {pageroute_pages} MODIFY type varchar(32) NOT NULL");
+
+  $result = db_query("SELECT * FROM {pageroute_pages}");
+  while ($page = db_fetch_object($result)) {
+    switch ($page->type) {
+      case 1:
+        $new_type = 'add';
+        break;
+      case 2:
+        $new_type = 'view';
+        break;
+      case 3:
+        $new_type = 'manage';
+        break;
+      case 4:
+        $new_type = 'manage_lonely';
+        break;
+      default:
+        break 2;
+    }
+    $ret[] = update_sql("UPDATE {pageroute_pages} SET type = '$new_type' ".
+                        "WHERE prid = ". intval($page->prid) .
+                        " AND name = '". db_escape_string($page->name) ."'");
+  }
+  return $ret;
+}
+
+function pageroute_update_5() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      $ret[] = update_sql("ALTER TABLE {pageroute_routes} CHANGE `options` `options` mediumtext");
+    break;
+    case 'pgsql':
+      db_change_column($ret, 'pageroute_routes', 'options', 'options', 'text', array("not null" => TRUE));
+    break;
+  }
+  return $ret;
+}
+
+function pageroute_update_6() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {pageroute_pages} SET type = 'user_edit' WHERE type = 'user edit'");
+  return $ret;
+}
+
+/*
+ * Clears the menu cache so that the route objects and their page index is rebuilt
+ */
+function pageroute_update_7() {
+  cache_clear_all('*', 'cache_menu', TRUE);
+  return array();
+}

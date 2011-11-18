@@ -1,0 +1,93 @@
+# $Id: mimemail.pot,v 1.1.2.1 2007/12/15 15:46:26 wulff Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  mimemail.module,v 1.14.2.4 2007/04/09 17:03:00 vauxia
+#  mimemail.info,v 1.1 2007/01/05 05:44:09 vauxia
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-12-09 13:55+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: mimemail.module:14 mimemail.info:0
+msgid "Mail"
+msgstr ""
+
+#: mimemail.module:15
+msgid "HTML E-mail settings"
+msgstr ""
+
+#: mimemail.module:44
+msgid "E-mail address"
+msgstr ""
+
+#: mimemail.module:48
+msgid "A valid e-mail address for this website, used by the auto-mailer during registration, new password requests, notifications, etc."
+msgstr ""
+
+#: mimemail.module:52
+msgid "Use mime mail for all messages"
+msgstr ""
+
+#: mimemail.module:54
+msgid "Use the mime mail module to deliver all site messages.  With this option, system emails will have styles and formatting"
+msgstr ""
+
+#: mimemail.module:58;117
+msgid "Plaintext email only"
+msgstr ""
+
+#: mimemail.module:60
+msgid "This option disables the use of email messages with graphics and styles.  All messages will be converted to plain text."
+msgstr ""
+
+#: mimemail.module:68;77
+msgid "E-mail engine"
+msgstr ""
+
+#: mimemail.module:71;80
+msgid "Choose an e-mail engine for sending mails from your site."
+msgstr ""
+
+#: mimemail.module:89
+msgid "Engine specific settings"
+msgstr ""
+
+#: mimemail.module:97
+msgid "Please choose a mail engine."
+msgstr ""
+
+#: mimemail.module:111
+msgid "Email settings"
+msgstr ""
+
+#: mimemail.module:119
+msgid "Check this option if you do not wish to receive email messages with graphics and styles"
+msgstr ""
+
+#: mimemail.module:226 mimemail.info:0
+msgid "Mime Mail"
+msgstr ""
+
+#: mimemail.module:229
+msgid "Default mailing engine using drupal_mail()."
+msgstr ""
+
+#: mimemail.module:0
+msgid "mimemail"
+msgstr ""
+
+#: mimemail.info:0
+msgid "E-mail with HTML and attachments"
+msgstr ""
+

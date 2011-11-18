@@ -1,0 +1,11 @@
+; $Id: ad.info,v 1.1.2.5 2009/01/29 06:26:02 jeremy Exp $
+name = Ad
+package = Ad
+dependencies = taxonomy
+description = An advertising system for Drupal powered websites.
+
+; Information added by drupal.org packaging script on 2009-02-11
+version = "5.x-1.7"
+project = "ad"
+datestamp = "1234387502"
+

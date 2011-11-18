@@ -1,0 +1,62 @@
+<?php
+
+// $Id: resume.module,v 1.5 2007/04/27 23:16:55 kbahey Exp $
+
+// Copyright 2006 http://2bits.com
+
+define('RESUME_NODE_TYPE',     'resume_node_type_');
+
+function resume_help($section) {
+  switch ($section) {
+    case 'admin/help#resume':
+      return t('Allows users to post resumes and use them to apply for jobs.');
+  }
+}
+
+function resume_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path'               => 'admin/settings/resume',
+      'title'              => t('Resume'),
+      'description'        => t('Resume settings.'),
+      'callback'           => 'drupal_get_form',
+      'callback arguments' => array('resume_admin_settings'),
+      'access'             => user_access('administer site configuration'),
+    );
+  }
+  return $items;
+}
+
+function resume_admin_settings() {
+  $set = 'resume';
+  $form[$set] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Enable resume for these content types'),
+  );
+
+  foreach(node_get_types() as $type => $name) {
+    $form[$set][RESUME_NODE_TYPE . $type] = array(
+      '#type' => 'checkbox',
+      '#title' => $type,
+      '#return_value' => 1,
+      '#default_value' => variable_get(RESUME_NODE_TYPE . $type, 0),
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+function resume_search_item($item) {
+  return theme('resume_search_item', $item);
+}
+
+function theme_resume_search_item($item) {
+  $output .= '<div id="resume_search">';
+  $output .= l($item['title'], $item['link']) . '<br />';
+  $output .= $item['snippet']. '<br />';
+  $output .= $item['user'] . ' | ' . format_date($item['date'], 'small'). '<br /><br />';
+  $output .= '</div>';
+
+  return $output ;
+}

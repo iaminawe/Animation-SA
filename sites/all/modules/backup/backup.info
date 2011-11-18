@@ -1,0 +1,10 @@
+; $Id: backup.info,v 1.1.2.1 2007/06/10 16:52:56 dmuth Exp $
+name = Backup
+description = "A module to backup your Drupal installation."
+
+
+; Information added by drupal.org packaging script on 2007-06-13
+version = "5.x-3.0"
+project = "backup"
+datestamp = "1181704511"
+

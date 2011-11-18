@@ -1,0 +1,859 @@
+<?php
+// $Id: uc_donate.module,v 1.2.2.3 2008/11/14 02:20:14 greenskin Exp $
+
+/**
+ * @uc_donate.module
+ * Provides a page with donation products.
+ *
+ * This module provides a page listing donation products either by
+ * group or individually. This supplied page also allows the user to set
+ * various amounts for differing donation products and add them to the cart
+ * all at once.
+ *
+ * The ability to have a featured donation product is also available if the
+ * module Node Queue is installed. This featured donation product can be added
+ * to the donate page and/or as a pane during checkout. This pane only shows if
+ * no donations exist in the cart.
+ *
+ * Written by greenSkin. Development sponsored by the It Is Written.
+ * http://www.itiswritten.org
+ */
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+function uc_donate_help($section) {
+  switch ($section) {
+    case 'admin/help#uc_donate':
+      $output = '<p>'. t('Add donation products to a single page where users can add amounts for several different donations at once and then add them all to the cart.') .'</p>';
+      $output .= '<p>'. l(t('Donate page'), 'donate') .'</p>';
+      return $output;
+    case 'admin/store/settings/donate/manage/queue':
+      return '<p>'. t('Queues which are set up to allow donation type nodes will be selectable. Only nodes that are a donation type will be displayed out of the node queue.') .'</p>';
+  }
+}
+
+function uc_donate_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'donate',
+      'title' => variable_get('uc_donate_title', t('Donate')),
+      'callback' => 'uc_donate',
+      'access' => user_access('access content')
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate',
+      'title' => t('Donate Page'),
+      'callback' => 'uc_donate_general',
+      'type' => MENU_NORMAL_ITEM
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate/general',
+      'title' => t('General'),
+      'description' => t('Set general settings for the donate page.'),
+      'type' => MENU_DEFAULT_LOCAL_TASK
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate/manage',
+      'title' => t('Manage Donate Products'),
+      'description' => t('Add, remove, and arrange donation products to the donate page.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'uc_donate_manage',
+      'type' => MENU_LOCAL_TASK
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate/manage/overview',
+      'title' => t('Manage'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate/manage/add',
+      'title' => t('Add Donation'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'uc_donate_add',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => -5
+    );
+    $items[] = array(
+      'path' => 'admin/store/settings/donate/manage/group',
+      'title' => t('Add Group'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'uc_donate_add_group',
+      'type' => MENU_LOCAL_TASK,
+      'weight' => -5
+    );
+    if (module_exists('nodequeue')) {
+      $items[] = array(
+        'path' => 'admin/store/settings/donate/manage/queue',
+        'title' => t('Add Node Queue'),
+        'callback' => 'drupal_get_form',
+        'callback arguments' => 'uc_donate_add_queue',
+        'type' => MENU_LOCAL_TASK,
+        'weight' => -5
+      );
+    }
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_donate_form_alter($form_id, &$form) {
+  if ($form_id == 'uc_cart_checkout_form' && module_exists('nodequeue')) {
+    $form['#validate']['uc_donate_cart_checkout_form_validate'] = array();
+  }
+}
+
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_checkout_pane().
+ */
+function uc_donate_checkout_pane() {
+  if (module_exists('nodequeue')) {
+    $panes[] = array(
+      'id' => 'donate',
+      'title' => variable_get('uc_donate_featured_title', t('Featured Donation')),
+      'desc' => t('Display the featured donation project if no donations are added to cart.'),
+      'callback' => 'uc_checkout_pane_donate',
+      'weight' => 1,
+      'collapsible' => FALSE
+    );
+    return $panes;
+  }
+}
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+function uc_donate() {
+  // Add the CSS file for the "Update Total" Button.
+  drupal_add_css(drupal_get_path('module','uc_donate').'/uc_donate.css', 'module');
+
+  $items = array();
+  $donate = uc_donate_set_order();
+  if ($donate) {
+    $used = array();
+    foreach ($donate->donations as $base) {
+      foreach ($base as $sub_base) {
+        if (is_array($sub_base)) {
+          foreach ($sub_base as $sub_group) {
+            if ($sub_group->type == 'donation') {
+              $node = node_load($sub_group->nid);
+              if (!isset($used[$node->nid])) {
+                $obj = new stdClass();
+                $obj->nid = $node->nid;
+                $obj->image = isset($node->field_image_cache[0]) ? theme('imagecache', 'product_list', $node->field_image_cache[0]['filepath'], $node->field_image_cache[0]['alt'], $node->field_image_cache[0]['title']) : '';
+                $obj->title = $node->title;
+                $obj->body = $node->field_excerpt[0]['value'];
+
+                $group = str_replace(' ', '_', $sub_group->group);
+                $items[$group][] = $obj;
+                $used[$node->nid] = TRUE;
+              }
+            } else if ($sub_group->type == 'queue') {
+              $result = db_query("SELECT nid FROM {nodequeue_nodes} WHERE qid = %d ORDER BY timestamp", $sub_group->nid);
+              while ($data = db_fetch_object($result)) {
+                $node = node_load($data->nid);
+                if ($node->type == 'donation' && !isset($used[$node->nid])) {
+                  $obj = new stdClass();
+                  $obj->nid = $node->nid;
+                  $obj->image = isset($node->field_image_cache[0]) ? theme('imagecache', 'product_list', $node->field_image_cache[0]['filepath'], $node->field_image_cache[0]['alt'], $node->field_image_cache[0]['title']) : '';
+                  $obj->title = $node->title;
+                  $obj->body = $node->field_excerpt[0]['value'];
+
+                  $group = str_replace(' ', '_', $sub_group->group);
+                  $items[$group][] = $obj;
+                  $used[$node->nid] = TRUE;
+                }
+              }
+            }
+          }
+        } else {
+          if ($sub_base->type == 'donation') {
+            $node = node_load($sub_base->nid);
+            if (!isset($used[$node->nid])) {
+              $obj = new stdClass();
+              $obj->nid = $node->nid;
+              $obj->image = isset($node->field_image_cache[0]) ? theme('imagecache', 'product_list', $node->field_image_cache[0]['filepath'], $node->field_image_cache[0]['alt'], $node->field_image_cache[0]['title']) : '';
+              $obj->title = $node->title;
+              $obj->body = $node->field_excerpt[0]['value'];
+
+              $items[] = $obj;
+              $used[$node->nid] = TRUE;
+            }
+          } else if ($sub_base->type == 'queue') {
+            $result = db_query("SELECT nid FROM {nodequeue_nodes} WHERE qid = %d ORDER BY timestamp", $sub_base->nid);
+            while ($data = db_fetch_object($result)) {
+              $node = node_load($data->nid);
+              if ($node->type == 'donation' && !isset($used[$node->nid])) {
+                $obj = new stdClass();
+                $obj->nid = $node->nid;
+                $obj->image = isset($node->field_image_cache[0]) ? theme('imagecache', 'product_list', $node->field_image_cache[0]['filepath'], $node->field_image_cache[0]['alt'], $node->field_image_cache[0]['title']) : '';
+                $obj->title = $node->title;
+                $obj->body = $node->field_excerpt[0]['value'];
+
+                $items[] = $obj;
+                $used[$node->nid] = TRUE;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return drupal_get_form('uc_donate_form', $items);
+}
+
+function uc_donate_general() {
+  return drupal_get_form('uc_donate_settings');
+}
+
+function uc_donate_settings() {
+  $form['uc_donate_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#description' => t('Page title for the Donate form.'),
+    '#default_value' => variable_get('uc_donate_title', t('Donate'))
+  );
+  $form['uc_donate_description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Description'),
+    '#description' => t('Set a description at the top of the Donate page.'),
+    '#default_value' => variable_get('uc_donate_description', '')
+  );
+  $form['uc_donate_add'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Add to Cart Name'),
+    '#description' => t('Set the button name for adding the donation products to the cart then going to the cart.'),
+    '#default_value' => variable_get('uc_donate_add', t('Add to Cart')),
+    '#required' => TRUE
+  );
+  $form['uc_donate_checkout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Checkout Name'),
+    '#description' => t('Set the button name for adding the donation products to the cart then proceeding to checkout.'),
+    '#default_value' => variable_get('uc_donate_checkout', t('Checkout')),
+    '#required' => TRUE
+  );
+  
+  return system_settings_form($form);
+}
+
+function uc_donate_manage() {
+  $form = array();
+  $weight = NULL;
+  for ($i = -10; $i <= 10; $i++) {
+    $weight[$i] = $i;
+  }
+  $donate = uc_donate_set_order();
+  if (!empty($donate->donations)) {
+    foreach ($donate->donations as $base_weight => $base_group) {
+      foreach ($base_group as $sub_weight => $sub_group) {
+        if (is_array($sub_group)) {
+          foreach ($sub_group as $group_sub) {
+            $node = node_load($group_sub->nid);
+            $temp_group = str_replace(' ', '_', $group_sub->group);
+            if (!isset($form['group_'.$temp_group])) {
+              $form['group_'.$temp_group] = array(
+                '#type' => 'fieldset',
+                '#title' => t($group_sub->group),
+                '#collapsible' => TRUE,
+                '#collapsed' => FALSE
+              );
+              $form['group_'.$temp_group]['group_remove|'.$temp_group] = array(
+                '#type' => 'submit',
+                '#value' => t('Delete '.$group_sub->group)
+              );
+              $form['group_'.$temp_group]['group_weight|'.$temp_group] = array(
+                '#type' => 'select',
+                '#title' => t('Weight'),
+                '#options' => $weight,
+                '#default_value' => $base_weight
+              );
+            }
+            if ($group_sub->type == 'donation') {
+              $form['group_'.$temp_group]['donation_'.$node->nid] = array(
+                '#type' => 'fieldset',
+                '#title' => t($node->title),
+                '#collapsible' => TRUE,
+                '#collapsed' => TRUE
+              );
+              $form['group_'.$temp_group]['donation_'.$node->nid]['donation_weight|'.$node->nid] = array(
+                '#type' => 'select',
+                '#title' => t('Weight'),
+                '#options' => $weight,
+                '#default_value' => $sub_weight
+              );
+              $form['group_'.$temp_group]['donation_'.$node->nid]['donation_group|'.$node->nid] = array(
+                '#type' => 'select',
+                '#title' => t('Group'),
+                '#options' => $donate->list_groups,
+                '#default_value' => $temp_group
+              );
+              $form['group_'.$temp_group]['donation_'.$node->nid]['donation_remove|'.$node->nid] = array(
+                '#type' => 'submit',
+                '#value' => t('Remove '.$node->title)
+              );
+            } else if ($group_sub->type == 'queue') {
+              $queue = nodequeue_load($group_sub->nid);
+              $temp_group = str_replace(' ', '_', $group_sub->group);
+              $form['group_'.$temp_group]['donation_queue_'.$group_sub->nid] = array(
+                '#type' => 'fieldset',
+                '#title' => t($queue->title." (Node Queue)"),
+                '#collapsible' => TRUE,
+                '#collapsed' => TRUE
+              );
+              $form['group_'.$temp_group]['donation_queue_'.$group_sub->nid]['donation_queue_weight|'.$group_sub->nid] = array(
+                '#type' => 'select',
+                '#title' => t('Weight'),
+                '#options' => $weight,
+                '#default_value' => $sub_weight
+              );
+              $form['group_'.$temp_group]['donation_queue_'.$group_sub->nid]['donation_queue_group|'.$group_sub->nid] = array(
+                '#type' => 'select',
+                '#title' => t('Group'),
+                '#options' => $donate->list_groups,
+                '#default_value' => $temp_group
+              );
+              $form['group_'.$temp_group]['donation_queue_'.$group_sub->nid]['donation_queue_remove|'.$group_sub->nid] = array(
+                '#type' => 'submit',
+                '#value' => t('Remove '.$queue->title." (Node Queue)")
+              );
+            }
+          }
+        } else {
+          if ($sub_group->type == 'donation') {
+            $node = node_load($sub_group->nid);
+            $temp_group = str_replace(' ', '_', $sub_group->group);
+            $form['donation_'.$node->nid] = array(
+              '#type' => 'fieldset',
+              '#title' => t($node->title),
+              '#collapsible' => TRUE,
+              '#collapsed' => TRUE
+            );
+            $form['donation_'.$node->nid]['donation_weight|'.$node->nid] = array(
+              '#type' => 'select',
+              '#title' => t('Weight'),
+              '#options' => $weight,
+              '#default_value' => $base_weight
+            );
+            $form['donation_'.$node->nid]['donation_group|'.$node->nid] = array(
+              '#type' => 'select',
+              '#title' => t('Group'),
+              '#options' => $donate->list_groups,
+              '#default_value' => $temp_group
+            );
+            $form['donation_'.$node->nid]['donation_remove|'.$node->nid] = array(
+              '#type' => 'submit',
+              '#value' => t('Remove '.$node->title)
+            );
+          } else if ($sub_group->type == 'queue') {
+            $queue = nodequeue_load($sub_group->nid);
+            $temp_group = str_replace(' ', '_', $sub_group->group);
+            $form['donation_queue_'.$sub_group->nid] = array(
+              '#type' => 'fieldset',
+              '#title' => t($queue->title." (Node Queue)"),
+              '#collapsible' => TRUE,
+              '#collapsed' => TRUE
+            );
+            $form['donation_queue_'.$sub_group->nid]['donation_queue_weight|'.$sub_group->nid] = array(
+              '#type' => 'select',
+              '#title' => t('Weight'),
+              '#options' => $weight,
+              '#default_value' => $base_weight
+            );
+            $form['donation_queue_'.$sub_group->nid]['donation_queue_group|'.$sub_group->nid] = array(
+              '#type' => 'select',
+              '#title' => t('Group'),
+              '#options' => $donate->list_groups,
+              '#default_value' => $temp_group
+            );
+            $form['donation_queue_'.$sub_group->nid]['donation_queue_remove|'.$sub_group->nid] = array(
+              '#type' => 'submit',
+              '#value' => t('Remove '.$queue->title." (Node Queue)")
+            );
+          }
+        }
+      }
+    }
+    $form['save'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save')
+    );
+  }
+  
+  if ($form == NULL) {
+    $form['info'] = array(
+      '#type' => 'item',
+      '#value' => t('There have not been any donation products added to the donate page. Go !here to add donation products.', array('!here' => l(t('here'), 'admin/store/settings/donate/manage/add')))
+    );
+  }
+  return $form;
+}
+
+function uc_donate_manage_submit($form_id, $form_values) {
+  foreach ($form_values as $element => $value) {
+    if ($element != 'op' && $element != 'save' && $element != 'form_token' && $element != 'form_id') {
+      list($type, $id) = split('\|', $element);
+      $id = str_replace('_', ' ', $id);
+      switch ($type) {
+        case "group_weight":
+          db_query("UPDATE {uc_donate} SET weight = %d WHERE type = '%s' AND `group` = '%s'", $value, 'group', $id);
+          break;
+        case "donation_weight":
+          db_query("UPDATE {uc_donate} SET weight = %d WHERE type = '%s' AND nid = %d", $value, 'donation', $id);
+          break;
+        case "donation_group":
+          if ($value != 'none') {
+            db_query("UPDATE {uc_donate} SET `group` = '%s' WHERE type = '%s' AND nid = %d", str_replace('_', ' ', $value), 'donation', $id);
+          } else {
+            db_query("UPDATE {uc_donate} SET `group` = '%s' WHERE type = '%s' AND nid = %d", NULL, 'donation', $id);
+          }
+          break;
+        case "donation_queue_weight":
+          db_query("UPDATE {uc_donate} SET weight = %d WHERE type = '%s' AND nid = %d", $value, 'queue', $id);
+          break;
+        case "donation_queue_group":
+          if ($value != 'none') {
+            db_query("UPDATE {uc_donate} SET `group` = '%s' WHERE type = '%s' AND nid = %d", str_replace('_', ' ', $value), 'queue', $id);
+          } else {
+            db_query("UPDATE {uc_donate} SET `group` = '%s' WHERE type = '%s' AND nid = %d", NULL, 'queue', $id);
+          }
+          break;
+      }
+    }
+  }
+  
+  $op = $form_values['op'];
+  if ($op != $form_values['save']) {
+    if (preg_match('/^Delete /', $op)) {
+      $group = str_replace('Delete ', '', $op);
+      db_query("DELETE FROM {uc_donate} WHERE `group` = '%s' AND type = '%s'", $group, 'group');
+      db_query("UPDATE {uc_donate} SET `group` = NULL WHERE `group` = '%s' AND type != '%s'", $group, 'group');
+    } else if (preg_match('/^Remove /', $op)) {
+      if (preg_match('/ \(Node Queue\)$/', $op)) {
+        $title = str_replace('Remove ', '', $op);
+        $title = str_replace(' (Node Queue)', '', $title);
+        $qid = db_result(db_query("SELECT qid FROM {nodequeue_queue} WHERE title = '%s'", $title));
+        db_query("DELETE FROM {uc_donate} WHERE nid = %d AND type = '%s'", $qid, 'queue');
+      } else {
+        $title = str_replace('Remove ', '', $op);
+        $result = db_query("SELECT nid FROM {uc_donate} WHERE type = '%s'", 'donation');
+        while ($data = db_fetch_object($result)) {
+          $node = node_load($data->nid);
+          if ($node->title == $title) {
+            db_query("DELETE FROM {uc_donate} WHERE nid = %d AND type = '%s'", $node->nid, 'donation');
+          }
+        }
+      }
+    }
+  }
+  
+  drupal_set_message('Changes have been saved.');
+}
+
+function uc_donate_add() {
+  $result = db_query("SELECT nid, title FROM {node} WHERE type = '%s' AND nid NOT IN (SELECT nid FROM {uc_donate}) ORDER BY title", 'donation');
+  $options = array();
+  while ($data = db_fetch_object($result)) {
+    $options[$data->nid] = $data->title;
+  }
+  if (!empty($options)) {
+    $form['donation'] = array(
+      '#type' => 'select',
+      '#title' => t('Donation Products'),
+      '#description' => t('Select a donation product to add to the donate page.'),
+      '#options' => $options,
+      '#required' => TRUE
+    );
+    $form['add'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add')
+    );
+  } else {
+    $form['info'] = array(
+      '#type' => 'item',
+      '#value' => t('There are no donation products to add.')
+    );
+  }
+  return $form;
+}
+
+function uc_donate_add_submit($form_id, $form_values) {
+  if (db_query("INSERT INTO {uc_donate} (nid,type) VALUES (%d,'%s')", $form_values['donation'], 'donation')) {
+    drupal_set_message(t('Donation successfully added to donate page.'));
+  } else {
+    drupal_set_message(t('There was a problem adding the donation product to the donate page.'), 'error');
+  }
+  return 'admin/store/settings/donate/manage';
+}
+
+function uc_donate_add_group() {
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#description' => t('Title for your group of donations on the donate page.')
+  );
+  $form['add'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add')
+  );
+  return $form;
+}
+
+function uc_donate_add_group_submit($form_id, $form_values) {
+  db_query("INSERT INTO {uc_donate} (`group`, type) VALUES ('%s', '%s')", $form_values['title'], 'group');
+  return 'admin/store/settings/donate/manage';
+}
+
+function uc_donate_add_queue() {
+  $options = uc_donate_queues();
+  
+  if (isset($options[0])) {
+    $form['info'] = array(
+      '#type' => 'item',
+      '#value' => 'Either no Node Queues have been created or all existing Node Queues have already been added. Go '.l(t('here'), 'admin/content/nodequeue/add').' to create a queue.'
+    );
+  } else {
+    $form['queues'] = array(
+      '#type' => 'select',
+      '#title' => t('Node Queues'),
+      '#description' => t('Select a queue to add to the Donate page.'),
+      '#options' => $options
+    );
+    $form['add'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add')
+    );
+  }
+  
+  return $form;
+}
+
+function uc_donate_add_queue_submit($form_id, $form_values) {
+  if (isset($form_values['queues'])) {
+    db_query("DELETE FROM {uc_donate} WHERE `group` = '%s'", $form_values['queues']);
+    db_query("INSERT INTO {uc_donate} (nid, type) VALUES ('%s', '%s')", $form_values['queues'], 'queue');
+  }
+  return 'admin/store/settings/donate/manage';
+}
+
+function uc_donate_form($items) {
+  foreach ($items as $group) {
+    if (is_array($group)) {
+      foreach ($group as $item) {
+        $form['donate'.$item->nid] = array(
+          '#type' => 'textfield',
+          '#title' => t('Amount'),
+          '#default_value' => '0.00',
+          '#size' => 10,
+          '#field_prefix' => variable_get('uc_sign_after_amount', FALSE) ? '' : variable_get('uc_currency_sign', '$'),
+          '#field_suffix' => variable_get('uc_sign_after_amount', FALSE) ? variable_get('uc_currency_sign', '$') : ''
+        );
+      }
+    } else {
+      $form['donate'.$group->nid] = array(
+        '#type' => 'textfield',
+        '#title' => t('Amount'),
+        '#default_value' => '0.00',
+        '#size' => 10,
+        '#field_prefix' => variable_get('uc_sign_after_amount', FALSE) ? '' : variable_get('uc_currency_sign', '$'),
+        '#field_suffix' => variable_get('uc_sign_after_amount', FALSE) ? variable_get('uc_currency_sign', '$') : ''
+      );
+    }
+  }
+  $form['buttons']['add'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('uc_donate_add', t('Add to Cart'))
+  );
+  $form['buttons']['checkout'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('uc_donate_checkout', t('Checkout'))
+  );
+  return $form;
+}
+
+function theme_uc_donate_form($form) {
+  $output = '';
+  if (!empty($form['#parameters'][1])) {
+    drupal_add_js(drupal_get_path('module', 'uc_donate').'/jquery.highlightFade.js');
+    drupal_add_js(drupal_get_path('module', 'uc_donate').'/uc_donate.js');
+    $output = '<div id="donate_donations">';
+    $output.= '<div>'.variable_get('uc_donate_description', '').'</div>';
+    foreach ($form['#parameters'][1] as $key => $project) {
+      if (is_array($project)) {
+        $output.= '<div class="group">';
+        $output.= '<h3 class="group_header">'.str_replace('_', ' ', $key).'</h3>';
+        foreach ($project as $item) {
+          $output.= '<div class="gift_item">';
+          $output.= '<div class="gift_image">';
+          $output.= $item->image;
+          $output.= '</div><!--end div# -->';
+          $output.= '<div class="gift_description">';
+          $output.= '<h4>'.l($item->title, 'node/'.$item->nid).'</h4>';
+          $output.= '<div class="body">'.$item->body.'</div>';
+          $output.= '</div><!--end div# -->';
+          $output.= '<div class="gift_form">';
+          $output.= drupal_render($form['donate'.$item->nid]);
+          $output.= '</div><!--end div# -->';
+          $output.= '</div><!--end div# -->';
+        }
+        $output.= '</div><!--end div# -->';
+        
+      } else {
+        $output.= '<div class="gift_item">';
+        $output.= '<div class="gift_image">';
+        $output.= $project->image;
+        $output.= '</div><!--end div# -->';
+        $output.= '<div class="gift_description">';
+        $output.= '<h4>'.l($project->title, 'node/'.$project->nid).'</h4>';
+        $output.= '<div class="body">'.$project->body.'</div>';
+        $output.= '</div><!--end div# -->';
+        $output.= '<div class="gift_form">';
+        $output.= drupal_render($form['donate'.$project->nid]);
+        $output.= '</div><!--end div# -->';
+        $output.= '</div><!--end div# -->';
+      }
+    }
+    $output.= '</div>';
+    $output.= '<div class="gift_submit">';
+    $output.= drupal_render($form);
+    $output.= '</div>';
+    return $output;
+  } else {
+    if (user_access('administer store')) {
+      return '<p>'.t('No donation products have been added to the donate page. You can add a donation product !here.', array('!here' => l(t('here'), 'admin/store/settings/donate/manage/add'))).'</p>';
+    } else {
+      drupal_not_found();
+    }
+  }
+}
+
+function uc_donate_form_validate($form_id, $form_values) {
+  $cid = uc_cart_get_id();
+  foreach ($form_values as $k => $v) {
+    if (preg_match('/^donate[0-9]*$/', $k)) {
+      if (!is_numeric($v) && !empty($v)) {
+        form_set_error($k, t('Amount value has to be a number.'));
+      }
+    }
+  }
+}
+
+function uc_donate_form_submit($form_id, $form_values) {
+  foreach ($form_values as $k => $v) {
+    if (preg_match('/^donate[0-9]*$/', $k)) {
+      if (!empty($v) && intval($v) > 0) {
+        $nid = str_replace('donate', '', $k);
+        $form_values['nid'] = $nid;
+        uc_cart_add_item($nid, 1, module_invoke_all('add_to_cart_data', $form_values, $k));
+      }
+    }
+  }
+  if ($form_values['op'] == $form_values['add']) {
+    return 'cart';
+  } else {
+    if (!variable_get('uc_checkout_enabled', TRUE)) {
+      return 'cart';
+    }
+    if (module_exists('uc_jscheck')) {
+      if ($form_values['checker'] == '1') {
+        return 'cart/checkout';
+      } else {
+        return 'cart/checker';
+      }
+    } else {
+      return 'cart/checkout';
+    }
+  }
+}
+
+function uc_donate_set_order($all = TRUE) {
+  $result = db_query("SELECT `group`, weight FROM {uc_donate} WHERE type = '%s' ORDER BY weight, `group`", 'group');
+  $list_groups['none'] = '--None--';
+  while ($data = db_fetch_object($result)) {
+    $temp_group = str_replace(' ', '_', $data->group);
+    $groups[$temp_group] = $data->weight;
+    if ($all == TRUE) {
+      $list_groups[$temp_group] = $data->group;
+    }
+  }
+  
+  $result = db_query("SELECT d.nid, d.group, d.weight, d.type, n.title
+    FROM {uc_donate} AS d LEFT OUTER JOIN {node} AS n ON d.nid = n.nid WHERE d.type != '%s' ORDER BY d.weight, n.title", 'group');
+  
+  while ($data = db_fetch_object($result)) {
+    if (($data->title != '' && $data->type == 'donation') || ($data->type == 'queue' && module_exists('nodequeue'))) {
+      if ($data->group) {
+        $temp_group = str_replace(' ', '_', $data->group);
+        if (!isset($groups[$temp_group])) {
+          $groups = array($temp_group => $data->weight);
+        }
+        if (is_object($donations[$groups[$temp_group]][$data->weight])) {
+          $donations[$groups[$temp_group]][][] = $data;
+        } else {
+          $donations[$groups[$temp_group]][$data->weight][] = $data;
+        }
+      } else {
+        $donations[$data->weight][] = $data;
+      }
+    } else {
+      if ($data->nid > 0) {
+        db_query("DELETE FROM {uc_donate} WHERE nid = %d", $data->nid);
+      }
+    }
+  }
+  if (!isset($donations) || !is_array($donations)) {
+    return FALSE;
+  }
+  ksort($donations);
+  $donate->donations = $donations;
+  if ($all == TRUE) {
+    $donate->list_groups = $list_groups;
+  }
+  return $donate;
+}
+
+function uc_checkout_pane_donate($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'view':
+      $cid = uc_cart_get_id();
+      $donations = FALSE;
+      $items = uc_cart_get_contents();
+      foreach ($items as $item) {
+        if ($item->module == 'uc_donation') {
+          $donations = TRUE;
+        }
+      }
+      if ($donations == FALSE) {
+        $qid = variable_get('uc_donate_featured_queue', 0);
+        if ($qid > 0) {
+          $description = variable_get('uc_donate_featured_description', '');
+          $count = variable_get('uc_donate_featured_count', 1);
+          $contents = uc_donate_featured_pane();
+          drupal_add_js(drupal_get_path('module', 'uc_donate').'/jquery.highlightFade.js');
+          drupal_add_js(drupal_get_path('module', 'uc_donate').'/uc_donate_pane.js');
+          return array('description' => $description, 'contents' => $contents, 'next-button' => FALSE);
+        }
+      }
+    case 'settings':
+      $form['uc_donate_featured_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Title'),
+        '#description' => t('This is the checkout panes title as well as the label for the line item.'),
+        '#default_value' => variable_get('uc_donate_featured_title', t('Featured Donation'))
+      );
+      $form['uc_donate_featured_description'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Description'),
+        '#description' => t('Text to be displayed in the donate pane.'),
+        '#default_value' => variable_get('uc_donate_featured_description', '')
+      );
+      $form['uc_donate_featured_queue'] = array(
+        '#type' => 'select',
+        '#title' => t('Featured Donation Queue'),
+        '#options' => uc_donate_queues(FALSE)
+      );
+      return $form;
+  }
+}
+
+function uc_donate_cart_checkout_form_validate($form_id, $form_values) {
+  if (!empty($form_values['panes']['donate']) && is_array($form_values['panes']['donate'])) {
+    $order_id = $_SESSION['cart_order'];
+    $order = uc_order_load($order_id);
+    foreach ($form_values['panes']['donate'] as $k => $amount) {
+      if ($amount > 0) {
+        $cid = uc_cart_get_id();
+        $nid = str_replace('uc_donate_featured_amount', '', $k);
+        $node = node_load($nid);
+        $form = drupal_retrieve_form('uc_donation_add_to_cart_form_'.$nid, $node);
+        $form_values = array();
+        foreach ($form as $key => $value) {
+          if (!preg_match('/^#/', $key)) {
+            $form_values[$key] = isset($value['#value']) ? $value['#value'] : $value['#default_value'];
+          }
+        }
+        $node->data = module_invoke_all('add_to_cart_data', $form_values);
+        $node->data['amount'] = $amount;
+        $node->price = $amount;
+        $node->qty = 1;
+        db_query("INSERT INTO {uc_cart_products} (cart_id, nid, qty, changed, data) VALUES ('%s', %d, %d, %d, '%s')", $cid, $node->nid, $node->qty, time(), serialize($node->data));
+        uc_order_product_save($order_id, $node);
+      }
+    }
+  }
+}
+
+/*******************************************************************************
+ * Module and Helper Functions
+ ******************************************************************************/
+
+function uc_donate_queues($limit = TRUE) {
+  $options = array();
+  $qids = nodequeue_get_qids('donation');
+  foreach ($qids as $qid) {
+    if ($limit) {
+      $check = db_result(db_query("SELECT nid FROM {uc_donate} WHERE nid = %d AND type = '%s'", $qid->qid, 'queue'));
+    }
+    if (!$check) {
+      $queue = nodequeue_load($qid->qid);
+      $options[$queue->qid] = $queue->title;
+    }
+  }
+  
+  if (empty($options)) {
+    $options = array('-- None --');
+  }
+  return $options;
+}
+
+function uc_donate_featured_pane() {
+  $queue = nodequeue_load(variable_get('uc_donate_featured_queue', 0));
+  $items = array();
+  $result = db_query("SELECT nid FROM {nodequeue_nodes} WHERE qid = %d ORDER BY timestamp", $queue->qid);
+  while ($data = db_fetch_object($result)) {
+    $node = node_load($data->nid);
+    if ($node->type == 'donation') {
+      $image = isset($node->field_image_cache[0]) ? theme('imagecache', 'product_list', $node->field_image_cache[0]['filepath'], $node->field_image_cache[0]['alt'], $node->field_image_cache[0]['title']) : '';
+      $items['uc_donate_featured_image'.$node->nid] = array(
+        '#value' => '<div class="gift_item"><div class="gift_image">'.$image.'</div>'
+      );
+      $items['description'] = array(
+        '#theme' => 'uc_donate_featured_desc'
+      );
+      $items['description']['uc_donate_featured_title'.$node->nid] = array(
+        '#value' => '<h4>'.$node->title.'</h4>'
+      );
+      $items['description']['uc_donate_featured_body'.$node->nid] = array(
+        '#value' => '<div class="body">'.$node->field_excerpt[0]['value'].'</div>',
+      );
+      $items['uc_donate_featured_amount'.$node->nid] = array(
+        '#type' => 'textfield',
+        '#title' => t('Amount'),
+        '#default_value' => '0.00',
+        '#size' => 10,
+        '#prefix' => '<div class="gift_form">',
+        '#suffix' => '</div></div>',
+        '#attributes' => array('class' => 'donate-amount')
+      );
+    }
+  }
+  
+  return $items;
+}
+
+function theme_uc_donate_featured_desc($form) {
+  // dprint_r($form);
+  $output = '<div class="gift_description">'.drupal_render($form).'</div>';
+  return $output;
+}

@@ -1,0 +1,540 @@
+<?php
+// $Id: country_select.module,v 1.2 2009/07/23 04:16:07 newzeal Exp $ 
+/*
+*   Select form and data for country and province.state select 
+*   Requires cck_address module and optionally uses activeselect module
+*/
+
+/**
+ * Implementation of hook_menu()
+ *
+ */
+function country_select_menu($may_cache) {
+  global $user;
+  $items = array();
+  if ($may_cache) {
+    $items[] = array( 
+      'path'               => 'admin/settings/country_select',
+      'callback'           => 'drupal_get_form',
+      'callback arguments' => array('country_select_settings_form'),
+      'title'              => t('Country Select'),
+      'type'               => MENU_NORMAL_ITEM,
+      'access' 			   => user_access('administer nodes'),
+    );
+    $items[] = array( 
+      'path'               => 'country/activeselect',
+      'callback'           => 'country_select_activeselect',
+      'type'               => MENU_CALLBACK,
+      'access' 			   => user_access('access content'),
+    );
+  }
+  return $items;
+}
+/*
+ *  hook_nodeapi : Modify state field prior to saving changing to string if an array
+ */
+function country_select_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+    switch ($op) {
+	  case 'submit':
+		$type = content_types($node->type);
+		$form = array();
+		if (count($type['fields'])) country_select_modify_output($type['fields'], $form ,$node);
+ 	  break;
+	}
+}
+/*
+ *  hook_form_alter : Implementation of country and state/province active select fields
+ */
+function country_select_form_alter($form_id, &$form) {
+  global $user;
+  $type = content_types($form['type']['#value']);
+  if (count($type['fields'])) country_select_modify_output($type['fields'], $form);  
+}
+
+function country_select_modify_output($type_fields, &$form=array(), &$node=NULL) {
+   drupal_add_js(drupal_get_path('module', 'activeselect').'/activeselect.js');
+   foreach ($type_fields as $field) {
+ 	  $widget_types = _content_widget_types();
+      $module = $widget_types[$field['widget']['type']]['module'];
+	  if($module=="cck_address") {
+		if($field['type']=="cck_address") {
+		  // if this is a form then modify the form fields
+		  if(isset($form['#id'])) {
+			$activeselect = module_exists('activeselect');
+			$provinces = country_select_province_get();
+
+			$code = db_fetch_object(db_query("SELECT ".$field['field_name']."_country as country, ".$field['field_name']."_state as state FROM {content_type_".$form['type']['#value']."} WHERE nid=%d", $form['nid']['#value']));
+			if($code->country=="") $code->country = variable_get('country_select_default', 'us');
+			// remove address and replace with custom field
+			unset($form[$field['field_name']][0]['country']);
+			$form[$field['field_name']][0]['country'] = array(
+			  '#prefix' => '<br /><br />',
+			  '#type' => 'select',
+			  '#options' => country_select_country_get(),
+			  '#title' => t('Country'),
+			  '#default_value' => $code->country,
+			  '#required' => TRUE,
+			);
+			if ($activeselect) {
+			  $target = str_replace("_", "-", $field['field_name']).'-0-state';
+			  $form[$field['field_name']][0]['country']['#type'] = 'activeselect';
+			  $form[$field['field_name']][0]['country']['#activeselect_path'] = 'country/activeselect';
+			  $form[$field['field_name']][0]['country']['#activeselect_targets'] = $target;
+			  $form[$field['field_name']][0]['country']['#activeselect_extra'] = $code->state;
+		    }
+			// remove address province and replace with custom field
+			unset($form[$field['field_name']][0]['state']);
+			$form[$field['field_name']][0]['state'] = array(
+			  '#prefix' => '<br /><br />',
+			  '#type' => 'select',
+			  '#options' => country_select_province_get(),
+			  '#title' => ('Province/State'),
+			  '#description' => t('Select the country and wait for the province/state box to show the correct items for that country'),
+			  '#default_value' => $code->state,
+			);
+
+		  }
+		  else {
+		    // if this is a node then modify the state/province data.  Convert to array to subsititute variable
+			$array = (array)$node;
+			if(is_array(($array[$field['field_name']][0]['state']))) {
+			  $array[$field['field_name']][0]['state'] = array_shift($array[$field['field_name']][0]['state']);
+			  $node = (object)$array;
+			}
+		  }
+		}
+ 	  }
+	}
+}
+function country_select_settings_form() {
+  // settings for default country
+  $form['dermpedia_settings']['country_select_default'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Default Country'),
+    '#default_value' => variable_get('country_select_default', 'us'),
+	'#options' 		 => country_select_country_get(),
+    '#description'   => t("Select the default country you wish to use."),
+  );
+ 
+ return system_settings_form($form);
+}
+
+
+/*  */
+function country_select_province_select() {
+  $countries = country_select_province_get();
+  $provinces = array();
+  foreach($countries as $key => $country) {
+    foreach($country as $code => $province)  $provinces[$code] = $province;
+  }
+  return $provinces;
+}
+function country_select_country_name($code) {
+  $countries = country_select_country_get();
+  return $countries[$code];
+}
+function country_select_province_name($code) {
+  $countries = country_select_province_get();
+  $parts = explode("-", $code);
+  $provinces = country_select_province_get($parts[0]);
+  return $provinces[$code];
+}
+function country_select_autocomplete($string) {
+  $matches = array();
+  $countries = country_select_province_get();
+  foreach ($countries as $key => $country) {
+    if(strpos(strtolower($country), strtolower($string))) $matches[$key] = check_plain($country);
+  }
+  print drupal_to_js($matches);
+  exit();
+}
+
+/**
+ * List all countries on Planet! :)
+ *  This comes from addresses.module
+ * It uses the ISO notation.
+ * See http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+ * or http://www.iso.org/iso/country_codes/iso_3166_code_lists/english_country_names_and_code_elements.htm
+ * for further info.
+ *
+ * @param $available
+ *   String (optional). A list of countries that are allowed.
+ * @param $upper
+ *   Boolean (optional). When TRUE, the country codes will
+ *   be totally in Upper Case. Its the default ISO code,
+ *   but the files and function are all named with lower
+ *   case, so its better to return lower case by default
+ * @return
+ *   Array. 'COUNTRY CODE' => 'COUNTRY NAME' pairs as layed out in
+ *   ISO 3166-1 alpha-2
+ */
+function country_select_country_get($available = array(), $upper = FALSE) {
+  $countries = array(
+    'ad' => t('Andorra'),
+    'ae' => t('United Arab Emirates'),
+    'af' => t('Afghanistan'),
+    'ag' => t('Antigua and Barbuda'),
+    'ai' => t('Anguilla'),
+    'al' => t('Albania'),
+    'am' => t('Armenia'),
+    'an' => t('Netherlands Antilles'),
+    'ao' => t('Angola'),
+    'aq' => t('Antarctica'),
+    'ar' => t('Argentina'),
+    'as' => t('American Samoa'),
+    'at' => t('Austria'),
+    'au' => t('Australia'),
+    'aw' => t('Aruba'),
+    'ax' => t('Aland Islands'),
+    'az' => t('Azerbaijan'),
+    'ba' => t('Bosnia and Herzegovina'),
+    'bb' => t('Barbados'),
+    'bd' => t('Bangladesh'),
+    'be' => t('Belgium'),
+    'bf' => t('Burkina Faso'),
+    'bg' => t('Bulgaria'),
+    'bh' => t('Bahrain'),
+    'bi' => t('Burundi'),
+    'bj' => t('Benin'),
+    'bm' => t('Bermuda'),
+    'bn' => t('Brunei'),
+    'bo' => t('Bolivia'),
+    'br' => t('Brazil'),
+    'bs' => t('Bahamas'),
+    'bt' => t('Bhutan'),
+    'bv' => t('Bouvet Island'),
+    'bw' => t('Botswana'),
+    'by' => t('Belarus'),
+    'bz' => t('Belize'),
+    'ca' => t('Canada'),
+    'cc' => t('Cocos (Keeling) Islands'),
+    'cd' => t('Congo (Kinshasa)'),
+    'cf' => t('Central African Republic'),
+    'cg' => t('Congo (Brazzaville)'),
+    'ch' => t('Switzerland'),
+    'ci' => t('Ivory Coast'),
+    'ck' => t('Cook Islands'),
+    'cl' => t('Chile'),
+    'cm' => t('Cameroon'),
+    'cn' => t('China'),
+    'co' => t('Colombia'),
+    'cr' => t('Costa Rica'),
+    'cs' => t('Serbia And Montenegro'),
+    'cu' => t('Cuba'),
+    'cv' => t('Cape Verde'),
+    'cx' => t('Christmas Island'),
+    'cy' => t('Cyprus'),
+    'cz' => t('Czech Republic'),
+    'de' => t('Germany'),
+    'dj' => t('Djibouti'),
+    'dk' => t('Denmark'),
+    'dm' => t('Dominica'),
+    'do' => t('Dominican Republic'),
+    'dz' => t('Algeria'),
+    'ec' => t('Ecuador'),
+    'ee' => t('Estonia'),
+    'eg' => t('Egypt'),
+    'eh' => t('Western Sahara'),
+    'er' => t('Eritrea'),
+    'es' => t('Spain'),
+    'et' => t('Ethiopia'),
+    'fi' => t('Finland'),
+    'fj' => t('Fiji'),
+    'fk' => t('Falkland Islands'),
+    'fm' => t('Micronesia'),
+    'fo' => t('Faroe Islands'),
+    'fr' => t('France'),
+    'ga' => t('Gabon'),
+    'gd' => t('Grenada'),
+    'ge' => t('Georgia'),
+    'gf' => t('French Guiana'),
+    'gg' => t('Guernsey'),
+    'gh' => t('Ghana'),
+    'gi' => t('Gibraltar'),
+    'gl' => t('Greenland'),
+    'gm' => t('Gambia'),
+    'gn' => t('Guinea'),
+    'gp' => t('Guadeloupe'),
+    'gq' => t('Equatorial Guinea'),
+    'gr' => t('Greece'),
+    'gs' => t('South Georgia and the South Sandwich Islands'),
+    'gt' => t('Guatemala'),
+    'gu' => t('Guam'),
+    'gw' => t('Guinea-Bissau'),
+    'gy' => t('Guyana'),
+    'hk' => t('Hong Kong S.A.R., China'),
+    'hm' => t('Heard Island and McDonald Islands'),
+    'hn' => t('Honduras'),
+    'hr' => t('Croatia'),
+    'ht' => t('Haiti'),
+    'hu' => t('Hungary'),
+    'id' => t('Indonesia'),
+    'ie' => t('Ireland'),
+    'il' => t('Israel'),
+    'im' => t('Isle of Man'),
+    'in' => t('India'),
+    'io' => t('British Indian Ocean Territory'),
+    'iq' => t('Iraq'),
+    'ir' => t('Iran'),
+    'is' => t('Iceland'),
+    'it' => t('Italy'),
+    'je' => t('Jersey'),
+    'jm' => t('Jamaica'),
+    'jo' => t('Jordan'),
+    'jp' => t('Japan'),
+    'ke' => t('Kenya'),
+    'kg' => t('Kyrgyzstan'),
+    'kh' => t('Cambodia'),
+    'ki' => t('Kiribati'),
+    'km' => t('Comoros'),
+    'kn' => t('Saint Kitts and Nevis'),
+    'kp' => t('North Korea'),
+    'kr' => t('South Korea'),
+    'kw' => t('Kuwait'),
+    'ky' => t('Cayman Islands'),
+    'kz' => t('Kazakhstan'),
+    'la' => t('Laos'),
+    'lb' => t('Lebanon'),
+    'lc' => t('Saint Lucia'),
+    'li' => t('Liechtenstein'),
+    'lk' => t('Sri Lanka'),
+    'lr' => t('Liberia'),
+    'ls' => t('Lesotho'),
+    'lt' => t('Lithuania'),
+    'lu' => t('Luxembourg'),
+    'lv' => t('Latvia'),
+    'ly' => t('Libya'),
+    'ma' => t('Morocco'),
+    'mc' => t('Monaco'),
+    'md' => t('Moldova'),
+    'me' => t('Montenegro'),
+    'mg' => t('Madagascar'),
+    'mh' => t('Marshall Islands'),
+    'mk' => t('Macedonia'),
+    'ml' => t('Mali'),
+    'mm' => t('Myanmar'),
+    'mn' => t('Mongolia'),
+    'mo' => t('Macao S.A.R., China'),
+    'mp' => t('Northern Mariana Islands'),
+    'mq' => t('Martinique'),
+    'mr' => t('Mauritania'),
+    'ms' => t('Montserrat'),
+    'mt' => t('Malta'),
+    'mu' => t('Mauritius'),
+    'mv' => t('Maldives'),
+    'mw' => t('Malawi'),
+    'mx' => t('Mexico'),
+    'my' => t('Malaysia'),
+    'mz' => t('Mozambique'),
+    'na' => t('Namibia'),
+    'nc' => t('New Caledonia'),
+    'ne' => t('Niger'),
+    'nf' => t('Norfolk Island'),
+    'ng' => t('Nigeria'),
+    'ni' => t('Nicaragua'),
+    'nl' => t('Netherlands'),
+    'no' => t('Norway'),
+    'np' => t('Nepal'),
+    'nr' => t('Nauru'),
+    'nu' => t('Niue'),
+    'nz' => t('New Zealand'),
+    'om' => t('Oman'),
+    'pa' => t('Panama'),
+    'pe' => t('Peru'),
+    'pf' => t('French Polynesia'),
+    'pg' => t('Papua New Guinea'),
+    'ph' => t('Philippines'),
+    'pk' => t('Pakistan'),
+    'pl' => t('Poland'),
+    'pm' => t('Saint Pierre and Miquelon'),
+    'pn' => t('Pitcairn'),
+    'pr' => t('Puerto Rico'),
+    'ps' => t('Palestinian Territory'),
+    'pt' => t('Portugal'),
+    'pw' => t('Palau'),
+    'py' => t('Paraguay'),
+    'qa' => t('Qatar'),
+    're' => t('Reunion'),
+    'ro' => t('Romania'),
+    'rs' => t('Serbia'),
+    'ru' => t('Russia'),
+    'rw' => t('Rwanda'),
+    'sa' => t('Saudi Arabia'),
+    'sb' => t('Solomon Islands'),
+    'sc' => t('Seychelles'),
+    'sd' => t('Sudan'),
+    'se' => t('Sweden'),
+    'sg' => t('Singapore'),
+    'sh' => t('Saint Helena'),
+    'si' => t('Slovenia'),
+    'sj' => t('Svalbard and Jan Mayen'),
+    'sk' => t('Slovakia'),
+    'sl' => t('Sierra Leone'),
+    'sm' => t('San Marino'),
+    'sn' => t('Senegal'),
+    'so' => t('Somalia'),
+    'sr' => t('Suriname'),
+    'st' => t('Sao Tome and Principe'),
+    'sv' => t('El Salvador'),
+    'sy' => t('Syria'),
+    'sz' => t('Swaziland'),
+    'tc' => t('Turks and Caicos Islands'),
+    'td' => t('Chad'),
+    'tf' => t('French Southern Territories'),
+    'tg' => t('Togo'),
+    'th' => t('Thailand'),
+    'tj' => t('Tajikistan'),
+    'tk' => t('Tokelau'),
+    'tl' => t('East Timor'),
+    'tm' => t('Turkmenistan'),
+    'tn' => t('Tunisia'),
+    'to' => t('Tonga'),
+    'tr' => t('Turkey'),
+    'tt' => t('Trinidad and Tobago'),
+    'tv' => t('Tuvalu'),
+    'tw' => t('Taiwan'),
+    'tz' => t('Tanzania'),
+    'ua' => t('Ukraine'),
+    'ug' => t('Uganda'),
+    'uk' => t('United Kingdom'),
+    'um' => t('United States Minor Outlying Islands'),
+    'us' => t('United States'),
+    'uy' => t('Uruguay'),
+    'uz' => t('Uzbekistan'),
+    'va' => t('Vatican'),
+    'vc' => t('Saint Vincent and the Grenadines'),
+    've' => t('Venezuela'),
+    'vg' => t('British Virgin Islands'),
+    'vi' => t('U.S. Virgin Islands'),
+    'vn' => t('Vietnam'),
+    'vu' => t('Vanuatu'),
+    'wf' => t('Wallis and Futuna'),
+    'ws' => t('Samoa'),
+    'ye' => t('Yemen'),
+    'yt' => t('Mayotte'),
+    'za' => t('South Africa'),
+    'zm' => t('Zambia'),
+    'zw' => t('Zimbabwe'),
+  );
+
+  if (!empty($available)) {
+    foreach ($countries as $ccode => $country) {
+      if (empty($available[$ccode])) {
+        unset($countries[$ccode]);
+      }
+    }
+  }
+
+  // In fact, the ISO codes for countries are all Upper Case.
+  // So, if someone needs the list as the official records,
+  // it will convert.
+  if (!empty($upper)) {
+    $countries = array_change_key_case($countries, CASE_UPPER);
+  }
+
+  // Sort the list and return
+  natcasesort($countries);
+
+  return $countries;
+}
+
+
+/**
+ * Get available states.
+ *
+ * @param $country
+ *   String (optional). The 2-digit country code
+ * @return
+ *   Array. If $country is passed, then return an array
+ *   of states for that country. If nothing is passed then return
+ *   an array of countrys who have states, where each country contains
+ *   an array of states.
+ */
+function country_select_province_get($country = NULL) {
+ // static $provinces;
+
+  // Get a list of countries
+  $countries_all = country_select_country_get();
+
+  // Test if its needed to update the province list
+  if (empty($country) and empty($provinces)) {
+    // Get the countries list
+    $countries = array_keys($countries_all);
+    $update = TRUE;
+  }
+  elseif (!empty($country) and $countries_all[$country] and empty($provinces[$country])) {
+    $countries[] = $country;
+    $update = TRUE;
+  }
+
+  if (!empty($update)) {
+    foreach ($countries as $country_code) {
+      // Load country specifice code .inc file if it exists.
+      // For example, if country_code for U.S. == 'us', load 'addresses.us.inc'
+      include_once drupal_get_path('module', 'country_select') .'/countries/'. $country_code .'.inc';
+
+      // If the country has a province list, load it
+      $function = 'addresses_province_list_'. $country_code;
+      if (function_exists($function)) {
+        $provinces[$country_code] = $function();
+      }
+	  // add country code to province code to make province codes unique
+	  $process_provinces[$country_code] = array();
+	  foreach($provinces[$country_code] as $key => $item) $process_provinces[$country_code][$country_code.'-'.$key] = $item;
+	  $provinces[$country_code] = $process_provinces[$country_code];
+    }
+  }
+
+  // Return the states of a single country, if any
+  if (!empty($country)) {
+    if (isset($provinces[$country_code])) {
+      return $provinces[$country_code];
+    }
+    else {
+      return array();
+    }
+  }
+  else {
+    return $provinces;
+  }
+}
+function country_select_activeselect($source, $targets, $string, $extra = NULL) {
+  if (empty($source) || empty($targets) || empty($string)) {
+    exit();
+  }
+  
+  $targets = explode(',', $targets);
+  $output = array();
+  $array = activeselect_explode_values($string);
+  
+  foreach ($targets as $target) {
+  $options = array();
+    
+    $first_element = TRUE;
+    foreach ($array as $key => $value) {
+      $provinces = country_select_province_get($key);
+	  if(count($provinces)==0) $options['XX']['value'] = 'No provinces available';
+	  else {
+	    foreach($provinces as $code => $province) {  
+	      $options[$code]['value'] = $province;
+          if ($code==$extra) {
+            $options[$code]['selected'] = TRUE;
+          }
+          else {
+            $options[$code]['selected'] = FALSE;
+          }
+	    }
+      }
+    }
+    $multiple = TRUE;
+    
+    $output[$target] = array('options' => $options, 'multiple' => $multiple);
+  }
+  
+  activeselect_set_header_nocache();
+  
+  print drupal_to_js($output);
+  exit();
+
+}

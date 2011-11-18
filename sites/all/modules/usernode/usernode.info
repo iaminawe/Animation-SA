@@ -1,0 +1,10 @@
+; $Id: usernode.info,v 1.1.2.2 2007/06/18 23:07:11 dww Exp $
+name = "Usernode"
+description = "Automatic creation and deletion of usernodes - one node for each user."
+package = "Node Profile"
+
+; Information added by drupal.org packaging script on 2008-06-10
+version = "5.x-1.4"
+project = "usernode"
+datestamp = "1213098320"
+

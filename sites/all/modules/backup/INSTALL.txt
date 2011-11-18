@@ -1,0 +1,20 @@
+
+Installation Instructions
+=========================
+
+1. Copy the file "backup.module" (without the quotes) to the modules/ 
+directory in your Drupal installation.
+
+2. Enable the backup module from the modules page
+
+3. Go into the "access control" page and make sure the "make backups"
+permission is enabled for your user account. (You are logging into Drupal
+as a user other than "admin", right?)
+
+4. Click on "backup" in the administer menu to bring up the backup screen.
+If everything is good (i.e. all programs can be found), then you will be
+able to perform a backup.
+
+NOTE: At this time, only MySQL is supported.
+
+

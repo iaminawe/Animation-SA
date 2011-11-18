@@ -1,0 +1,823 @@
+<?php
+/**
+ *  This class is used to test the nodecarousel module with simpletest.
+ */
+class NodeCarouselTests extends DrupalTestCase {
+  private $first_set_up = true;
+  function get_info() {
+    return array('name' => 'NodeCarousel Test',
+                 'desc' => t('Assure that NodeCarousel works.'),
+                 'group' => 'NodeCarousel');
+  }
+  
+  
+  function test_nodecarousel_validate_taxonomy() {
+    $query = "INSERT INTO {vocabulary} (name, description, module) VALUES ('%s', '%s', '%s')";
+    db_query($query, 'nc_test', 'test', 'nodecarousel');
+    $vid = db_fetch_object(db_query("SELECT vid FROM {vocabulary} WHERE name = 'nc_test' AND module = 'nodecarousel'"));
+
+    $query = "INSERT INTO {term_data} (name, vid, description) VALUES ('%s', %d, '%s')";
+    db_query($query, 'nc_test_1', $vid->vid, 'nc_test term');
+    db_query($query, 'nc_test_2', $vid->vid, 'nc_test term');
+
+    $test_values = array();
+    $result = db_query("SELECT tid FROM {term_data} WHERE vid = %d", $vid->vid);
+    while ($row = db_fetch_object($result)) {
+    	  $test_values[] = $row->tid;
+    }
+
+    //$test_values = array(1, 3);
+    
+    $this->assertTrue(_nodecarousel_validate_taxonomy($test_values));
+    
+    db_query("DELETE FROM {term_data} WHERE vid = %d", $vid->vid);
+    db_query("DELETE FROM {vocabulary} WHERE vid = %d", $vid->vid);
+
+  }
+  
+  function test_nodecarousel_validate_taxonomy_fail() {
+    $test_values = array(1, 99999);
+    
+    $this->assertFalse(_nodecarousel_validate_taxonomy($test_values));
+    
+  }
+  
+  function test__nodecarousel_validate_node_types() {
+    $nodes = Array ( 'blog' => 'blog' ,'page' => 'page', 'image' => 0, 'story' => 0 );
+    $result = _nodecarousel_validate_node_types($nodes);
+    
+    $this->assertEqual(0, count($result));
+  }
+  
+  function test_nodecarousel_validate_node_types_fail() {
+    $nodes = Array ( 'rediculous' => 'rediculous', 'blog' => 'blog' ,'page' => 'page', 'image' => 0, 'story' => 0 );
+    $result = _nodecarousel_validate_node_types($nodes);
+    
+    $this->assertEqual(1, count($result));
+  }
+  
+  function test_nodecarousel_validate_node_types_fail_2() {
+    $nodes = Array ( 'rediculous' => 'rediculous');
+    $result = _nodecarousel_validate_node_types($nodes);
+    
+    $this->assertEqual(1, count($result));
+  }
+  
+  function test_nodecarousel_validate_node_types_with_bad_node_that_is_not_selected() {
+    $nodes = Array ( 'rediculous' => 0, 'blog' => 'blog' ,'page' => 'page', 'image' => 0, 'story' => 0 );
+    $result = _nodecarousel_validate_node_types($nodes);
+    
+    $this->assertEqual(0, count($result));
+  }
+  
+  function test_nodecarousel_validate_numeric() {
+    $value = '5';
+    
+    $this->assertTrue(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_zero() {
+    $value = '0';
+    
+    $this->assertTrue(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_blank() {
+    $value = '';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_blank2() {
+    $value = '  ';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_frog() {
+    $value = 'frog';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_not_int() {
+    $value = '10.5';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_too_big() {
+    $value = '500000';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_numeric_too_small() {
+    $value = '-3';
+    
+    $this->assertFalse(_nodecarousel_validate_numeric($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_fast() {
+    $value = 'fast';
+    
+    $this->assertTrue(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_fast2() {
+    $value = 'fast ';
+    
+    $this->assertFalse(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_fast3() {
+    $value = ' fast';
+    
+    $this->assertFalse(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_slow() {
+    $value = 'slow';
+    
+    $this->assertTrue(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_number() {
+    $value = '750';
+    
+    $this->assertTrue(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_animation_speed_blank() {
+    $value = '';
+    
+    $this->assertFalse(_nodecarousel_validate_animation_speed($value));
+  }
+  
+  function test_nodecarousel_validate_length() {
+    $value = 'test';
+    $length = 15;
+    
+    $this->assertTrue(_nodecarousel_validate_length($value, $length));
+  }
+  
+  function test_nodecarousel_validate_length_blank() {
+    $value = '';
+    $length = 15;
+    
+    $this->assertTrue(_nodecarousel_validate_length($value, $length));
+  }
+  
+  function test_nodecarousel_validate_length_too_long() {
+    $value = 'The rain in spain falls mainly on the plain';
+    $length = 15;
+    
+    $this->assertFalse(_nodecarousel_validate_length($value, $length));
+  }
+  
+  function test_nodecarousel_load_bad_number() {
+    $value = -1; // will not exist.
+    
+    $this->assertFalse(nodecarousel_load($value));
+  }
+  
+  function test_nodecarousel_load_bad_string() {
+    $value = "This is the way the world will end - in bad names.";
+    
+    $this->assertFalse(nodecarousel_load($value));
+  }
+  
+  function test_nodecarousel_load_good() {
+    $value = -1; 
+    $query = "SELECT ncid FROM {nodecarousel} ORDER BY ncid";
+    $result = db_query_range($query, 0, 1);
+    if ($row = db_fetch_object($result)) {
+      $value = $row->ncid;
+    }
+    
+    $nc = nodecarousel_load($value);
+    $this->assertTrue(FALSE != $nc);
+    $this->assertTrue(isset($nc));
+    $this->assertEqual($value, $nc->ncid);
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type() {
+    $test_node_id = -1;
+    $this->drupalModuleEnable('blog');
+    $count_query = "SELECT count(nid) FROM {node} n WHERE n.type = 'blog'";
+    $count = db_result(db_query($count_query));
+    if ($count == 0) {
+       $test_node = new stdClass();
+       $test_node->title = 'Test Node';
+       $test_node->body  = 'This is the test node body';
+       $test_node->type  = 'blog';
+       node_save($test_node);
+       $test_node_id = $test_node->nid;
+       if ($test_node_id > 0) {
+         $count = 1;
+       }
+    }
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('blog');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = $count;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual($count, count($node_array));
+    $this->assertEqual('blog', $node_array[0]->type);
+
+    if ($test_node_id > 0) {
+      node_delete($test_node_id);
+    }
+  }
+
+// TODO: Need to fix this test to be less dependant on db.
+/*  
+  function test_nodecarousel_get_nodes_by_node_type_two_types() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image', 'blog');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 20;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $found = false;
+    $this->assertTrue(5 < count($node_array));
+    //$this->assertEqual('image', $node_array[0]->type);
+    foreach($node_array as $node) {
+      if ($node->type == 'blog') {
+        $found = true;
+      }
+    }
+    $this->assertTrue($found, 'Found blog post among images');
+  }*/
+  
+  function test_nodecarousel_get_nodes_by_node_type_two_types_ignore_blogs() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image', 'story');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 20;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $found = false;
+    $this->assertTrue(5 < count($node_array));
+    //$this->assertEqual('image', $node_array[0]->type);
+    foreach($node_array as $node) {
+      if ($node->type == 'blog') {
+        $found = true;
+      }
+    }
+    $this->assertFalse($found, 'Should not find blog post when looking at images and stories.');
+  }
+  
+  function test_nodecarousel_get_nodes_by_taxonomy() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array();
+    $nc->taxonomy_tids = array(3);
+    $nc->number_fetch = 5;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertTrue(0 < count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    $this->assertTrue(isset($node_array[0]->taxonomy[3]));
+  }
+  
+  function test_nodecarousel_get_nodes_by_taxonomy_two() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array();
+    $nc->taxonomy_tids = array(1);
+    $nc->number_fetch = 100;
+    
+    $node_array_1 = _nodecarousel_get_nodes($nc);
+    
+    $nc->taxonomy_tids = array(3);
+    $node_array_2 = _nodecarousel_get_nodes($nc);
+    
+    $node_array_merge = array_merge($node_array_1, $node_array_2);
+    
+    $nc->taxonomy_tids = array(3, 1);
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertTrue(0 < count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    $this->assertEqual(count($node_array_merge), count($node_array));
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_and_taxonomy() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array(1, 3);
+    $nc->number_fetch = 5;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_queue() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 2;
+    $nc->nodequeue_qid = 1;
+    $nc->number_fetch = 5;
+    
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual(3, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_queue_empty() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 2;
+    $nc->nodequeue_qid = 0;
+    $nc->number_fetch = 5;
+    
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual(0, count($node_array));
+   
+  }
+  
+  function test_nodecarousel_get_nodes_by_hook() {
+    $nc = new stdClass();
+    
+    $nc->name = 'test_hook_1';
+    $nc->node_source = 3;
+    $nc->number_fetch = 5;
+    
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual(3, count($node_array));
+    $this->assertEqual(3, $node_array[0]->nid);
+    $this->assertEqual(1, $node_array[1]->nid);
+    $this->assertEqual(4, $node_array[2]->nid);
+   
+  }
+  
+  function test_nodecarousel_get_nodes_by_hook_name_not_matched() {
+    $nc = new stdClass();
+    
+    $nc->name = 'test_hook_does_not_match';
+    $nc->node_source = 3;
+    $nc->number_fetch = 5;
+    
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    $this->assertEqual(0, count($node_array));
+   
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_creation_time_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'date_created';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->created < $node_array[$i+1]->created, 'Comparing '. $node_array[$i]->created .' with '. $node_array[$i]->created);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_creation_time_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'date_created';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->created > $node_array[$i+1]->created, 'Comparing '. $node_array[$i]->created .' with '. $node_array[$i]->created);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_update_time_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'date_updated';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->changed < $node_array[$i+1]->changed, 'Comparing '. $node_array[$i]->changed .' with '. $node_array[$i]->changed);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_update_time_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'date_updated';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->changed > $node_array[$i+1]->changed, 'Comparing '. $node_array[$i]->changed .' with '. $node_array[$i]->changed);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_title_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'title';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue(strtolower($node_array[$i]->title) <= strtolower($node_array[$i+1]->title), 'Comparing '. $node_array[$i]->title .' with '. $node_array[$i]->title);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_title_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'title';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue(strtolower($node_array[$i]->title) >= strtolower($node_array[$i+1]->title), 'Comparing '. $node_array[$i]->title .' with '. $node_array[$i]->title);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_nid_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 15;
+    $nc->sort = 'node_id';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->nid < $node_array[$i+1]->nid, 'Comparing '. $node_array[$i]->nid .' with '. $node_array[$i]->nid);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_nid_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 15;
+    $nc->sort = 'node_id';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue($node_array[$i]->nid > $node_array[$i+1]->nid, 'Comparing '. $node_array[$i]->nid .' with '. $node_array[$i]->nid);
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_random_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'random';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    $node_array_2 = _nodecarousel_get_nodes($nc);
+    
+    $different = false;
+    for ($i = 0; $i<(count($node_array)); $i++ ) {
+      if ($node_array[$i]->nid != $node_array_2[$i]->nid) {
+        $different = true;
+      }
+    }
+    $this->assertTrue($different, 'Two random samplings of nodes should be different.');
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_random_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'random';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    $node_array_2 = _nodecarousel_get_nodes($nc);
+    
+    $different = false;
+    for ($i = 0; $i<(count($node_array)); $i++ ) {
+      if ($node_array[$i]->nid != $node_array_2[$i]->nid) {
+        $different = true;
+      }
+    }
+    $this->assertTrue($different, 'Two random samplings of nodes should be different.');
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_author_name_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 20;
+    $nc->sort = 'author_name';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue(strtolower($this->getAuthorName($node_array[$i]->uid)) <= strtolower($this->getAuthorName($node_array[$i+1]->uid)), 'Comparing '. $this->getAuthorName($node_array[$i]->uid) .' with '. $this->getAuthorName($node_array[$i]->uid));
+    }
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_author_name_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 20;
+    $nc->sort = 'author_name';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+    for ($i = 0; $i<(count($node_array)-1); $i++ ) {
+      $this->assertTrue(strtolower($this->getAuthorName($node_array[$i]->uid)) >= strtolower($this->getAuthorName($node_array[$i+1]->uid)), 'Comparing '. $this->getAuthorName($node_array[$i]->uid) .' with '. $this->getAuthorName($node_array[$i]->uid));
+    }
+  }
+  
+  function getAuthorName($uid) {
+    static $author_array;
+    
+    if (isset($author_array[$uid])) {
+      return $author_array[$uid];
+    } 
+    else {
+      $query = "SELECT u.name FROM {users} u WHERE uid = %d";
+      $result = db_query($query, $uid);
+      if ($row = db_fetch_object($result)) {
+        $author_array[$uid] = $row->name;
+        return $row->name;
+      }
+    }
+    return FALSE;
+  }
+
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_nodequeue_asc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'node_queue_order';
+    $nc->sort_ascending = 0;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+  }
+  
+  function test_nodecarousel_get_nodes_by_node_type_sort_by_nodequeue_desc() {
+    $nc = new stdClass();
+    
+    $nc->node_source = 1;
+    $nc->node_types = array('image');
+    $nc->taxonomy_tids = array();
+    $nc->number_fetch = 5;
+    $nc->sort = 'node_queue_order';
+    $nc->sort_ascending = 1;
+    
+    $node_array = _nodecarousel_get_nodes($nc);
+    
+    //$this->assertEqual(5, count($node_array));
+    $this->assertEqual('image', $node_array[0]->type);
+    
+  }
+  
+  function test_nodecarousel_access_no_access_in_nc() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array();
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    
+    $this->assertTrue(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_access_no_access_in_nc_unauthenticated_user() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array();
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    $test_user->uid = 0;
+    $test_user->roles = array(1 => 'anonymous user');
+    
+    $this->assertTrue(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_access_authenticated_access_in_nc() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(2);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    
+    $this->assertEqual(1, count(nodecarousel_access($nc, $test_user)));
+  }
+  
+  function test_nodecarousel_access_authenticated_access_in_nc_unauthenticated_user() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(2);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    //drupal_set_message('user: '. print_r($test_user, true));
+    $test_user->uid = 0;
+    $test_user->roles = array(1 => 'anonymous user');
+    
+    $this->assertFalse(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_access_unauthenticated_access_in_nc() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(1);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    
+    $this->assertFalse(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_access_unauthenticated_access_in_nc_unauthenticated_user() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(1);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    //drupal_set_message('user: '. print_r($test_user, true));
+    $test_user->uid = 0;
+    $test_user->roles = array(1 => 'anonymous user');
+    
+    $this->assertEqual(1, count(nodecarousel_access($nc, $test_user)));
+  }
+  
+  function test_nodecarousel_access_both_access_in_nc() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(1, 2);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    
+    $this->assertTrue(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_access_both_access_in_nc_unauthenticated_user() {
+    $nc = new stdClass();
+    
+    $nc->name = 'unit_test_nc';
+    $nc->access = array(1, 2);
+    
+    $test_user = $this->drupalCreateUserRolePerm();
+    $test_user->uid = 0;
+    $test_user->roles = array(1 => 'anonymous user');
+    
+    $this->assertTrue(nodecarousel_access($nc, $test_user));
+  }
+  
+  function test_nodecarousel_find_image_in_string_simple() {
+    $text = '<div class="node-carousel-title node-carousel-label">
+</div>
+<img title="cat2.jpg" alt="" src="http://localhost/testbed/files/imagecache/thumbnail/files/cat2_0.jpg"/>';
+    
+    $expected = '<img title="cat2.jpg" alt="" src="http://localhost/testbed/files/imagecache/thumbnail/files/cat2_0.jpg"/>';
+    
+    $result = _nodecarousel_find_image_in_string($text);
+    
+    $this->assertEqual($expected, $result);
+  }
+  
+  function test_nodecarousel_find_image_in_string_missing() {
+    $text = '<div class="node-carousel-title node-carousel-label">
+</div>
+<img1 title="cat2.jpg" alt="" src="http://localhost/testbed/files/imagecache/thumbnail/files/cat2_0.jpg"/>';
+    
+    $expected = '';
+    
+    $result = _nodecarousel_find_image_in_string($text);
+    
+    $this->assertEqual($expected, $result);
+  }
+  
+  function test_nodecarousel_find_image_in_string_tricky() {
+    $text = '<div class="node-carousel-title node-carousel-label">
+</div>
+<img title="cat2.jpg" alt="/>" src="http://localhost/testbed/files/imagecache/thumbnail/files/cat2_0.jpg"/>';
+    
+    $expected = '<img title="cat2.jpg" alt="/>" src="http://localhost/testbed/files/imagecache/thumbnail/files/cat2_0.jpg"/>';
+    
+    $result = _nodecarousel_find_image_in_string($text);
+    
+    $this->assertEqual($expected, $result);
+  }
+  
+}
+?>

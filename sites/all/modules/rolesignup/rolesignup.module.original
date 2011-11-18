@@ -1,0 +1,93 @@
+<?php
+/* $Id: rolesignup.module,v 1.2.4.1 2007/01/20 21:49:48 sym Exp $ */
+
+/********************************************************************
+* Drupal Hooks
+********************************************************************/
+/**
+ * Implementation of hook_menu()
+ */
+function rolesignup_menu($may_cache) {
+  $items = array();
+  $items[] = array(
+    'path' => 'user/register/role',
+    'callback' => 'role_register_page',
+    'title' => t('Register'),
+    'type' => MENU_LOCAL_TASK);
+
+ return $items;
+}
+ 
+/**
+ * Implementation of hook_perm()
+ */
+function rolesignup_perm() {
+  return array('register for role');
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function rolesignup_form_alter($form_id, &$form) {
+  if ($form_id == "user_register") {
+    global $user;
+    if (!user_access('administer users') && !$_SESSION['role']) {
+      drupal_goto('user/register/role', drupal_get_destination());
+    } else {
+      $form['role'] = array(
+        '#type' => 'value',
+        '#value' => $_SESSION['role'],
+        );
+    }
+    $form['rolelink'] = array(
+      '#value' => theme('select_role'),
+      '#weight' => -11,      
+      );
+  }
+} 
+
+function role_register_page() {
+  $roles = user_roles(1, 'register for role');
+  if (isset($roles[arg(3)])) {
+    $_SESSION['role'] = arg(3);
+    drupal_goto('user/register');
+  }
+  return theme('rolelist', $roles);
+}
+
+/**
+ * Implementation of hook_user()
+ */
+function rolesignup_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'insert':
+    $roles = user_roles(1,'register for role');
+    if ($roles[$_SESSION['role']]) {
+      db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)", $account->uid, $_SESSION['role']);
+    }
+  }
+}
+
+/* Theme functions */
+
+function theme_rolelist($roles) {
+  $output = t("<p>Please select what type of account you would like</p>");
+  $output .= "<ul>\n";
+  foreach ($roles as $roleid => $role) {
+    $url = "user/register/role/".$roleid;
+    $output .= "<li>".l($role, $url)."</li>\n";
+  }
+  $output .= "</ul>\n";
+  return $output;
+}
+
+
+function theme_select_role() {
+  $roles = user_roles();
+  $rolename = $roles[$_SESSION['role']]; 
+  $output = t("<p class='messages role_select'>You are registering for the '{$rolename}' account type.<br />");
+  $output .= l(t('Select a different account type'), 'user/register/role');
+  $output .= "</p>";
+  return $output;
+}
+

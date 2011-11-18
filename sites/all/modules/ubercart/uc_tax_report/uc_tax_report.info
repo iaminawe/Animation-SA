@@ -1,0 +1,6 @@
+; $Id: uc_tax_report.info,v 1.1.4.2 2009/09/23 19:14:43 rszrama Exp $
+name = Tax Report
+description = View a report about sales tax your customers paid.
+dependencies = uc_reports uc_taxes
+package = "Ubercart - core (optional)"
+

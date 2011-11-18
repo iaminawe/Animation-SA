@@ -1,0 +1,5 @@
+; $Id: event.info,v 1.4 2007/06/18 22:53:41 dww Exp $
+name = Event
+description = Calendaring API, calendar display and export
+package = Event
+

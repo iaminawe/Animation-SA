@@ -1,0 +1,16 @@
+<?php
+// $Id$
+
+function uc_bankdeposit_install(){
+  
+}
+
+function uc_bankdeposit_uninstall() {
+  variable_del('uc_bankdeposit_account');
+}
+
+function uc_bankdeposit_update_1() {
+  $items = array();
+  $items[] = update_sql("DROP TABLE IF EXISTS {uc_payment_bankdeposit}");
+  return $items;
+}

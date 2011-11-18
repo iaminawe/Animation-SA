@@ -1,0 +1,84 @@
+// $Id: CHANGELOG.txt,v 1.5.4.10 2009/02/11 18:59:24 tbarregren Exp $
+
+
+Simplenews Template 6.x-1.0-BETA2, 2009-01-31
+---------------------------------------------
+#346264 by hopfrog, kenorb: Fixed the "missing argument 3" bug.
+
+
+Simplenews Template 6.x-1.0-BETA1, 2008-12-02
+---------------------------------------------
+Initial port of Simplenews Template.
+
+
+Simplenews Template 5.x-1.4, 2009-02-11
+---------------------------------------
+Refactored the persisten variable handling. Made them public.
+
+
+Simplenews Template 5.x-1.4-RC1, 2009-02-06
+-------------------------------------------
+Refactored the code to improve its readability (and memory consumption).
+
+
+Simplenews Template 5.x-1.4-BETA2, 2009-02-02
+---------------------------------------------
+#367540 by TBarregren: Updated the .pot-file.
+#350285 by electronicmonkey: Added a possibility to have different templates
+  for different newsletters.
+Improved the documentation in the README file.
+
+
+Simplenews Template 5.x-1.4-BETA1, 2009-02-02
+---------------------------------------------
+Updated the documentation of simplenews_template.tpl.php and README.txt.
+#367513 by TBarregren: Moved the default template from code to a template file.
+#367511 by TBarregren: Fixed so that %mymail work in header or footer.
+Refactoring of the source code, including changes of the settings form.
+#367599 by TBarregren: Fixed so that the title is not shown twice when viewing
+  nodes with issues of a newsletter.
+#141635 by tcblack: Added support for choosing independently whether header,
+  footer and style should be included in nodes with issues of a newsletter.
+  The header, footer and style are always included in e-mails with issues of
+  a newsletter.
+
+
+Simplenews Template 5.x-1.3, 2009-01-31
+---------------------------------------
+#329247 by spade: Removed <!-- and --> in the default template.
+#345246 by guitarmiami: Fixed a bug in _simplenews_template_starts_with() that
+  made phptemplate_mimemail_message() to call theme_mimemail_message().
+Because mimemail_html_to_text() only matchs <style>...</style> when the opening
+  and closing tags are on the same line, \n and \r in the style must be
+  removed.
+#344695 by enboig: Emogrify can't handle several CSS rules on one line. As a
+  precaution, insert LF after each closing bracket.
+#329249 by spade: Added support for Simplenews' variable substitution tokens,
+  e.g. %site, %uri, %uri_brief, %mymail, %date, %login_uri.
+Removed comment in README.txt about a previous bug in Emogrifier.
+Minor improvemnts of the source code.
+
+
+Simplenews Template 5.x-1.2, 2008-10-19
+---------------------------------------
+#152819: Module .info files should not define 'version' in CVS.
+Replaced the HTML version of README with a text dito.
+#273089 by tizzo: Pass entire node to theme_simplenews_template_mail_content.
+#322905 by sun: Added link to preview HTML newsletters in browser.
+Minor improvements of the code itself, such as removing a lot of trailing
+  spaces.
+#317976 by enboig: Added support for
+  Emogrifier <http://www.pelagodesign.com/sidecar/emogrifier/>.
+#240562 by Sixcolored: Fixed a typo in the default template.
+Minor improvements of the code itself.
+Updated simplenews_template.pot.
+
+
+Simplenews Template 5.x-1.1, 2007-04-09
+---------------------------------------
+#132288 by polar-bear: Fixed a stupid mistake in phptemplate_mimemail_message().
+
+
+Simplenews Template 5.x-1.0, 2007-03-22
+---------------------------------------
+Initial release of Simplenews Template.

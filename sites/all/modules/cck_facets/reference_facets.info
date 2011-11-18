@@ -1,0 +1,6 @@
+; $Id: reference_facets.info,v 1.5 2008/04/23 14:58:40 davidlesieur Exp $
+name = CCK Reference Facets
+description = "Exposes CCK Node Reference and User Reference fields as facets."
+dependencies = content faceted_search cck_facets search
+package = Faceted Search
+

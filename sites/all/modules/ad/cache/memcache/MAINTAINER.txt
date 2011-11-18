@@ -1,0 +1,4 @@
+ad_cache_memcache.module:
+ad_cache_memcache.inc:
+ Written by Jeremy Andrews (3/2008)
+ Maintained by Jeremy Andrews <jeremy@tag1consulting.com>

@@ -1,0 +1,607 @@
+<?php
+// $Id: ad_notify.module,v 1.1.2.2.2.17 2009/01/29 06:26:03 jeremy Exp $
+
+/**
+ * @file
+ * Receive email notifications regarding ads.
+ *
+ * Copyright (c) 2007.
+ *   Jeremy Andrews <jeremy@kerneltrap.org>.  All rights reserved.
+ */
+define(AD_NOTIFY_DISABLED, 0);
+define(AD_NOTIFY_ENABLED, 1);
+
+/**
+ * Implementation of hook_help().
+ */
+function ad_notify_help($path) {
+  switch ($path) {
+    case 'admin/help#ad_notify':
+      $output = '<p>'. t('The ad_notify modules provides email notifications for the ad module.') .'</p>';
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function ad_notify_menu($may_cache) {
+  $items = array();
+
+  if (!$may_cache) {
+    if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == 'adowners' && is_numeric(arg(3))) {
+      $node = node_load(array('nid' => arg(1)));
+      $ad_user = user_load(array('uid' => arg(3)));
+      if (isset($node->adtype) && isset($ad_user->uid)) {
+        $items[] = array(
+          'path' => "node/$node->nid/adowners/$ad_user->uid/notifications",
+          'title' => t('!owner\'s notifications', array('!owner' => $ad_user->name)),
+          'callback' => 'drupal_get_form',
+          'callback arguments' => array('ad_notify_notifications', $node->nid, $ad_user->uid),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 4,
+        );
+      }
+    }
+    if (arg(0) == 'node' && is_numeric(arg(1)) && 
+        (ad_adaccess(arg(1), 'manage own notifications') ||
+         ad_adaccess(arg(1), 'manage owners'))) {
+      global $user;
+      $node = node_load(array('nid' => arg(1)));
+      // Only display "my notifications" tab if this is an ad, and we are one
+      // of the ad's owners.
+      if (isset($node->adtype) && (db_result(db_query('SELECT oid FROM {ad_owners} WHERE aid = %d AND uid = %d', $node->nid, $user->uid)))) {
+        $items[] = array(
+          'path' => "node/$node->nid/notifications",
+          'title' => t('My notifications'),
+          'callback' => 'drupal_get_form',
+          'callback arguments' => array('ad_notify_notifications', $node->nid, $user->uid),
+          'type' => MENU_LOCAL_TASK,
+          'weight' => 4,
+        );
+        if (is_numeric(arg(5)) && arg(6) == 'delete') {
+          $notid = arg(5);
+          $items[] = array(
+            'path' => "node/$node->nid/adowners/$ad_user->uid/notifications/$notid/delete",
+            'title' => t('delete notification'),
+            'callback' => 'ad_notify_confirm_delete_page',
+            'callback arguments' => array(ad_notify_load_notification($notid), $node->nid, $ad_user->uid),
+            'type' => MENU_CALLBACK,
+          );
+        }
+      }
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Drupal _cron() hook.  
+ * For performance reasons, all notifications are actually sent via this cron 
+ * hook.
+ */
+function ad_notify_cron() {
+  // Walk through all configured notifications and determine if any need to be
+  // emailed. 
+  $result = db_query('SELECT n.notid, o.aid, n.oid, n.event, n.queued, n.delay, n.sent, n.expire, n.address, n.subject, n.body FROM {ad_notify} n INNER JOIN {ad_owners} o ON n.oid = o.oid WHERE n.status = %d', AD_NOTIFY_ENABLED);
+  while ($notification = db_fetch_object($result)) {
+    $send = FALSE;
+    // Handle special case 'regular' notification that is simply a time-based
+    // status email.
+    if ($notification->event == 'regular') {
+      if ((time() - $notification->delay) >= $notification->sent) {
+        $send = TRUE;
+        $count = 1;
+      }
+    }
+    // Handle event based notifications based on information stored in the 
+    // ad_statistics table.
+    else {
+      if (($event = trim($notification->event, '-')) != $notification->event) {
+        // Event was prefixed by a -, so time is negative.  We can't pull a
+        // future event out of the statistics table, so we let the module that
+        // defined this event tell us whether or not it's happened.
+        $event_count = module_invoke_all('adnotifyapi', $notification->event, $notification);
+        if (isset($event_count[$notification->event])) {
+          $send = TRUE;
+        }
+      }
+
+      else {
+        $count = db_result(db_query("SELECT COUNT(aid) AS count FROM {ad_statistics} WHERE aid = %d AND date > %d AND action = '%s'", $notification->aid, date('YmdH', $notification->sent), $notification->event));
+        if ($count) {
+          // See if the notification has been queued long enough to be sent.
+          if (!$notification->delay || ($notification->queued &&
+              (time() > ($notification->queued + $notification->delay)))) {
+            $send = TRUE;
+          }
+          else if (!$notification->queued) {
+            // Queue up the notification to send it at a later time.
+            db_query('UPDATE {ad_notify} SET queued = %d WHERE notid = %d', time(), $notification->notid);
+          }
+        }
+      }
+    }
+
+    if ($send) {
+      ad_notify_send_mail($notification, $count);
+      if ($notification->expire) {
+        // Update the sent timestamp and counter, and auto-expire the 
+        // notification so it is not sent again.
+        db_query('UPDATE {ad_notify} SET queued = 0, sent = %d, counter = counter + 1, status = %d WHERE notid = %d', time(), AD_NOTIFY_DISABLED, $notification->notid);
+      }
+      else {
+        // Simply update the sent timestamp and counter.
+        db_query('UPDATE {ad_notify} SET queued = 0, sent = %d, counter = counter + 1 WHERE notid = %d', time(), $notification->notid);
+      }
+    }
+  }
+}
+
+/**
+ * Send email notifications using PHP mail() function.
+ */
+function ad_notify_send_mail($notification, $count = 0) {
+  $uid = db_result(db_query('SELECT uid FROM {ad_owners} WHERE oid = %d', $notification->oid));
+  $node = node_load(array('nid' => $notification->aid));
+  $owner = user_load(array('uid' => $uid));
+  $statistics = ad_statistics($notification->aid);
+  $notifications = module_invoke_all('adnotifyapi', 'register');
+  $variables = array(
+    t('%owner_name') => $owner->name,
+    t('%owner_mail') => $owner->mail,
+    t('%owner_uid') => $owner->uid,
+    t('%sitename') => variable_get('site_name', 'drupal'),
+    t('%status') => $node->adstatus,
+    t('%type') => $node->adtype,
+    t('%event') => $notification->event,
+    t('%frequency') => t(strtolower($notifications[$notification->event]), array('@when' => format_interval($notification->delay))),
+    t('%redirect') => url($node->redirect, NULL, NULL, TRUE),
+    t('%aid') => $notification->aid,
+    t('%title') => $node->title,
+    t('%url') => url("node/$node->nid", NULL, NULL, TRUE),
+    t('%siteurl') => url('', NULL, NULL, TRUE),
+    t('%comments') => $node->comment_count,
+    t('%count') => $count,
+    t('%created_small') => format_date($node->created, 'small'),
+    t('%created_medium') => format_date($node->created, 'medium'),
+    t('%created_large') => format_date($node->created, 'large'),
+    t('%activated_small') => $node->activated ? format_date($node->activated, 'small') : t('never'),
+    t('%activated_medium') => $node->activated ? format_date($node->activated, 'medium') : t('never'),
+    t('%activated_large') => $node->activated ? format_date($node->activated, 'large') : t('never'),
+    t('%expired_small') => $node->expired ? format_date($node->expired, 'small') : t('never'),
+    t('%expired_medium') => $node->expired ? format_date($node->expired, 'medium') : t('never'),
+    t('%expired_large') => $node->expired ? format_date($node->expired, 'large') : t('never'),
+    t('%autoactivate_small') => $node->autoactivate ? format_date($node->autoactivate, 'small') : t('never'),
+    t('%autoactivate_medium') => $node->autoactivate ? format_date($node->autoactivate, 'medium') : t('never'),
+    t('%autoactivate_large') => $node->autoactivate ? format_date($node->autoactivate, 'large') : t('never'),
+    t('%autoexpire_small') => $node->autoexpire ? format_date($node->autoexpire, 'small') : t('never'),
+    t('%autoexpire_medium') => $node->autoexpire ? format_date($node->autoexpire, 'medium') : t('never'),
+    t('%autoexpire_large') => $node->autoexpire ? format_date($node->autoexpire, 'large') : t('never'),
+    t('%maxviews') => $node->maxviews,
+    t('%maxclicks') => $node->maxclicks,
+    t('%global_views') => $statistics['global']['views'],
+    t('%global_clicks') => $statistics['global']['clicks'],
+    t('%last_year_views') => $statistics['last_year']['views'],
+    t('%last_year_clicks') => $statistics['last_year']['clicks'],
+    t('%this_year_views') => $statistics['this_year']['views'],
+    t('%this_year_clicks') => $statistics['this_year']['clicks'],
+    t('%last_month_views') => $statistics['last_month']['views'],
+    t('%last_month_clicks') => $statistics['last_month']['clicks'],
+    t('%this_month_views') => $statistics['this_month']['views'],
+    t('%this_month_clicks') => $statistics['this_month']['clicks'],
+    t('%this_week_views') => $statistics['this_week']['views'],
+    t('%this_week_clicks') => $statistics['this_week']['clicks'],
+    t('%yesterday_views') => $statistics['yesterday']['views'],
+    t('%yesterday_clicks') => $statistics['yesterday']['clicks'],
+    t('%today_views') => $statistics['today']['views'],
+    t('%today_clicks') => $statistics['today']['clicks'],
+    t('%last_hour_views') => $statistics['last_hour']['views'],
+    t('%last_hour_clicks') => $statistics['last_hour']['clicks'],
+    t('%this_hour_views') => $statistics['this_hour']['views'],
+    t('%this_hour_clicks') => $statistics['this_hour']['clicks'],
+  );
+  // TODO: Add hook to allow other modules to define variables.
+
+  // TODO: Should the from_address be configurable?
+  drupal_mail(
+    'ad_notify_mail',                                   // mail key
+    $notification->address,                             // to address
+    strtr($notification->subject, $variables),          // subject
+    wordwrap(strtr($notification->body, $variables), 72),      // message
+    variable_get('site_mail', ini_get('sendmail_from')) // from address
+  );
+}
+
+/**
+ * Adapi _hook implementation.
+ */
+function ad_notify_adapi($op, &$node) {
+  $output = NULL;
+  switch ($op) {
+    case 'statistics_increment':
+      break;
+
+    case 'permissions':
+      return array('manage own notifications', 'edit notification email');
+      break;
+  }
+}
+
+function ad_notify_adnotifyapi($op, $arg1 = NULL, $arg2 = NULL) {
+  switch ($op) {
+    case 'register':
+      return array(
+        'regular' => t('Email every @when as long as the ad is active.'),
+      );
+      break;
+  }
+}
+
+/**
+ * Function stub.
+ */
+function ad_notify_notifications($aid, $uid, $notid = 0) {
+  global $user;
+  if (arg(2) == 'notifications') {
+    drupal_set_title('My notifications');
+  }
+  else {
+    drupal_set_title('Notifications');
+  }
+
+  $oid = db_result(db_query('SELECT oid FROM {ad_owners} WHERE aid = %d AND uid = %d', $aid, $uid));
+  $notifications = module_invoke_all('adnotifyapi', 'register');
+  $owner = user_load(array('uid' => $uid));
+
+  $header = array(
+    array('data' => t('last sent'), 'field' => 'sent', 'sort' => 'desc'),
+    array('data' => t('notification'), 'field' => 'event'),
+    array('data' => t('status'), 'field' => 'status'),
+    array('data' => t('action'))
+  );
+  $sql = "SELECT notid, event, delay, sent, address, status FROM {ad_notify} WHERE oid = $oid";
+  $sql .= tablesort_sql($header);
+  $result = pager_query($sql, 25);
+
+  $rows = array();
+  while ($notify = db_fetch_object($result)) {
+    $row = array();
+    $row[] = $notify->sent ? format_interval(time() - $notify->sent). t(' ago') : t('Never');
+    $row[] = t($notifications[$notify->event], array('@when' => format_interval($notify->delay)));
+    $row[] = $notify->status == AD_NOTIFY_ENABLED ? t('enabled') : t('disabled');
+    $row[] = l(t('edit'), "node/$aid/adowners/$uid/notifications/$notify->notid/edit") .' '. l(t('delete'), "node/$aid/adowners/$uid/notifications/$notify->notid/delete");
+    $rows[] = $row;
+  }
+  $output = theme('table', $header, $rows);
+  $output .= theme('pager', NULL, 25, 0);
+
+  $form = array();
+
+  if ($notid) {
+    $notification = ad_notify_load_notification($notid);
+  }
+
+  $help = '<p>'. t('You can configure one or more notifications for your advertisement using the drop down menus below.  For example, to receive a weekly notification with information about how often your advertisement was viewed and clicked, select the <em>email every @when as long as the ad is active</em> event, and <em>1 week</em> for when.  Or, to receive a reminder that your advertisement will expire in 24 hours select the <em>email @when before the advertisement will expire</em>, and <em>1 day</em> for when.') .'</p>';
+  $help .= '<p>'. t('If you schedule a delay between an event and when you are notified and the event happens multiple times, only one notification will be sent.  For example, if you create a notification for <em>email 1 day after the advertisement is clicked</em> and the ad is clicked 42 more times in the next 24 hours, you will only receive one email 24 hours after your ad was first clicked that notes that your ad was clicked a total of 43 times in the past 24 hours.') .'</p>';
+  $form['create'] = array(
+    '#type' => 'fieldset',
+    '#description' => $help,
+    '#title' => $notid ? t('edit notification') : t('create new notification'),
+    '#collapsible' => TRUE,
+    '#collapsed' => ($rows == array() || $notid) ? FALSE : TRUE,
+  );
+
+  $form['create']['event'] = array(
+    '#type' => 'select',
+    '#title' => t('Event'),
+    '#options' => $notifications,
+    '#description' => t('Select an event for which you would like to receive a notification.'),
+    '#default_value' => $notid ? $notification->event : 1,
+  );
+
+  $form['create']['delay'] = array(
+    '#type' => 'select',
+    '#title' => t('When'),
+    '#options' => drupal_map_assoc(array(0,3600,10800,21600,43200,86400,259200,432000,604800,1209600,1814400,2419200,4838400,9676800,31536000), 'format_interval'),
+    '#description' => t('Select a value to replace @when in the event notification you selected above.'),
+    '#default_value' => $notid ? $notification->delay : 0,
+  );
+
+  $form['create']['expire'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('One-time'),
+    '#description' => t('Check this box if this notification email should only be sent one time.  If not checked, an email will be sent each time the event happens.  If checked, an email will only be sent the first time the event happens, then the notification will be automatically disabled.'),
+    '#default_value' => $notid ? $notification->expire : 0,
+  );
+
+  if (ad_adaccess($aid, 'manage owners') && arg(2) == 'adowners' && 
+      $user->uid != arg(3)) {
+    $form['create']['locked'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Locked'),
+      '#description' => t('Check this box if you are setting up a notification for someone else, and you don\'t want them to be able to disable the notification.  Only users with the <em>manage owners</em> permission for this ad can edit or delete a locked notification.'),
+      '#default_value' => $notid ? $notification->locked : 0,
+    );
+  }
+  else {
+    $form['create']['locked'] = array(
+      '#type' => 'hidden',
+      '#value' => $notid ? $notification->locked : 0,
+    );
+  }
+
+  if ($notid) {
+    $form['create']['mail'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('message'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+  }
+
+  // TODO: Make it possible for admins to modify email address, and even to
+  // enter multiple email addresses.  Wrap this in a special permission, as 
+  // it involves trust to configure notifications to unverified addresses.
+  $form['create']['mail']['address-display'] = array(
+    '#type' => 'markup',
+    '#value' => '<b>'. t('Notify address') .':</b><br />'. t('The email will be sent to %address.', array('%address' => $owner->mail)),
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+
+  $form['create']['mail']['address'] = array(
+    '#type' => 'hidden',
+    '#value' => $owner->mail,
+  );
+
+  if ($notid) {
+    $form['create']['mail']['subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Subject'),
+      '#required' => TRUE,
+      '#default_value' => $notification->subject,
+    );
+
+    $form['create']['mail']['body'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Body'),
+      '#required' => TRUE,
+      '#default_value' => $notification->body,
+      '#description' => t('Enter the body of your notification email.  The following variables can be used in your message and will be automatically replaced before the email is sent:') .'<ul>'
+.'<li>'. t('%sitename: the name of this website.', array('%sitename' => '%sitename')) 
+.'<li>'. t('%owner_name: the username of the ad owner.', array('%owner_name' => '%owner_name')) 
+.'<li>'. t('%owner_mail: the email address of the ad owner.', array('%owner_mail' => '%owner_mail')) 
+.'<li>'. t('%owner_uid: the user ID of the ad owner.', array('%owner_uid' => '%owner_uid')) 
+.'<li>'. t('%event: the type of event that has triggered this notification.', array('%event' => '%event'))
+.'<li>'. t('%count: the number of times the event happened.', array('%count' => '%count')) 
+.'<li>'. t('%frequency: a complete sentence describing the frequency this notification will be sent.', array('%frequency' => '%frequency')) 
+.'<li>'. t('%type: the type of ad.', array('%type' => '%type')) 
+.'<li>'. t('%status: the status of the ad.', array('%status' => '%status')) 
+.'<li>'. t('%url: the url of the advertisement.', array('%url' => '%url')) 
+.'<li>'. t('%siteurl: the url of the website.', array('%siteurl' => '%siteurl')) 
+.'<li>'. t('%redirect: the redirection url of the advertisement.', array('%redirect' => '%redirect')) 
+.'<li>'. t('%title: the title of the advertisement.', array('%title' => '%title')) 
+.'<li>'. t('%aid: the ID of the advertisement.', array('%aid' => '%aid')) 
+.'<li>'. t('%comments: the number of comments attached to the advertisement.', array('%comments' => '%comments')) 
+.'<li>'. t('%created_small, %created_medium, %created_large: various formats of when the advertisement was created.', array('%created_small' => '%created_small', '%created_medium' => 'created_medium', '%created_large' => 'created_large')) 
+.'<li>'. t('%activated_small, %activated_medium, %activated_large: various formats of when the advertisement was activated.', array('%activated_small' => '%activated_small', '%activated_medium' => 'activated_medium', '%activated_large' => 'activated_large')) 
+.'<li>'. t('%expired_small, %expired_medium, %expired_large: various formats of when the advertisement was expired.', array('%expired_small' => '%expired_small', '%expired_medium' => 'expired_medium', '%expired_large' => 'expired_large')) 
+.'<li>'. t('%autoactivate_small, %autoactivate_medium, %autoactivate_large: various formats of when the advertisement was automatically activated.', array('%autoactivate_small' => '%autoactivate_small', '%autoactivate_medium' => 'autoactivate_medium', '%autoactivate_large' => 'autoactivate_large')) 
+.'<li>'. t('%autoexpire_small, %autoexpire_medium, %autoexpire_large: various formats of when the advertisement was automatically expired.', array('%autoexpire_small' => '%autoexpire_small', '%autoexpire_medium' => 'autoexpire_medium', '%autoexpire_large' => 'autoexpire_large')) 
+.'<li>'. t('%maxviews: the maximum number of times this advertisement is allowed to be viewed.', array('%maxviews' => '%maxviews')) 
+.'<li>'. t('%maxclicks: the maximum number of times this advertisement is allowed to be clicked.', array('%maxclicks' => '%maxclicks')) 
+.'<li>'. t('%global_views, %global_clicks, %last_year_views, %last_year_clicks, %this_year_views, %this_year_clicks, %last_month_views, %last_month_clicks, %this_month_views, %this_month_clicks, %this_week_views, %this_week_clicks, %yesterday_views, %yesterday_clicks, %today_views, %today_clicks, %last_hour_views, %last_hour_clicks, %this_hour_views, %this_hour_clicks: various advertisement statistics', array('%global_views' => '%global_views', '%global_clicks' => '%global_views', '%last_year_views' => '%last_year_views', '%last_year_clicks' => '%last_year_clicks', '%this_year_views' => '%this_year_views', '%this_year_clicks' => '%this_year_clicks', '%this_hour_views' => '%this_hour_views', '%this_hour_clicks' => '%this_hour_clicks'))
+.'</ul>',
+    );
+  }
+
+  $form['create']['oid'] = array(
+    '#type' => 'hidden',
+    '#value' => $oid,
+  );
+
+  $form['create']['aid'] = array(
+    '#type' => 'hidden',
+    '#value' => $aid,
+  );
+
+  $form['create']['uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $uid,
+  );
+
+  if ($notid) {
+    $form['create']['notid'] = array(
+      '#type' => 'hidden',
+      '#value' => $notid,
+    );
+  }
+
+  $form['create']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => $notid ? t('edit notification') : t('create notification'),
+  );
+
+  if ($rows != array()) {
+    $form['notifications'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('notifications'),
+      '#collapsible' => TRUE,
+    );
+
+    $form['notifications']['current'] = array(
+      '#type' => 'markup',
+      '#value' => $output,
+    );
+  }
+  else {
+    $form['notifications'] = array(
+      '#type' => 'markup',
+      '#value' => '<p>'. t('There are no notifications configured for %owner.', array('%owner' => $owner->name)) .'</p>',
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Load a specified notification from the database, return as an object.
+ */
+function ad_notify_load_notification($notid) {
+  return db_fetch_object(db_query('SELECT * FROM {ad_notify} WHERE notid = %d', $notid));
+}
+
+/**
+ * Display confirm form.
+ */
+function ad_notify_confirm_delete_page($notification, $aid, $uid) {
+  return drupal_get_form('ad_notify_confirm_delete', $notification, $aid, $uid);
+}
+
+/**
+ * Confirm deletion of a specified notification from the database.
+ */
+function ad_notify_confirm_delete($notification, $aid, $uid) {
+  $form = array();
+
+  $form['oid'] = array(
+    '#type' => 'hidden',
+    '#value' => $notification->oid,
+  );
+
+  $form['aid'] = array(
+    '#type' => 'hidden',
+    '#value' => $aid,
+  );
+
+  $form['uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $uid,
+  );
+
+  $form['notid'] = array(
+    '#type' => 'hidden',
+    '#value' => $notification->notid,
+  );
+
+  $form['locked'] = array(
+    '#type' => 'hidden',
+    '#value' => $notification->locked,
+  );
+
+  $form['event'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+  );
+  $notifications = module_invoke_all('adnotifyapi', 'register');
+  $form['event']['type'] = array(
+    '#type' => 'markup',
+    '#value' => t($notifications[$notification->event], array('@when' => format_interval($notification->delay))),
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+
+  $form = confirm_form(
+    $form,
+    t('Are you sure you want to delete this notification?'),
+    "node/$aid/adowners/$uid/notifications",
+    t('This action cannot be undone.'),
+    t('Delete'),
+    t('Cancel'));
+  return $form;
+}
+
+
+/**
+ * Validate that the selected notification can be deleted.
+ */
+function ad_notify_confirm_delete_validate($form_id, $form_values) {
+  if ($form_values['locked'] && !ad_adaccess($form_values['aid'], 'manage owners')) {
+    drupal_set_message(t('This notification is locked, you will need to contact the site administrator to delete this notification for you.'), 'error');
+    if (arg(2) == 'adowners' && arg(4) == 'notifications') {
+      drupal_goto('node/'. $form_values['aid'] .'/adowners/'. $form_values['uid'] .'/notifications');
+    }
+    else {
+      drupal_goto('node/'. $form_values['aid'] .'/notifications');
+    }
+  }
+}
+
+/**
+ * Delete a specified notification from the database.
+ */
+function ad_notify_confirm_delete_submit($form_id, $form_values) {
+  db_query('DELETE FROM {ad_notify} WHERE notid = %d', $form_values['notid']);
+  drupal_set_message('Notification deleted.');
+  drupal_goto('node/'. $form_values['aid'] .'/adowners/'. $form_values['uid'] .'/notifications');
+}
+
+/**
+ * Validate ad notifications before saving to database.
+ */
+function ad_notify_notifications_validate($form_id, $form_values) {
+  $redirect = FALSE;
+  if ($form_values['event'] == 'regular' && $form_values['delay'] < 3600) {
+    drupal_set_message(t('You are not allowed to schedule a regular notification more frequently than once an hour.'), 'error');
+    $redirect = TRUE;
+  }
+  else if (!$form_values['notid']) {
+    if (db_result(db_query("SELECT notid FROM {ad_notify} WHERE oid = %d AND event = '%s' AND delay = %d", $form_values['oid'], $form_values['event'], $form_values['delay']))) {
+      drupal_set_message(t('You have already scheduled that notification.'), 'error');
+      $redirect = TRUE;
+    }
+  }
+  else if ($form_values['locked'] && !ad_adaccess($form_values['aid'], 'manage owners')) {
+    $redirect = TRUE;
+    drupal_set_message(t('This notification is locked, you will need to contact the site administrator to edit this notification for you.'), 'error');
+  }
+
+  if ($redirect) {
+    if (arg(2) == 'adowners' && arg(4) == 'notifications') {
+      drupal_goto('node/'. $form_values['aid'] .'/adowners/'. $form_values['uid'] .'/notifications');
+    }
+    else {
+      drupal_goto('node/'. $form_values['aid'] .'/notifications');
+    }
+  }
+}
+
+function ad_notify_notifications_submit($form_id, $form_values) {
+  if ($form_values['notid']) {
+    db_query("UPDATE {ad_notify} SET aid = %d, oid = %d, event = '%s', delay = %d, expire = %d, locked = %d, status = %d, address = '%s', subject = '%s', body = '%s' WHERE notid = %d", $form_values['aid'], $form_values['oid'], $form_values['event'], $form_values['delay'], $form_values['expire'], $form_values['locked'], AD_NOTIFY_ENABLED, $form_values['address'], $form_values['subject'], $form_values['body'], $form_values['notid']);
+    drupal_set_message('Notification updated.');
+  }
+  else {
+    // Retrieve the default mail subject and body.
+    $mail = module_invoke_all('adnotifyapi', 'mail_text', $form_values['event']);
+    if ($mail == array()) {
+      // Default message text.
+      $mail = array(
+        'subject' => t('[%sitename ad] %event notification'),
+        'body' => t("Hello %owner_name,\n\n  This is an automatically generated notification about your advertisement \"%title\" that is being displayed on the %sitename website.\n\n  Your advertisement has been viewed %today_views times and clicked %today_clicks times today.  It was viewed %yesterday_views times and clicked %yesterday_clicks times yesterday.  It has been viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You will receive this %frequency  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"),
+      );
+    }
+    db_query("INSERT INTO {ad_notify} (aid, oid, event, delay, expire, locked, status, address, subject, body) VALUES(%d, %d, '%s', %d, %d, %d, %d, '%s', '%s', '%s')", $form_values['aid'], $form_values['oid'], $form_values['event'], $form_values['delay'], $form_values['expire'], $form_values['locked'], AD_NOTIFY_ENABLED, $form_values['address'], $mail['subject'], $mail['body']);
+    drupal_set_message('Notification created.');
+  }
+}
+
+/**
+ * Adowners _hook().
+ */
+function ad_notify_adowners($op, $arg1 = NULL, $arg2 = NULL) {
+  switch ($op) {
+    case 'overview':
+      return l(t('notifications'), "node/$arg1/adowners/$arg2/notifications");
+
+    case 'delete':
+      if ($arg1) {
+        db_query('DELETE FROM {ad_notify} WHERE oid = %d', $arg1);
+      }
+      break;
+  }
+}
+

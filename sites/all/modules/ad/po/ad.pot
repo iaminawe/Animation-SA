@@ -1,0 +1,2158 @@
+# $Id: ad.pot,v 1.1.2.1 2008/03/13 01:43:56 sun Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  n/a
+#  ad.module,v 1.2.2.29.2.62 2008/01/17 20:04:14 jeremy
+#  ad_image.module,v 1.2.2.13.2.32 2008/01/23 15:28:03 jeremy
+#  ad.info,v 1.1.2.2 2007/07/16 19:25:05 jeremy
+#  ad_cache_file.info,v 1.1.2.1 2007/05/03 16:11:26 jeremy
+#  ad_cache_memcache.info,v 1.1.2.1 2008/03/11 01:40:57 jeremy
+#  ad_embed.info,v 1.1.2.1 2007/02/24 13:03:56 morbus
+#  ad_external.info,v 1.1.2.1 2007/10/19 00:36:36 jeremy
+#  ad_html.info,v 1.1.2.1 2007/10/22 20:26:48 jeremy
+#  ad_image.info,v 1.1.2.4 2008/01/11 19:45:04 jeremy
+#  ad_notify.info,v 1.1.2.1 2007/02/24 13:03:56 morbus
+#  ad_remote.info,v 1.1.2.1 2007/05/05 17:13:02 jeremy
+#  ad_report.info,v 1.1.2.1 2007/02/24 13:03:56 morbus
+#  click_filter.info,v 1.1.2.1 2008/01/17 20:04:15 jeremy
+#  ad_text.info,v 1.1.2.2 2008/01/05 18:34:28 jeremy
+#  ad_notify.module,v 1.1.2.2.2.12 2007/05/25 10:12:28 jeremy
+#  ad_embed.module,v 1.1.2.4.2.11 2007/06/08 14:30:38 jeremy
+#  ad_text.module,v 1.2.2.7.2.20 2008/01/11 18:52:09 jeremy
+#  ad_weight_percent.module,v 1.1.2.1 2007/09/06 20:52:51 jeremy
+#  ad_external.module,v 1.1.2.4 2007/11/03 17:15:19 jeremy
+#  ad.install,v 1.2.2.4.2.21 2008/01/23 14:40:15 jeremy
+#  ad_cache_file.module,v 1.1.4.15 2008/03/11 01:40:57 jeremy
+#  ad_cache_memcache.module,v 1.1.2.4 2008/03/12 13:14:28 jeremy
+#  ad_remote.module,v 1.1.4.4 2008/01/06 19:28:26 jeremy
+#  ad_external.install,v 1.1.2.1 2007/10/19 00:36:36 jeremy
+#  ad_html.module,v 1.1.2.2 2008/01/11 18:52:09 jeremy
+#  ad_html.install,v 1.1.2.1 2007/10/22 20:26:48 jeremy
+#  ad_image.install,v 1.2.2.2.2.6 2008/01/11 18:29:05 jeremy
+#  ad_notify.install,v 1.1.2.2.2.6 2007/06/08 14:56:04 jeremy
+#  ad_report.module,v 1.1.2.3.2.6 2008/01/30 20:17:37 jeremy
+#  click_filter.module,v 1.1.2.2 2008/01/17 20:33:52 jeremy
+#  click_filter.install,v 1.1.2.2 2008/01/17 20:33:52 jeremy
+#  ad_text.install,v 1.2.2.2.2.4 2007/06/08 14:56:04 jeremy
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-03-13 02:41+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ad_views.inc:31;127 image/ad_image_views.inc:23 text/ad_text_views.inc:23
+msgid "As link"
+msgstr ""
+
+#: ad_views.inc:32;128
+msgid "Not As link"
+msgstr ""
+
+#: ad_views.inc:54
+msgid "When using the <em>Advertisement View Type</em> use this field to specify how many ads to display at the same time."
+msgstr ""
+
+#: ad_views.inc:59
+msgid "Ad: Status"
+msgstr ""
+
+#: ad_views.inc:64
+msgid "Include or exclude ads with the selected status."
+msgstr ""
+
+#: ad_views.inc:67
+msgid "Ad: Type"
+msgstr ""
+
+#: ad_views.inc:72
+msgid "Include or exclude ads of the selected types."
+msgstr ""
+
+#: ad_views.inc:95
+msgid "Ad: Owned by current user"
+msgstr ""
+
+#: ad_views.inc:96
+msgid "Equals"
+msgstr ""
+
+#: ad_views.inc:99
+msgid "Include or exclude ads from the owners groups."
+msgstr ""
+
+#: ad_views.inc:145 ad.module:480
+msgid "Advertisement"
+msgstr ""
+
+#: ad_views.inc:157
+msgid "active_@type_ads"
+msgstr ""
+
+#: ad_views.inc:158
+msgid "Display all active @type ads in a block."
+msgstr ""
+
+#: ad_views.inc:162
+msgid "All active @type ads"
+msgstr ""
+
+#: ad_views.inc:214
+msgid "active_@group_group_ads"
+msgstr ""
+
+#: ad_views.inc:215
+msgid "Display all active @group ads in a block."
+msgstr ""
+
+#: ad_views.inc:219
+msgid "All active @group group ads"
+msgstr ""
+
+#: ad_views.inc:249
+msgid "all_active_ads"
+msgstr ""
+
+#: ad_views.inc:250
+msgid "Display all active ads in a block."
+msgstr ""
+
+#: ad_views.inc:254
+msgid "All active ads"
+msgstr ""
+
+#: ad_views.inc:338
+msgid "All @status ads owned by user."
+msgstr ""
+
+#: ad_views.inc:343
+msgid "My @status ads"
+msgstr ""
+
+#: ad_views.inc:348
+msgid "You have no @status ads."
+msgstr ""
+
+#: ad.module:34
+msgid "Ads cannot be displayed.  The ad module is <a href=\"@misconfigured\">misconfigured</a>, failed to locate the required <em>serve.php</em> ond/or <em>adserve.inc</em> file."
+msgstr ""
+
+#: ad.module:36
+msgid "The ad module is <a href=\"@misconfigured\">misconfigured</a>."
+msgstr ""
+
+#: ad.module:153
+msgid "Clicked %type ad aid %aid hostid %hostid."
+msgstr ""
+
+#: ad.module:157
+msgid "Ad redirection failed for aid %aid hostid %hostid, failed to load destination URL. "
+msgstr ""
+
+#: ad.module:215
+msgid "This advertisement is currently waiting for administrative approval."
+msgstr ""
+
+#: ad.module:216
+msgid "This advertisement has been approved and is currently waiting to be administratively activated."
+msgstr ""
+
+#: ad.module:217;226
+msgid "This advertisement is actively being displayed."
+msgstr ""
+
+#: ad.module:218
+msgid "This advertisement has been temporarily disabled by its owner and is not currently being displayed."
+msgstr ""
+
+#: ad.module:219
+msgid "This advertisement has been unpublished and is not currently being displayed."
+msgstr ""
+
+#: ad.module:220
+msgid "This advertisement has expired."
+msgstr ""
+
+#: ad.module:221
+msgid "This advertisement was refused by the site administrator, it will not be displayed."
+msgstr ""
+
+#: ad.module:227
+msgid "This advertisement has been temporarily disabled and is not currently being displayed."
+msgstr ""
+
+#: ad.module:322
+msgid "This advertisement will be automatically activated on %timestamp, in %time."
+msgstr ""
+
+#: ad.module:328
+msgid "This advertisement has been active since %date."
+msgstr ""
+
+#: ad.module:331
+msgid "This advertisement will expire on %timestamp, in %time."
+msgstr ""
+
+#: ad.module:335
+msgid "This advertisement will expire after %left more views."
+msgstr ""
+
+#: ad.module:339
+msgid "This advertisement will expire after %left more clicks."
+msgstr ""
+
+#: ad.module:345
+msgid "This advertisement expired %date."
+msgstr ""
+
+#: ad.module:350;578;598;603;615;637;642;931;1530;1661
+msgid "Status"
+msgstr ""
+
+#: ad.module:354
+msgid "Views"
+msgstr ""
+
+#: ad.module:354
+msgid "Clicks"
+msgstr ""
+
+#: ad.module:354
+msgid "Click-thru"
+msgstr ""
+
+#: ad.module:357
+msgid "This hour"
+msgstr ""
+
+#: ad.module:357
+msgid "Last hour"
+msgstr ""
+
+#: ad.module:357
+msgid "Today"
+msgstr ""
+
+#: ad.module:357
+msgid "Yesterday"
+msgstr ""
+
+#: ad.module:357
+msgid "Last seven days"
+msgstr ""
+
+#: ad.module:357
+msgid "Last week"
+msgstr ""
+
+#: ad.module:357
+msgid "This month"
+msgstr ""
+
+#: ad.module:357
+msgid "Last month"
+msgstr ""
+
+#: ad.module:357
+msgid "This year"
+msgstr ""
+
+#: ad.module:357
+msgid "Last year"
+msgstr ""
+
+#: ad.module:357
+msgid "All time"
+msgstr ""
+
+#: ad.module:369;654;1001
+msgid "Statistics"
+msgstr ""
+
+#: ad.module:390
+msgid "The ad module provides a complete advertising system for Drupal powered websites.  It does this through an API that allow other modules to handle various types of advertising content.  For example, if enabled together with the ad_image module you will be able to display image based advertisements such as banner ads."
+msgstr ""
+
+#: ad.module:415
+msgid "Automatically activated ad %title with nid %nid."
+msgstr ""
+
+#: ad.module:424
+msgid "Warning: ad %title with nid %nid in approved state has no autoactivate date set."
+msgstr ""
+
+#: ad.module:440
+msgid "Automatically expired ad %title with nid %nid."
+msgstr ""
+
+#: ad.module:455
+msgid "Warning: reset %type timestamp on advertisement %title with nid %nid because it is in %state state."
+msgstr ""
+
+#: ad.module:482;483
+msgid "Advertisements can be randomly displayed to visitors of your website."
+msgstr ""
+
+#: ad.module:524;1528
+msgid "Title"
+msgstr ""
+
+#: ad.module:530;1899;2123
+msgid "Description"
+msgstr ""
+
+#: ad.module:541
+msgid "At least one ad type module must be enabled before you can create advertisements.  For example, try %enabling the ad_text or ad_image module."
+msgstr ""
+
+#: ad.module:551
+msgid "Style of ad"
+msgstr ""
+
+#: ad.module:555
+msgid "Select the type of ad that you wish to create from the above options."
+msgstr ""
+
+#: ad.module:586;595;623;633 image/ad_image.module:197;199;203
+msgid "pending"
+msgstr ""
+
+#: ad.module:669
+msgid "Scheduling"
+msgstr ""
+
+#: ad.module:684
+msgid "The current date and time is \"%date\"."
+msgstr ""
+
+#: ad.module:688
+msgid "Automatically activate ad"
+msgstr ""
+
+#: ad.module:691
+msgid "You can specify a date and time for this advertisement to be automatically activated.  The advertisement needs to be in an <em>approved</em> state before it can be automatically activated.  If you prefer to activate the advertisement immediately, leave this field empty."
+msgstr ""
+
+#: ad.module:699
+msgid "Automatically expire ad"
+msgstr ""
+
+#: ad.module:702
+msgid "You can specify a date and time for this advertisement to be automatically expired.  If you don't want the advertisement to expire, leave this field empty."
+msgstr ""
+
+#: ad.module:706
+msgid "Maximum views"
+msgstr ""
+
+#: ad.module:711
+msgid "You can specify the maximum number of times this advertisement should be displayed, after which it will be automatically expired.  If you don't want this advertisement to expire after a certain number of views, leave this field set to %zero."
+msgstr ""
+
+#: ad.module:715
+msgid "Maximum clicks"
+msgstr ""
+
+#: ad.module:720
+msgid "You can specify the maximum number of times this advertisement should be clicked, after which it will be automatically expired.  If you don't want this advertisement to expire after a certain number of clicks leave this field set to %zero."
+msgstr ""
+
+#: ad.module:748
+msgid "This vocabulary was automatically created for use by the ad module.  Only applicable options are available."
+msgstr ""
+
+#: ad.module:753;756
+msgid "ad group"
+msgstr ""
+
+#: ad.module:756
+msgid "Type %type is required to use this vocabulary."
+msgstr ""
+
+#: ad.module:758
+msgid "If enabled, ads are categorized by typing ad group names instead of choosing them from a list."
+msgstr ""
+
+#: ad.module:759
+msgid "If enabled, allows ads to have more than one ad group (always true for free tagging)."
+msgstr ""
+
+#: ad.module:760
+msgid "If enabled, every ad <strong>must</strong> be assigned to at least one ad group."
+msgstr ""
+
+#: ad.module:770
+msgid "Ad group name"
+msgstr ""
+
+#: ad.module:771
+msgid "The name for this ad group.  Example: \"Linux\"."
+msgstr ""
+
+#: ad.module:772
+msgid "A description of the ad group."
+msgstr ""
+
+#: ad.module:774
+msgid "In listings, the heavier ad groups will sink and the lighter ad groups will be positioned nearer the top."
+msgstr ""
+
+#: ad.module:802;827
+msgid "unpublished"
+msgstr ""
+
+#: ad.module:822
+msgid "This ad will not be automatically activated at the scheduled time because it is not in the <em>approved</em> state."
+msgstr ""
+
+#: ad.module:832 image/ad_image.module:197;199;203
+msgid "active"
+msgstr ""
+
+#: ad.module:925
+msgid "Time"
+msgstr ""
+
+#: ad.module:926;1228;1278
+msgid "Username"
+msgstr ""
+
+#: ad.module:927
+msgid "IP address"
+msgstr ""
+
+#: ad.module:928
+msgid "URL where clicked"
+msgstr ""
+
+#: ad.module:966
+msgid "Click history"
+msgstr ""
+
+#: ad.module:990
+msgid "Ads"
+msgstr ""
+
+#: ad.module:993
+msgid "Configure and manage your advertising system."
+msgstr ""
+
+#: ad.module:997;1020;1097
+msgid "List"
+msgstr ""
+
+#: ad.module:1007
+msgid "Settings"
+msgstr ""
+
+#: ad.module:1013
+msgid "Groups"
+msgstr ""
+
+#: ad.module:1025
+msgid "Create group"
+msgstr ""
+
+#: ad.module:1033
+msgid "Global settings"
+msgstr ""
+
+#: ad.module:1039 ad.info:0;0 cache/file/ad_cache_file.info:0 cache/memcache/ad_cache_memcache.info:0 embed/ad_embed.info:0 external/ad_external.info:0 html/ad_html.info:0 image/ad_image.info:0 notify/ad_notify.info:0 remote/ad_remote.info:0 report/ad_report.info:0 statistics/click_filter/click_filter.info:0 text/ad_text.info:0 weight/percent/ad_weight_percent.info:0
+msgid "Ad"
+msgstr ""
+
+#: ad.module:1047;1200
+msgid "!type advertisement"
+msgstr ""
+
+#: ad.module:1066;1543;1910 notify/ad_notify.module:275
+msgid "edit"
+msgstr ""
+
+#: ad.module:1075 notify/ad_notify.module:275
+msgid "delete"
+msgstr ""
+
+#: ad.module:1090
+msgid "Ad owners"
+msgstr ""
+
+#: ad.module:1104
+msgid "!owner's permissions"
+msgstr ""
+
+#: ad.module:1119
+msgid "Add"
+msgstr ""
+
+#: ad.module:1141
+msgid "ad group: @name"
+msgstr ""
+
+#: ad.module:1147
+msgid "Number of ads"
+msgstr ""
+
+#: ad.module:1150
+msgid "Select the maximum number of unique ads that should be displayed together in this block.  If you specify a number larger than the maximum number of ads in this ad group, all ads will be displayed once."
+msgstr ""
+
+#: ad.module:1189
+msgid "Submit %name"
+msgstr ""
+
+#: ad.module:1192
+msgid "Choose from the following available advertisement types:"
+msgstr ""
+
+#: ad.module:1208
+msgid "There are no advertisement types available."
+msgstr ""
+
+#: ad.module:1229;1531;1900
+msgid "Options"
+msgstr ""
+
+#: ad.module:1245;1389
+msgid "permissions"
+msgstr ""
+
+#: ad.module:1249
+msgid "remove"
+msgstr ""
+
+#: ad.module:1275
+msgid "Enter the username of the user who should have ownership permissions on this advertisement."
+msgstr ""
+
+#: ad.module:1282
+msgid "Add owner"
+msgstr ""
+
+#: ad.module:1291
+msgid "The specified username %username does not exist."
+msgstr ""
+
+#: ad.module:1294
+msgid "The specified user %username is already an owner of this ad."
+msgstr ""
+
+#: ad.module:1298
+msgid "The specified user %username does not have <em>manage advertisements</em> nor <em>administer advertisements</em> permissions.  The user must be !assigned to a !role with these privileges before you can add them as an ad owner."
+msgstr ""
+
+#: ad.module:1298
+msgid "assigned"
+msgstr ""
+
+#: ad.module:1298
+msgid "role"
+msgstr ""
+
+#: ad.module:1306
+msgid "The user is already an owner of the ad."
+msgstr ""
+
+#: ad.module:1309
+msgid "The user %username has been added as an owner of this advertisement."
+msgstr ""
+
+#: ad.module:1389
+msgid "granted"
+msgstr ""
+
+#: ad.module:1423;1790 embed/ad_embed.module:192 image/ad_image.module:123 text/ad_text.module:109
+msgid "Save"
+msgstr ""
+
+#: ad.module:1473
+msgid "The permissions have been saved."
+msgstr ""
+
+#: ad.module:1529;1779
+msgid "Type"
+msgstr ""
+
+#: ad.module:1628
+msgid "There %count in this group."
+msgstr ""
+
+#: ad.module:1634
+msgid "There @count in this group."
+msgstr ""
+
+#: ad.module:1642
+msgid "There are no active ads."
+msgstr ""
+
+#: ad.module:1665
+msgid "Using detected adserve scripts: %adserve, %adserveinc"
+msgstr ""
+
+#: ad.module:1665;1665
+msgid "not found"
+msgstr ""
+
+#: ad.module:1670
+msgid "General"
+msgstr ""
+
+#: ad.module:1679
+msgid "Click-through target"
+msgstr ""
+
+#: ad.module:1681
+msgid "same browser window and frame"
+msgstr ""
+
+#: ad.module:1682
+msgid "new browser window"
+msgstr ""
+
+#: ad.module:1683
+msgid "parent frame"
+msgstr ""
+
+#: ad.module:1684
+msgid "same browser window, removing all frames"
+msgstr ""
+
+#: ad.module:1687
+msgid "Select an option above to configure what happens when an ad is clicked.  These options set the <em>a target</em>, and are <em>_self</em>, <em>_blank</em>, <em>_parent</em> and <em>_top</em> respectively."
+msgstr ""
+
+#: ad.module:1692
+msgid "nofollow"
+msgstr ""
+
+#: ad.module:1694
+msgid "If enabled, %tag will be added to advertisement links generated by this module."
+msgstr ""
+
+#: ad.module:1694
+msgid "rel=\"nofollow\""
+msgstr ""
+
+#: ad.module:1698
+msgid "JavaScript"
+msgstr ""
+
+#: ad.module:1698;1724
+msgid "IFrame"
+msgstr ""
+
+#: ad.module:1698
+msgid "Raw"
+msgstr ""
+
+#: ad.module:1701
+msgid "This setting configures the default method for displaying advertisements on your website.  It is possible to override this setting when making direct calls to ad(), as described in the documentation.  Using the JavaScript display method allows you to display random ads and track views even on cached pages.  Using the Raw method does not work well together with Drupal's page cache enabled as the advertisements will not change until the page cache is updated, and statistics will not be incremented each time an advertisement is displayed."
+msgstr ""
+
+#: ad.module:1709
+msgid "Display type"
+msgstr ""
+
+#: ad.module:1717
+msgid "Validate URLs"
+msgstr ""
+
+#: ad.module:1719
+msgid "If enabled, any destination URLs entered in ads will be required to be complete URLs (including http:// or https:// at the beginning).  If you wish to include internal urls, you will need to disable this option."
+msgstr ""
+
+#: ad.module:1730
+msgid "Frameborder"
+msgstr ""
+
+#: ad.module:1732
+msgid "If enabled, IFrames used for displaying ads will have a frameborder."
+msgstr ""
+
+#: ad.module:1736
+msgid "Scrolling"
+msgstr ""
+
+#: ad.module:1739
+msgid "Define whether or not scroll bars should be enabled for the ad IFrame."
+msgstr ""
+
+#: ad.module:1743
+msgid "Width"
+msgstr ""
+
+#: ad.module:1748
+msgid "The default width for advertisement IFrames"
+msgstr ""
+
+#: ad.module:1752
+msgid "Height"
+msgstr ""
+
+#: ad.module:1757
+msgid "The default height for advertisement IFrames"
+msgstr ""
+
+#: ad.module:1762
+msgid "Cache"
+msgstr ""
+
+#: ad.module:1768
+msgid "None"
+msgstr ""
+
+#: ad.module:1771
+msgid "A cache can be used to efficiently track how many times advertisements are displayed and clicked."
+msgstr ""
+
+#: ad.module:1860;1881
+msgid "default"
+msgstr ""
+
+#: ad.module:1861
+msgid "The default ad group is comprised of all ads not assigned to any other ad group."
+msgstr ""
+
+#: ad.module:1898
+msgid "Name"
+msgstr ""
+
+#: ad.module:1915
+msgid "No groups have been created."
+msgstr ""
+
+#: ad.module:1935
+msgid "Are you sure you want to remove user %name as an owner of this advertisement?"
+msgstr ""
+
+#: ad.module:1937 notify/ad_notify.module:511
+msgid "This action cannot be undone."
+msgstr ""
+
+#: ad.module:1938
+msgid "Remove"
+msgstr ""
+
+#: ad.module:1939;2189 notify/ad_notify.module:513
+msgid "Cancel"
+msgstr ""
+
+#: ad.module:1950
+msgid "%name is the primary owner of this advertisement.  You cannot remove the primary owner."
+msgstr ""
+
+#: ad.module:1964
+msgid "The ad owner %name has been removed."
+msgstr ""
+
+#: ad.module:1976
+msgid "Email @when before the advertisement will expire."
+msgstr ""
+
+#: ad.module:1977
+msgid "Email @when after the advertisement is expired."
+msgstr ""
+
+#: ad.module:1978
+msgid "Email @when before the advertisement will be activated (if scheduled)."
+msgstr ""
+
+#: ad.module:1979
+msgid "Email @when after the advertisement is activated."
+msgstr ""
+
+#: ad.module:1980
+msgid "Email @when after the advertisement is clicked."
+msgstr ""
+
+#: ad.module:1981
+msgid "Email @when after the advertisement is approved."
+msgstr ""
+
+#: ad.module:1982
+msgid "Email @when after the advertisement is denied."
+msgstr ""
+
+#: ad.module:2007;2017;2027;2032;2037 notify/ad_notify.module:583
+msgid "[%sitename ad] %event notification"
+msgstr ""
+
+#: ad.module:2008
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" that was being displayed on the %sitename website has expired.\n\n  Your advertisement was viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2012
+msgid "[%sitename ad] expiration notification"
+msgstr ""
+
+#: ad.module:2013
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" that is being displayed on the %sitename website will expire on %autoexpire_large.\n\n  Your advertisement has been viewed %today_views times and clicked %today_clicks times today.  It was viewed %yesterday_views times and clicked %yesterday_clicks times yesterday.  It has been viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2018
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" is now actively being displayed on the %sitename website.\n\n  Your advertisement has been viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2022
+msgid "[%sitename ad] activation notification"
+msgstr ""
+
+#: ad.module:2023
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" will be actively displayed on the %sitename website on %autoactivate_large.\n\n  You can view statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2028
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" on the %sitename website has been clicked.\n\n  Your advertisement has been viewed %today_views times and clicked %today_clicks times today.  It was viewed %yesterday_views times and clicked %yesterday_clicks times yesterday.  It has been viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You will receive this %frequency  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2033
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" on the %sitename website has been approved.\n\n  You can view statistics about this advertisement at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2038
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification to inform you that your advertisement \"%title\" on the %sitename website has been denied and will not be displayed.\n\n  You can view statistics about this advertisement at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: ad.module:2058;2067
+msgid "Failed to read the required file %filename.  Please make the file readable by the webserver process.  No ads can be displayed until this problem is resolved."
+msgstr ""
+
+#: ad.module:2072
+msgid "Invalid vocabulary defined for advertisements, attempting to auto-fix."
+msgstr ""
+
+#: ad.module:2078
+msgid "Be sure to enable \"!show\" permissions for all roles that you wish to see advertisements."
+msgstr ""
+
+#: ad.module:2078 image/ad_image.module:246
+msgid "show advertisements"
+msgstr ""
+
+#: ad.module:2108;2149;2188 notify/ad_notify.module:512
+msgid "Delete"
+msgstr ""
+
+#: ad.module:2114
+msgid "Group name"
+msgstr ""
+
+#: ad.module:2118
+msgid "Specify a name for the ad group."
+msgstr ""
+
+#: ad.module:2126
+msgid "Describe this ad group."
+msgstr ""
+
+#: ad.module:2133
+msgid "Weight"
+msgstr ""
+
+#: ad.module:2135
+msgid "When listing ad groups, those with lighter (smaller) weights get listed before ad groups with heavier (larger) weights.  Ad groups with equal weights are sorted alphabetically."
+msgstr ""
+
+#: ad.module:2144 weight/percent/ad_weight_percent.module:89
+msgid "Submit"
+msgstr ""
+
+#: ad.module:2168
+msgid "Created new ad group %term."
+msgstr ""
+
+#: ad.module:2171
+msgid "The ad group %term has been updated."
+msgstr ""
+
+#: ad.module:2185
+msgid "Are you sure you want to delete the ad group %name?"
+msgstr ""
+
+#: ad.module:2187
+msgid "Ads that were within this group will not be deleted.  This action cannot be undone."
+msgstr ""
+
+#: ad.module:2197
+msgid "The ad group %term has been deleted."
+msgstr ""
+
+#: ad.module:2198
+msgid "mailarchive: deleted %term ad group."
+msgstr ""
+
+#: ad.module:153;157;415;424;440;455;2198 external/ad_external.module:82
+msgid "ad"
+msgstr ""
+
+#: ad.module:1634
+msgid "is 1 active ad"
+msgid_plural "are @count active ads"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ad.install:234
+msgid "The necessary ad module tables have been created."
+msgstr ""
+
+#: ad.info:0
+msgid "An advertising system for Drupal powered websites."
+msgstr ""
+
+#: cache/file/ad_cache_file.module:19
+msgid "Can improve the performance of the ad module utilizing file caching."
+msgstr ""
+
+#: cache/file/ad_cache_file.module:36
+msgid "File"
+msgstr ""
+
+#: cache/file/ad_cache_file.module:38
+msgid "File based caching will usually offer better performance, however, some find it difficult to enable and it may not offer valid statistics if you are using multiple load balanced web servers."
+msgstr ""
+
+#: cache/file/ad_cache_file.module:43
+msgid "File cache settings"
+msgstr ""
+
+#: cache/file/ad_cache_file.module:49
+msgid "Number of cache files"
+msgstr ""
+
+#: cache/file/ad_cache_file.module:52
+msgid "Please select the number of cache files the ad module should use.  Select a smaller value for better accuracy when performaing automatic actions on advertisements at specified thresholds.  Select a larger value for better performance.  This configuration option is only relevant if the file cache is enabled."
+msgstr ""
+
+#: cache/file/ad_cache_file.module:57
+msgid "Cache lifetime"
+msgstr ""
+
+#: cache/file/ad_cache_file.module:60
+msgid "Specify how long information should be cached before ad statistics are updated in the database.  Increasing the cache lifetime can improve overall performance.  This configuration options is only relevant if the file cache is enabled."
+msgstr ""
+
+#: cache/file/ad_cache_file.module:99
+msgid "Ad module failed to access cache <em>%file</em>.  Verify file permissions."
+msgstr ""
+
+#: cache/file/ad_cache_file.info:0
+msgid "File cache"
+msgstr ""
+
+#: cache/file/ad_cache_file.info:0
+msgid "Provides a file-caching mechanism to improve ad serving performance."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:18
+msgid "Utilize memcached to improve the performance of the ad module."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:32
+msgid "Memcache"
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:34
+msgid "Memcache allows improved performance by caching data directly in RAM."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:38
+msgid "Memcache settings"
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:45
+msgid "Sync frequency"
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:48
+msgid "Specify how often statistics stored in RAM should be synced to the database (requires cron runs with the same or greater frequency). The longer you store data in memcache, the more data you risk loosing in the event of a system failure. This configuration option is only relevant if memcache is enabled."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:56
+msgid "Memcache warning:  your last cron run was !time ago.  Advertisement view data is only synchronized into the database when cron runs.  You are risking data loss.  To learn more about how Drupal cron works, please check the online help pages for <a href=\"@url\">configuring cron jobs</a>."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.module:60
+msgid "Memcache warning:  Cron has not run.  Advertisement view data is only synchronized into the database when cron runs.  You are risking data loss.  It appears cron jobs have not been setup on your system. Please check the help pages for <a href=\"@url\">configuring cron jobs</a>."
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.info:0
+msgid "Ad memcache cache"
+msgstr ""
+
+#: cache/memcache/ad_cache_memcache.info:0
+msgid "Integrates the ad module with memcached, allowing ads to be served directly out of RAM."
+msgstr ""
+
+#: embed/ad_embed.module:18
+msgid "The ad_embed module uses the ad module to replace special tags with random advertisements, or to automatically insert ads after a number of paragraphs in your content.  The module allows you to specify which ad group to select ads from and how many ads to display.  Instead of selecting ads from ad groups, it also allows you to specify individual ads by their node id."
+msgstr ""
+
+#: embed/ad_embed.module:19
+msgid "Replace tags:"
+msgstr ""
+
+#: embed/ad_embed.module:20
+msgid "Content must have been created by a user with <em>embed ads in content</em> permissions for tags to be replaced.  The ad_embed module supports two different types of tags.  One uses double brackets, looking like <em>[[ad]]</em>, the other uses an html comment, looking like <em>&lt;!--ad--&gt;</em>.  Individual parameters are then separated by the | (pipe) character.  For individual parameters with multiple values, the values are separated by commas."
+msgstr ""
+
+#: embed/ad_embed.module:21
+msgid "Using html comments has the advantage that if you decide to disable the ad_embed module, the ads will simply disappear (as they will be html coments.  The downside to using html comments is that you need to configure your Input Filter to not filter them out.  Using brackets can be simpler to get working."
+msgstr ""
+
+#: embed/ad_embed.module:22
+msgid "Parameters:"
+msgstr ""
+
+#: embed/ad_embed.module:23
+msgid "The following parameters can be used within embedded advertisement tages:"
+msgstr ""
+
+#: embed/ad_embed.module:25
+msgid "<em>groups</em>: specify which group to select random ads from."
+msgstr ""
+
+#: embed/ad_embed.module:26
+msgid "<em>quantity</em>: specify how many ads to display at once."
+msgstr ""
+
+#: embed/ad_embed.module:27
+msgid "<em>hostid</em>: specify a unqiue when logging views and clicks.  (This is primarily intended for use when hosting ads on remote websites.)"
+msgstr ""
+
+#: embed/ad_embed.module:28
+msgid "<em>nids</em>: a list of ads from which to select from.  If <em>nids</em> is specified, the <em>groups</em> parameter will be ignored."
+msgstr ""
+
+#: embed/ad_embed.module:30
+msgid "Examples:"
+msgstr ""
+
+#: embed/ad_embed.module:31
+msgid "The following examples should help you to understand how to embed ads within your content."
+msgstr ""
+
+#: embed/ad_embed.module:33
+msgid "<em>[[ad]]</em><br />This will display one random ad from ads that are not assigned to any group."
+msgstr ""
+
+#: embed/ad_embed.module:34
+msgid "<em>&lt;!--ad--&gt;</em><br />This will display one random ad from ads that are not assigned to any group."
+msgstr ""
+
+#: embed/ad_embed.module:35
+msgid "<em>[[ad|quantity=2]]</em><br />This will display two random ads from ads that are not assigned to any group."
+msgstr ""
+
+#: embed/ad_embed.module:36
+msgid "<em>[[ad|group=23]]</em><br />This will display one random ad from the group with a tid of 23."
+msgstr ""
+
+#: embed/ad_embed.module:37
+msgid "<em>&lt!--ad|nids=1,13,42,76|quantity=4]]</em><br />This will display all four listed ads in a random order."
+msgstr ""
+
+#: embed/ad_embed.module:39
+msgid "Automatically embedding ads:"
+msgstr ""
+
+#: embed/ad_embed.module:40
+msgid "You can enable the functionality to automatically embed ads in your content at <em>administer >> ads >> settings >> embed ads</em>.  On this configuration page, you can choose which content types should contain automatically embedded ads, after which paragraph the ad should appear, and from which ad group the advertisement should be selected."
+msgstr ""
+
+#: embed/ad_embed.module:104
+msgid "Manually embedded ads"
+msgstr ""
+
+#: embed/ad_embed.module:105
+msgid "Configuration options for manually embedded ads using [[ad]] and &lt!--ad--&gt; tags."
+msgstr ""
+
+#: embed/ad_embed.module:110
+msgid "Replace ad bracket tags"
+msgstr ""
+
+#: embed/ad_embed.module:112
+msgid "Replace [[ad]] style tags in site content with advertisements."
+msgstr ""
+
+#: embed/ad_embed.module:117
+msgid "Replace ad comment tags"
+msgstr ""
+
+#: embed/ad_embed.module:119
+msgid "Replace &lt;!--ad--&gt; style tags in site content with advertisements."
+msgstr ""
+
+#: embed/ad_embed.module:125
+msgid "Automatically embedded ads"
+msgstr ""
+
+#: embed/ad_embed.module:126
+msgid "Enable automatically embedded ads for any of the following content types, causing ads to be automatically inserted when users are viewing the content.  Configure where the ad should be placed, from which ad group(s) the ads should be selected, and how many ads to display."
+msgstr ""
+
+#: embed/ad_embed.module:140
+msgid "Automatically embed ads in %type content"
+msgstr ""
+
+#: embed/ad_embed.module:146
+msgid "Location"
+msgstr ""
+
+#: embed/ad_embed.module:148
+msgid "Before the first paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:149
+msgid "After the first paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:150
+msgid "After the second paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:151
+msgid "After the third paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:152
+msgid "After the fourth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:153
+msgid "After the fifth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:154
+msgid "After the sixth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:155
+msgid "After the seventh paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:156
+msgid "After the eighth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:157
+msgid "After the ninth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:158
+msgid "After the tenth paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:159
+msgid "After the last paragraph"
+msgstr ""
+
+#: embed/ad_embed.module:162
+msgid "Specify where you would like to automatically embed the advertisement for this content type."
+msgstr ""
+
+#: embed/ad_embed.module:167
+msgid "Always display ad"
+msgstr ""
+
+#: embed/ad_embed.module:169
+msgid "Check this box to display an ad even if the content doesn't have as many paragraphs as you specified above.  In these cases the ad will appear at the end of the content."
+msgstr ""
+
+#: embed/ad_embed.module:175
+msgid "Ad group"
+msgstr ""
+
+#: embed/ad_embed.module:178
+msgid "Specify from which ad group(s) you'd like to display advertisements."
+msgstr ""
+
+#: embed/ad_embed.module:183 remote/ad_remote.module:59
+msgid "Quantity"
+msgstr ""
+
+#: embed/ad_embed.module:186
+msgid "Specify how many advertisements to display at the same time."
+msgstr ""
+
+#: embed/ad_embed.module:218
+msgid "Embedded ad configuration options saved."
+msgstr ""
+
+#: embed/ad_embed.info:0
+msgid "Embed"
+msgstr ""
+
+#: embed/ad_embed.info:0
+msgid "Embed ads in content."
+msgstr ""
+
+#: external/ad_external.module:51
+msgid "An external advertisement, displayed in an IFrame."
+msgstr ""
+
+#: external/ad_external.module:82
+msgid "Unexpected redirect attempt in external ad type."
+msgstr ""
+
+#: external/ad_external.module:98
+msgid "External"
+msgstr ""
+
+#: external/ad_external.module:111
+msgid "External Source URL"
+msgstr ""
+
+#: external/ad_external.module:114
+msgid "Enter the complete URL where your external ad his hosted.  The URL must begin with http:// or https://.  For example, %url."
+msgstr ""
+
+#: external/ad_external.module:114
+msgid "http://www.sample.org/external/ad.php"
+msgstr ""
+
+#: external/ad_external.module:126 image/ad_image.module:455 text/ad_text.module:232
+msgid "Links to %url."
+msgstr ""
+
+#: external/ad_external.install:24
+msgid "The necessary ad_external module tables have been created."
+msgstr ""
+
+#: external/ad_external.info:0
+msgid "External Ad"
+msgstr ""
+
+#: external/ad_external.info:0
+msgid "Enhances the ad module to support externally hosted ads.  Typically combined with IFrames."
+msgstr ""
+
+#: html/ad_html.module:37
+msgid "A html advertisement."
+msgstr ""
+
+#: html/ad_html.module:89
+msgid "HTML"
+msgstr ""
+
+#: html/ad_html.module:102
+msgid "Ad HTML"
+msgstr ""
+
+#: html/ad_html.module:105
+msgid "Paste the complete HTML provided by your advertising affiliate."
+msgstr ""
+
+#: html/ad_html.install:43
+msgid "The necessary ad_html module tables have been created."
+msgstr ""
+
+#: html/ad_html.info:0
+msgid "HTML Ad"
+msgstr ""
+
+#: html/ad_html.info:0
+msgid "Enhances the ad module to support html-based ads, such as those defined by many advertising affiliate websites."
+msgstr ""
+
+#: image/ad_image_views.inc:24 text/ad_text_views.inc:24
+msgid "Not as link"
+msgstr ""
+
+#: image/ad_image_views.inc:34
+msgid "Linked Image"
+msgstr ""
+
+#: image/ad_image_views.inc:35
+msgid "Unlinked Image"
+msgstr ""
+
+#: image/ad_image_views.inc:36
+msgid "Image path"
+msgstr ""
+
+#: image/ad_image.module:42
+msgid "An image or banner advertisement."
+msgstr ""
+
+#: image/ad_image.module:57
+msgid "Image ads"
+msgstr ""
+
+#: image/ad_image.module:89
+msgid "Minimum height"
+msgstr ""
+
+#: image/ad_image.module:93
+msgid "Optionally specify a minimum height in pixels for images in this group.  To specify no minimum height, enter <em>0</em>."
+msgstr ""
+
+#: image/ad_image.module:97
+msgid "Minimum width"
+msgstr ""
+
+#: image/ad_image.module:101
+msgid "Optionally specify a minimum width in pixels for images in this group.  To specify no minimum width, enter <em>0</em>."
+msgstr ""
+
+#: image/ad_image.module:105
+msgid "Maximum height"
+msgstr ""
+
+#: image/ad_image.module:109
+msgid "Optionally specify a maximum height in pixels for images in this group.  To specify no maximum height, enter <em>0</em>."
+msgstr ""
+
+#: image/ad_image.module:113
+msgid "Maximum width"
+msgstr ""
+
+#: image/ad_image.module:117
+msgid "Optionally specify a maximum width in pixels for images in this group.  To specify no maximum width, enter <em>0</em>."
+msgstr ""
+
+#: image/ad_image.module:199
+msgid "Image validation failed, unable to mark ad as %active.  Setting ad as %pending.  If you do not see any more errors, you should now be able to set your ad as %active."
+msgstr ""
+
+#: image/ad_image.module:205
+msgid "Unable to mark ad as <em>active</em> until uploaded image is validated.  If you do not see any more errors, you should now be able to set your ad as <em>active</em>."
+msgstr ""
+
+#: image/ad_image.module:212 text/ad_text.module:259
+msgid "You must specify a valid %field."
+msgstr ""
+
+#: image/ad_image.module:212;430 text/ad_text.module:199;259
+msgid "Destination URL"
+msgstr ""
+
+#: image/ad_image.module:239
+msgid "The required <em>upload module</em> is not enabled, you will not be able to upload image ads.  Please %enable the upload module, or %disable the ad_image module."
+msgstr ""
+
+#: image/ad_image.module:242
+msgid "You will not be able to upload image ads until you !enable for the advertisement content type."
+msgstr ""
+
+#: image/ad_image.module:242
+msgid "enable attachments"
+msgstr ""
+
+#: image/ad_image.module:246
+msgid "Your website is configured to use Drupal's private !method.  You have to enable \"!view\" permissions in addition to the ad module's standard \"!show\" permissions for all roles that you wish to view image advertisements."
+msgstr ""
+
+#: image/ad_image.module:246
+msgid "download method"
+msgstr ""
+
+#: image/ad_image.module:246
+msgid "view uploaded files"
+msgstr ""
+
+#: image/ad_image.module:302
+msgid "The image <em>%name</em> is only %current pixels wide, which is less than the minimum of %minimum pixels allowed in the %group ad group."
+msgstr ""
+
+#: image/ad_image.module:306
+msgid "The image <em>%name</em> is %current pixels wide, which is more than the maximum of %maximum pixels allowed in the %group ad group."
+msgstr ""
+
+#: image/ad_image.module:310
+msgid "The image <em>%name</em> is only %current pixels high, which is less than the minimum of %minimum pixels allowed in the %group ad group."
+msgstr ""
+
+#: image/ad_image.module:314
+msgid "The image <em>%name</em> is %current pixels high, which is more than the maximum of %maximum pixels allowed in the %group ad group."
+msgstr ""
+
+#: image/ad_image.module:376
+msgid "Image"
+msgstr ""
+
+#: image/ad_image.module:396
+msgid "(invalid image)"
+msgstr ""
+
+#: image/ad_image.module:399
+msgid "(active)"
+msgstr ""
+
+#: image/ad_image.module:402
+msgid "(inactive)"
+msgstr ""
+
+#: image/ad_image.module:406
+msgid "Unable to locate image %image."
+msgstr ""
+
+#: image/ad_image.module:407
+msgid "Unable to locate the uploaded image."
+msgstr ""
+
+#: image/ad_image.module:412
+msgid "No images have been uploaded.  Please upload an image via the <em>File attachments</em> form section below.<br />"
+msgstr ""
+
+#: image/ad_image.module:415
+msgid "It is required that you upload an image for your image advertisement."
+msgstr ""
+
+#: image/ad_image.module:419
+msgid "<br />Only the first uploaded image that has <em>List</em> checked in the <em>File attachments</em> form section below will be displayed as an advertisement.  The image that will be displayed is marked as <em>active</em> above."
+msgstr ""
+
+#: image/ad_image.module:433 text/ad_text.module:203
+msgid "Enter the complete URL where you want people to be redirected when they click on this advertisement.  The URL must begin with http:// or https://.  For example, %url."
+msgstr ""
+
+#: image/ad_image.module:433 text/ad_text.module:203
+msgid "http://www.sample.org/"
+msgstr ""
+
+#: image/ad_image.module:438
+msgid "Mouseover"
+msgstr ""
+
+#: image/ad_image.module:441
+msgid "Optionally enter text to appear when a mouse pointer hovers over the ad image."
+msgstr ""
+
+#: image/ad_image.install:76
+msgid "The necessary ad_image module tables have been created."
+msgstr ""
+
+#: image/ad_image.info:0
+msgid "Image Ad"
+msgstr ""
+
+#: image/ad_image.info:0
+msgid "Enhances the ad module to support banner ads."
+msgstr ""
+
+#: notify/ad_notify.module:20
+msgid "The ad_notify modules provides email notifications for the ad module."
+msgstr ""
+
+#: notify/ad_notify.module:39
+msgid "!owner's notifications"
+msgstr ""
+
+#: notify/ad_notify.module:57
+msgid "My notifications"
+msgstr ""
+
+#: notify/ad_notify.module:67
+msgid "delete notification"
+msgstr ""
+
+#: notify/ad_notify.module:153
+msgid "%owner_name"
+msgstr ""
+
+#: notify/ad_notify.module:154
+msgid "%owner_mail"
+msgstr ""
+
+#: notify/ad_notify.module:155
+msgid "%owner_uid"
+msgstr ""
+
+#: notify/ad_notify.module:156
+msgid "%sitename"
+msgstr ""
+
+#: notify/ad_notify.module:157
+msgid "%status"
+msgstr ""
+
+#: notify/ad_notify.module:158
+msgid "%type"
+msgstr ""
+
+#: notify/ad_notify.module:159
+msgid "%event"
+msgstr ""
+
+#: notify/ad_notify.module:160
+msgid "%frequency"
+msgstr ""
+
+#: notify/ad_notify.module:161
+msgid "%redirect"
+msgstr ""
+
+#: notify/ad_notify.module:162
+msgid "%aid"
+msgstr ""
+
+#: notify/ad_notify.module:163
+msgid "%title"
+msgstr ""
+
+#: notify/ad_notify.module:164
+msgid "%url"
+msgstr ""
+
+#: notify/ad_notify.module:165
+msgid "%siteurl"
+msgstr ""
+
+#: notify/ad_notify.module:166
+msgid "%comments"
+msgstr ""
+
+#: notify/ad_notify.module:167
+msgid "%count"
+msgstr ""
+
+#: notify/ad_notify.module:168
+msgid "%created_small"
+msgstr ""
+
+#: notify/ad_notify.module:169
+msgid "%created_medium"
+msgstr ""
+
+#: notify/ad_notify.module:170
+msgid "%created_large"
+msgstr ""
+
+#: notify/ad_notify.module:171
+msgid "%activated_small"
+msgstr ""
+
+#: notify/ad_notify.module:171;172;173;174;175;176;177;178;179;180;181;182
+msgid "never"
+msgstr ""
+
+#: notify/ad_notify.module:172
+msgid "%activated_medium"
+msgstr ""
+
+#: notify/ad_notify.module:173
+msgid "%activated_large"
+msgstr ""
+
+#: notify/ad_notify.module:174
+msgid "%expired_small"
+msgstr ""
+
+#: notify/ad_notify.module:175
+msgid "%expired_medium"
+msgstr ""
+
+#: notify/ad_notify.module:176
+msgid "%expired_large"
+msgstr ""
+
+#: notify/ad_notify.module:177
+msgid "%autoactivate_small"
+msgstr ""
+
+#: notify/ad_notify.module:178
+msgid "%autoactivate_medium"
+msgstr ""
+
+#: notify/ad_notify.module:179
+msgid "%autoactivate_large"
+msgstr ""
+
+#: notify/ad_notify.module:180
+msgid "%autoexpire_small"
+msgstr ""
+
+#: notify/ad_notify.module:181
+msgid "%autoexpire_medium"
+msgstr ""
+
+#: notify/ad_notify.module:182
+msgid "%autoexpire_large"
+msgstr ""
+
+#: notify/ad_notify.module:183
+msgid "%maxviews"
+msgstr ""
+
+#: notify/ad_notify.module:184
+msgid "%maxclicks"
+msgstr ""
+
+#: notify/ad_notify.module:185
+msgid "%global_views"
+msgstr ""
+
+#: notify/ad_notify.module:186
+msgid "%global_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:187
+msgid "%last_year_views"
+msgstr ""
+
+#: notify/ad_notify.module:188
+msgid "%last_year_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:189
+msgid "%this_year_views"
+msgstr ""
+
+#: notify/ad_notify.module:190
+msgid "%this_year_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:191
+msgid "%last_month_views"
+msgstr ""
+
+#: notify/ad_notify.module:192
+msgid "%last_month_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:193
+msgid "%this_month_views"
+msgstr ""
+
+#: notify/ad_notify.module:194
+msgid "%this_month_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:195
+msgid "%this_week_views"
+msgstr ""
+
+#: notify/ad_notify.module:196
+msgid "%this_week_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:197
+msgid "%yesterday_views"
+msgstr ""
+
+#: notify/ad_notify.module:198
+msgid "%yesterday_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:199
+msgid "%today_views"
+msgstr ""
+
+#: notify/ad_notify.module:200
+msgid "%today_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:201
+msgid "%last_hour_views"
+msgstr ""
+
+#: notify/ad_notify.module:202
+msgid "%last_hour_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:203
+msgid "%this_hour_views"
+msgstr ""
+
+#: notify/ad_notify.module:204
+msgid "%this_hour_clicks"
+msgstr ""
+
+#: notify/ad_notify.module:237
+msgid "Email every @when as long as the ad is active."
+msgstr ""
+
+#: notify/ad_notify.module:260
+msgid "last sent"
+msgstr ""
+
+#: notify/ad_notify.module:261
+msgid "notification"
+msgstr ""
+
+#: notify/ad_notify.module:262
+msgid "status"
+msgstr ""
+
+#: notify/ad_notify.module:263
+msgid "action"
+msgstr ""
+
+#: notify/ad_notify.module:272
+msgid " ago"
+msgstr ""
+
+#: notify/ad_notify.module:272
+msgid "Never"
+msgstr ""
+
+#: notify/ad_notify.module:274
+msgid "enabled"
+msgstr ""
+
+#: notify/ad_notify.module:274
+msgid "disabled"
+msgstr ""
+
+#: notify/ad_notify.module:287
+msgid "You can configure one or more notifications for your advertisement using the drop down menus below.  For example, to receive a weekly notification with information about how often your advertisement was viewed and clicked, select the <em>email every @when as long as the ad is active</em> event, and <em>1 week</em> for when.  Or, to receive a reminder that your advertisement will expire in 24 hours select the <em>email @when before the advertisement will expire</em>, and <em>1 day</em> for when."
+msgstr ""
+
+#: notify/ad_notify.module:288
+msgid "If you schedule a delay between an event and when you are notified and the event happens multiple times, only one notification will be sent.  For example, if you create a notification for <em>email 1 day after the advertisement is clicked</em> and the ad is clicked 42 more times in the next 24 hours, you will only receive one email 24 hours after your ad was first clicked that notes that your ad was clicked a total of 43 times in the past 24 hours."
+msgstr ""
+
+#: notify/ad_notify.module:292;425
+msgid "edit notification"
+msgstr ""
+
+#: notify/ad_notify.module:292
+msgid "create new notification"
+msgstr ""
+
+#: notify/ad_notify.module:299
+msgid "Event"
+msgstr ""
+
+#: notify/ad_notify.module:301
+msgid "Select an event for which you would like to receive a notification."
+msgstr ""
+
+#: notify/ad_notify.module:307
+msgid "When"
+msgstr ""
+
+#: notify/ad_notify.module:309
+msgid "Select a value to replace @when in the event notification you selected above."
+msgstr ""
+
+#: notify/ad_notify.module:315
+msgid "One-time"
+msgstr ""
+
+#: notify/ad_notify.module:316
+msgid "Check this box if this notification email should only be sent one time.  If not checked, an email will be sent each time the event happens.  If checked, an email will only be sent the first time the event happens, then the notification will be automatically disabled."
+msgstr ""
+
+#: notify/ad_notify.module:324
+msgid "Locked"
+msgstr ""
+
+#: notify/ad_notify.module:325
+msgid "Check this box if you are setting up a notification for someone else, and you don't want them to be able to disable the notification.  Only users with the <em>manage owners</em> permission for this ad can edit or delete a locked notification."
+msgstr ""
+
+#: notify/ad_notify.module:339
+msgid "message"
+msgstr ""
+
+#: notify/ad_notify.module:350
+msgid "Notify address"
+msgstr ""
+
+#: notify/ad_notify.module:350
+msgid "The email will be sent to %address."
+msgstr ""
+
+#: notify/ad_notify.module:363
+msgid "Subject"
+msgstr ""
+
+#: notify/ad_notify.module:370
+msgid "Body"
+msgstr ""
+
+#: notify/ad_notify.module:373
+msgid "Enter the body of your notification email.  The following variables can be used in your message and will be automatically replaced before the email is sent:"
+msgstr ""
+
+#: notify/ad_notify.module:374
+msgid "%sitename: the name of this website."
+msgstr ""
+
+#: notify/ad_notify.module:375
+msgid "%owner_name: the username of the ad owner."
+msgstr ""
+
+#: notify/ad_notify.module:376
+msgid "%owner_mail: the email address of the ad owner."
+msgstr ""
+
+#: notify/ad_notify.module:377
+msgid "%owner_uid: the user ID of the ad owner."
+msgstr ""
+
+#: notify/ad_notify.module:378
+msgid "%event: the type of event that has triggered this notification."
+msgstr ""
+
+#: notify/ad_notify.module:379
+msgid "%count: the number of times the event happened."
+msgstr ""
+
+#: notify/ad_notify.module:380
+msgid "%frequency: a complete sentence describing the frequency this notification will be sent."
+msgstr ""
+
+#: notify/ad_notify.module:381
+msgid "%type: the type of ad."
+msgstr ""
+
+#: notify/ad_notify.module:382
+msgid "%status: the status of the ad."
+msgstr ""
+
+#: notify/ad_notify.module:383
+msgid "%url: the url of the advertisement."
+msgstr ""
+
+#: notify/ad_notify.module:384
+msgid "%siteurl: the url of the website."
+msgstr ""
+
+#: notify/ad_notify.module:385
+msgid "%redirect: the redirection url of the advertisement."
+msgstr ""
+
+#: notify/ad_notify.module:386
+msgid "%title: the title of the advertisement."
+msgstr ""
+
+#: notify/ad_notify.module:387
+msgid "%aid: the ID of the advertisement."
+msgstr ""
+
+#: notify/ad_notify.module:388
+msgid "%comments: the number of comments attached to the advertisement."
+msgstr ""
+
+#: notify/ad_notify.module:389
+msgid "%created_small, %created_medium, %created_large: various formats of when the advertisement was created."
+msgstr ""
+
+#: notify/ad_notify.module:390
+msgid "%activated_small, %activated_medium, %activated_large: various formats of when the advertisement was activated."
+msgstr ""
+
+#: notify/ad_notify.module:391
+msgid "%expired_small, %expired_medium, %expired_large: various formats of when the advertisement was expired."
+msgstr ""
+
+#: notify/ad_notify.module:392
+msgid "%autoactivate_small, %autoactivate_medium, %autoactivate_large: various formats of when the advertisement was automatically activated."
+msgstr ""
+
+#: notify/ad_notify.module:393
+msgid "%autoexpire_small, %autoexpire_medium, %autoexpire_large: various formats of when the advertisement was automatically expired."
+msgstr ""
+
+#: notify/ad_notify.module:394
+msgid "%maxviews: the maximum number of times this advertisement is allowed to be viewed."
+msgstr ""
+
+#: notify/ad_notify.module:395
+msgid "%maxclicks: the maximum number of times this advertisement is allowed to be clicked."
+msgstr ""
+
+#: notify/ad_notify.module:396
+msgid "%global_views, %global_clicks, %last_year_views, %last_year_clicks, %this_year_views, %this_year_clicks, %last_month_views, %last_month_clicks, %this_month_views, %this_month_clicks, %this_week_views, %this_week_clicks, %yesterday_views, %yesterday_clicks, %today_views, %today_clicks, %last_hour_views, %last_hour_clicks, %this_hour_views, %this_hour_clicks: various advertisement statistics"
+msgstr ""
+
+#: notify/ad_notify.module:425
+msgid "create notification"
+msgstr ""
+
+#: notify/ad_notify.module:431;598
+msgid "notifications"
+msgstr ""
+
+#: notify/ad_notify.module:443
+msgid "There are no notifications configured for %owner."
+msgstr ""
+
+#: notify/ad_notify.module:509
+msgid "Are you sure you want to delete this notification?"
+msgstr ""
+
+#: notify/ad_notify.module:523
+msgid "This notification is locked, you will need to contact the site administrator to delete this notification for you."
+msgstr ""
+
+#: notify/ad_notify.module:548
+msgid "You are not allowed to schedule a regular notification more frequently than once an hour."
+msgstr ""
+
+#: notify/ad_notify.module:553
+msgid "You have already scheduled that notification."
+msgstr ""
+
+#: notify/ad_notify.module:559
+msgid "This notification is locked, you will need to contact the site administrator to edit this notification for you."
+msgstr ""
+
+#: notify/ad_notify.module:584
+msgid "Hello %owner_name,\n\n  This is an automatically generated notification about your advertisement \"%title\" that is being displayed on the %sitename website.\n\n  Your advertisement has been viewed %today_views times and clicked %today_clicks times today.  It was viewed %yesterday_views times and clicked %yesterday_clicks times yesterday.  It has been viewed %global_views times and clicked %global_clicks times since it was activated on %activated_large.\n\n  You will receive this %frequency  You can view additional statistics about this advertisement or update this notification at the following url:\n    %url\n\nRegards,\n The %sitename Team\n\n-\n%siteurl"
+msgstr ""
+
+#: notify/ad_notify.install:83
+msgid "The ad_notify table has been created."
+msgstr ""
+
+#: notify/ad_notify.info:0
+msgid "Notify"
+msgstr ""
+
+#: notify/ad_notify.info:0
+msgid "Receive email notifications regarding ads."
+msgstr ""
+
+#: remote/ad_remote.module:51
+msgid "Use the following options to build a source snippet for displaying ads on your website."
+msgstr ""
+
+#: remote/ad_remote.module:55
+msgid "Select one or more groups to display ads from."
+msgstr ""
+
+#: remote/ad_remote.module:62
+msgid "Select the maximum number of unique ads that should be displayed together."
+msgstr ""
+
+#: remote/ad_remote.module:67
+msgid "Generate code snippet"
+msgstr ""
+
+#: remote/ad_remote.module:103
+msgid "Insert the following source snippet into your web page to display ads hosted on this web site.  Include the entire snippet, and do not modify it in any way."
+msgstr ""
+
+#: remote/ad_remote.module:110
+msgid "start"
+msgstr ""
+
+#: remote/ad_remote.module:110
+msgid "end"
+msgstr ""
+
+#: remote/ad_remote.info:0
+msgid "Remote"
+msgstr ""
+
+#: remote/ad_remote.info:0
+msgid "Generates cut-and-paste source snippets allowing ads to be easily displayed on remote websites."
+msgstr ""
+
+#: report/ad_report.module:24
+msgid "Reports"
+msgstr ""
+
+#: report/ad_report.module:32
+msgid "Hourly"
+msgstr ""
+
+#: report/ad_report.module:38
+msgid "Daily"
+msgstr ""
+
+#: report/ad_report.module:44
+msgid "Weekly"
+msgstr ""
+
+#: report/ad_report.module:50
+msgid "Monthly"
+msgstr ""
+
+#: report/ad_report.module:82
+msgid "past twelve hours"
+msgstr ""
+
+#: report/ad_report.module:87
+msgid "past twelve days"
+msgstr ""
+
+#: report/ad_report.module:90
+msgid "past twelve weeks"
+msgstr ""
+
+#: report/ad_report.module:93
+msgid "past twelve months"
+msgstr ""
+
+#: report/ad_report.info:0
+msgid "Report"
+msgstr ""
+
+#: report/ad_report.info:0
+msgid "Provides comprehensive charts and reports about advertising statistics."
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:30
+msgid "New"
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:33
+msgid "Valid"
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:36
+msgid "Duplicate"
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:39
+msgid "Ad owner"
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:42
+msgid "Filtered role"
+msgstr ""
+
+#: statistics/click_filter/click_filter.module:45
+msgid "Unknown"
+msgstr ""
+
+#: statistics/click_filter/click_filter.install:56
+msgid "Updated existing clicks: %valid valid, filtered %duplicate duplicate and %owner by owner."
+msgstr ""
+
+#: statistics/click_filter/click_filter.info:0
+msgid "Click filter"
+msgstr ""
+
+#: statistics/click_filter/click_filter.info:0
+msgid "Filter duplicate click statistics."
+msgstr ""
+
+#: text/ad_text.module:44
+msgid "A text advertisement."
+msgstr ""
+
+#: text/ad_text.module:75
+msgid "Header minimum length"
+msgstr ""
+
+#: text/ad_text.module:79
+msgid "Optionally specify the minimum number of characters allowed in the header of a text ad.  Set to <em>0</em> to specify no minimum length."
+msgstr ""
+
+#: text/ad_text.module:83
+msgid "Header maximum length"
+msgstr ""
+
+#: text/ad_text.module:87
+msgid "Optionally specify the maximum number of characters allowed in the header of a text ad.  Set to <em>0</em> to specify no maximum length."
+msgstr ""
+
+#: text/ad_text.module:91
+msgid "Body minimum length"
+msgstr ""
+
+#: text/ad_text.module:95
+msgid "Optionally specify the minimum number of characters allowed in the body of a text ad.  Set to <em>0</em> to specify no minimum length."
+msgstr ""
+
+#: text/ad_text.module:99
+msgid "Body maximum length"
+msgstr ""
+
+#: text/ad_text.module:103
+msgid "Optionally specify the maximum number of characters allowed in the body of a text ad.  Set to <em>0</em> to specify no maximum length."
+msgstr ""
+
+#: text/ad_text.module:120
+msgid "The header minimum length can not be greater than the header maximum length."
+msgstr ""
+
+#: text/ad_text.module:123
+msgid "The body minimum length can not be greater than the body maximum length."
+msgstr ""
+
+#: text/ad_text.module:186
+msgid "Text"
+msgstr ""
+
+#: text/ad_text.module:208
+msgid "Ad header"
+msgstr ""
+
+#: text/ad_text.module:211
+msgid "This is the first line of the ad which will be linked to the URL entered above."
+msgstr ""
+
+#: text/ad_text.module:215
+msgid "Ad body"
+msgstr ""
+
+#: text/ad_text.module:218
+msgid "This is the rest of the ad."
+msgstr ""
+
+#: text/ad_text.module:243
+msgid "Your text ad header is only %cur characters but must be at least %min characters."
+msgstr ""
+
+#: text/ad_text.module:246
+msgid "Your text ad header is %cur characters but can not be more than %max characters."
+msgstr ""
+
+#: text/ad_text.module:252
+msgid "Your text ad body is only %cur characters but must be at least %min characters."
+msgstr ""
+
+#: text/ad_text.module:255
+msgid "Your text ad body is %cur characters but can not be more than %max characters."
+msgstr ""
+
+#: text/ad_text.install:44
+msgid "The necessary ad_text module tables have been created."
+msgstr ""
+
+#: text/ad_text.info:0
+msgid "Text Ad"
+msgstr ""
+
+#: text/ad_text.info:0
+msgid "Enhances the ad module to support static text ads."
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:22
+msgid "Weight Percent"
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:56
+msgid "Enabled"
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:57
+msgid "If enabled, each ad in this group will be weighted per the percentages defined below."
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:77
+msgid "Display percent"
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:81
+msgid "Enter a percentage from 0 to 100.  The total percentages of all ads in this group must add up to 100.  For example, if you have two ads, and want one to be displayed 70% of the time and the other 30% of the time enter '70' in one and '30' in the other."
+msgstr ""
+
+#: weight/percent/ad_weight_percent.module:112
+msgid "The total percentage for all ads in the %group group combined must equal 100%.  It currently equals %percent."
+msgstr ""
+
+#: weight/percent/ad_weight_percent.info:0
+msgid "Weight Percentage"
+msgstr ""
+
+#: weight/percent/ad_weight_percent.info:0
+msgid "Allows a per-group weighting of ads, configured as a percentage of total views."
+msgstr ""
+

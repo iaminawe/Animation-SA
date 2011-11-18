@@ -1,0 +1,95 @@
+<?php
+// $Id: modr8.install,v 1.1.2.3 2007/01/20 15:25:59 pwolanin Exp $
+
+/**
+ * Implementation of hook_install().
+ */
+function modr8_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {modr8_log} (
+        modid int NOT NULL auto_increment,
+        nid int unsigned NOT NULL default '0',
+        uid int NOT NULL default '0',
+        author_uid int NOT NULL default '0',
+        action varchar(16) NOT NULL default '',
+        title varchar(128) NOT NULL default '',
+        message longtext NOT NULL,
+        teaser longtext NOT NULL,
+        timestamp int NOT NULL default '0',
+        PRIMARY KEY (modid),
+        KEY nid_time (nid, modid),
+        KEY action (action)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {modr8_log} (
+        modid serial,
+        nid int_unsigned NOT NULL default '0',
+        uid int NOT NULL default '0',
+        author_uid int NOT NULL default '0',
+        action varchar(16) NOT NULL default '',
+        title varchar(128) NOT NULL default '',
+        message text NOT NULL,
+        teaser text NOT NULL,
+        timestamp int NOT NULL default '0',
+        PRIMARY KEY (modid)
+      )");
+      db_query("CREATE INDEX {modr8_log}_nid_time ON {modr8_log} (nid, modid)");
+      db_query("CREATE INDEX {modr8_log}_act_idx ON {modr8_log} (action)");
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function modr8_uninstall() {
+  db_query('DROP TABLE {modr8_log}');
+}
+
+
+/**
+ * Update table definitions.
+ */
+function modr8_update_1000() {
+  $ret = array();
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("CREATE TABLE {modr8_log} (
+        modid int NOT NULL auto_increment,
+        nid int unsigned NOT NULL default '0',
+        uid int NOT NULL default '0',
+        author_uid int NOT NULL default '0',
+        action varchar(16) NOT NULL default '',
+        title varchar(128) NOT NULL default '',
+        message longtext NOT NULL,
+        teaser longtext NOT NULL,
+        timestamp int NOT NULL default '0',
+        PRIMARY KEY (modid),
+        KEY nid_time (nid, modid),
+        KEY action (action)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      $ret[] = update_sql("CREATE TABLE {modr8_log} (
+        modid serial,
+        nid int_unsigned NOT NULL default '0',
+        uid int NOT NULL default '0',
+        author_uid int NOT NULL default '0',
+        action varchar(16) NOT NULL default '',
+        title varchar(128) NOT NULL default '',
+        message text NOT NULL,
+        teaser text NOT NULL,
+        timestamp int NOT NULL default '0',
+        PRIMARY KEY (modid)
+      )");
+      $ret[] = update_sql("CREATE INDEX {modr8_log}_nid_time ON {modr8_log} (nid, modid)");
+      $ret[] = update_sql("CREATE INDEX {modr8_log}_act_idx ON {modr8_log} (action)");
+      break;
+  }
+  return $ret;
+}

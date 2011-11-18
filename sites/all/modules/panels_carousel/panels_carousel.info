@@ -1,0 +1,11 @@
+; $Id: panels_carousel.info,v 1.2 2008/01/30 22:09:06 wimleers Exp $
+name = Carousel Panel Style.
+description = Carousel Panel style.
+package = "Panels style plugins"
+dependencies = jcarousel
+
+; Information added by drupal.org packaging script on 2008-02-09
+version = "5.x-1.3"
+project = "panels_carousel"
+datestamp = "1202588709"
+

@@ -1,0 +1,27 @@
+# translation of htmlcorrector.po to Nederlands
+# LANGUAGE translation of Drupal (htmlcorrector.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from file:
+#
+# Bèr Kessels <ber@webschuur.com>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: htmlcorrector\n"
+"POT-Creation-Date: 2007-07-02 16:10+0200\n"
+"PO-Revision-Date: 2007-07-02 16:12+0200\n"
+"Last-Translator: Bèr Kessels <ber@webschuur.com>\n"
+"Language-Team: Nederlands <nl@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: htmlcorrector.module:7
+msgid "HTML Corrector"
+msgstr "HTML verbeteraar"
+
+#: htmlcorrector.module:10
+msgid "Corrects faulty and chopped off HTML in postings."
+msgstr "Verbetert foutieve HTML en afgebroken HTML inzedingen."
+

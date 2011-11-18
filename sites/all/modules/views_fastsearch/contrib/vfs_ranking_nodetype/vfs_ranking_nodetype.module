@@ -1,0 +1,87 @@
+<?php
+// $Id: vfs_ranking_nodetype.module,v 1.1.2.3 2008/01/17 11:19:02 jacobsingh Exp $
+
+/**
+ * Implement the search_ranking callback
+ *
+ * NOTE: this is a first draft
+ * - these might be better in include files, one per module
+ * - the array definition could be cleaned up
+ */
+function vfs_ranking_nodetype_search_ranking() {
+  $ranking = array();
+  
+  // get the type weight
+  $ranking['node_rank_type'] = array(
+    'join' => 'LEFT JOIN {vfs_ranking_nodetype} nt ON nt.type = n.type',
+    'score' => 'i.score * nt.search_weight',
+  );
+  
+  return $ranking;
+}
+
+function vfs_ranking_nodetype_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/vfs_ranking_nodetype',
+      'callback' => 'drupal_get_form',
+      'access' => user_access('administer search'),
+      'title' => 'Views Fast Search Node Rankings',
+      'description' => "Gives admins the ability to weight content types in searches",
+      'callback arguments' => array('vfs_ranking_nodetype_settings_form'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  return $items;
+}
+
+function vfs_ranking_nodetype_settings_form() {
+  $form = array();
+  $form['#tree'] = true;
+  $weights = vfs_ranking_nodetype_get_weights();
+  foreach (node_get_types() as $type) {
+    $form['types'][$type->type] = $field = array (      
+      '#title' => $type->name,
+      '#default_value' => ($weights[$type->type]) ? $weights[$type->type]: 1,
+      '#type' => 'select',
+      '#options' => array_combine(range(0,10),range(0,10)),
+    );
+  }
+  
+  $form['submit'] = array ('#type' => 'submit','#value' => 'submit');
+  return $form;
+}
+
+function vfs_ranking_nodetype_settings_form_submit($form_id,$form_values) {
+  foreach ($form_values['types'] as $type => $weight) {
+    db_query("INSERT INTO {vfs_ranking_nodetype} (type,search_weight) VALUES ('%s',%d)
+    ON DUPLICATE KEY 
+    UPDATE search_weight = %d", $type,$weight,$weight);
+  }
+}
+
+function vfs_ranking_nodetype_get_weights() {
+  $types = array();
+  $res = db_query('SELECT * from {vfs_ranking_nodetype}');
+  while ($row = db_fetch_object($res)) {
+    $types[$row->type] = $row->search_weight;
+  }
+  return $types;
+}
+
+function theme_vfs_ranking_nodetype_settings_form($form) {
+  $output = drupal_render($form['info']);
+  
+  $header = array(t('Type'), t('Weight'));
+  foreach (element_children($form['types']) as $key) {
+    $row = array();
+    $row[] = $form['types'][$key]['#title'];
+    unset($form['types'][$key]['#title']);
+    $row[] = drupal_render($form['types'][$key]);
+    $rows[] = $row;
+  }
+  $output .= theme('table', $header, $rows);
+  $output .= drupal_render($form);
+  return $output;
+}

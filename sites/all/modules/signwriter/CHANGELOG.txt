@@ -1,0 +1,54 @@
+28th November 2006
+----------------------------------------------------------------
+* Got rid of license in favour of LICENSE.txt
+
+27th November 2006
+----------------------------------------------------------------
+* Made GDFONTPATH use ';' as a separator on windows (hopefully).
+* Got rid of the tab for each signwriter profile on the settings page.
+* Bugfix to make it work when nice urls are disabled
+* Upgraded to 5.0
+
+8th September 2006
+----------------------------------------------------------------
+* Made the path to signwriter images absolute as per http://drupal.org/node/78209
+* Added settings for the cache directory and font search path.
+
+
+1st August 2006
+----------------------------------------------------------------
+* fixed a reference to a non-existent variable in an error message
+
+14th July 2006
+----------------------------------------------------------------
+* Added documentation about needing the GD image library.
+
+9th July 2006
+----------------------------------------------------------------
+* Added a check for the GD library on the settings page.
+
+28th June 2006
+----------------------------------------------------------------
+* added _signwriter_strip_tags to get rid of <i>, <b>, and <em> tags
+* added x and y offsets to calculated image width so text isn't truncated
+
+22nd June 2006
+----------------------------------------------------------------
+* Changed the settings page to use tabs
+* Minor documentation fix
+* Added CHANGELOG.txt
+* Fixed text being cut off by arbitrarily increasing the calculated width by 5px
+
+21st June 2006
+----------------------------------------------------------------
+* Added licensing details
+* Added README.txt with documentation
+* Changed the font search path from just the drupal files directory to all of:
+ - the drupal files directory
+ - the base drupal directory
+ - the current theme directory
+* Some minor documentation changes
+
+20th June 2006
+----------------------------------------------------------------
+* Initial Release

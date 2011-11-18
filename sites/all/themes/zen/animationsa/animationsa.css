@@ -1,0 +1,2308 @@
+/* $Id: zen.css,v 1.1.2.26 2008/04/20 04:22:15 johnalbin Exp $ */
+
+/*
+ * ZEN STYLES
+ *
+ * This is an example stylesheet. Sub-themes should NOT include the zen/zen.css
+ * file, but instead copy this CSS to their own stylesheets.
+ *
+ * In this stylesheet, we have included all of the classes and IDs from this
+ * theme's tpl.php files. We have also included many of the useful Drupal core
+ * styles to make it easier for theme developers to see them.
+ *
+ * Many of these styles are over-riding Drupal's core stylesheets, so if you
+ * remove a declaration from here, the styles may still not be what you want
+ * since Drupal's core stylesheets are still styling the element. See the
+ * drupal5-reference.css file for a list of all Drupal 5.x core styles.
+ *
+ * In addition to the style declarations in this file, other Drupal styles that
+ * you might want to override or augment are those for:
+ *
+ *   Book Navigation  See line 74  of Zen's drupal5-reference.css file
+ *   Forum            See line 197 of Zen's drupal5-reference.css file
+ *   Menus            See line 667 of Zen's drupal5-reference.css file
+ *   News Aggregator  See line 20  of Zen's drupal5-reference.css file
+ *   Polls            See line 287 of Zen's drupal5-reference.css file
+ *   Search           See line 320 of Zen's drupal5-reference.css file
+ *   User Profiles    See line 945 of Zen's drupal5-reference.css file
+ */
+
+
+
+/** body **/
+  body
+  {
+margin: 0;
+  padding: 0;
+  min-width: 700px;
+background-color: whitesmoke;
+
+  }
+
+  #page
+  {
+width: 990px;            /* page width - optional */
+margin: 0 auto;
+padding-top: 10px;
+font-family: Tahoma,Helvetica, Arial, sans-serif;
+color: #333;
+line-height:1.15em;
+
+  }
+
+
+  #page-inner
+  {
+
+  }
+
+/** header **/
+  #header
+  {
+
+  }
+
+  #header-inner
+  {
+
+  }
+
+  #logo-title /* Wrapper for logo, website name, and slogan */
+  {
+	margin: 10px 20px 10px 20px;
+  position: relative;
+  width: 350px;
+  }
+
+  #logo /* Wrapper for logo */
+  {
+	position: relative;
+	top: -15px;
+  }
+
+  #logo-image /* The actual logo image */
+  {
+	
+
+	
+  }
+
+  #site-name /* The name of the website */
+  {
+  }
+
+  #site-name a:link,
+  #site-name a:visited
+  {
+    color: #000;
+    text-decoration: none;
+  }
+
+  #site-name a:hover
+  {
+    text-decoration: underline;
+  }
+
+  #site-slogan /* The slogan (or tagline) of a website */
+  {
+  }
+
+  #header-blocks /* Wrapper for any blocks placed in the header region */
+  {
+
+  }
+
+/** main (container for everything else) **/
+  #main
+  {
+	  color: #333;
+	  
+  }
+
+  #main-inner
+  {
+
+  }
+
+/** content **/
+  #content
+  {
+
+  }
+
+  #content-inner
+  {
+	
+	
+
+	
+  }
+
+  #mission /* The mission statement of the site (displayed on homepage) */
+  {
+  }
+
+  #content-top /* Wrapper for any blocks placed in the "content top" region */
+  {
+  }
+
+  #content-header /* Wrapper for breadcrumb, title, messages, tabs, and help */
+  {
+  }
+
+  .breadcrumb /* The path to the current page in the form of a list of links */
+  {
+    padding-bottom: 0; /* Undo system.css */
+     background-color: whitesmoke;
+  }
+
+  h1.title, /* The title of the page */
+  h2.title, /* Block title or the title of a piece of content when it is given in a list of content */
+  h3.title /* Comment title */
+  {
+
+margin-top: 10px;
+margin-bottom: 5px;
+    
+  }
+  
+
+  div.messages /* Important messages (status, warning, and error) for the user */
+  {
+    margin: 0 1em 5px 1em;
+    border: 2px solid #ccc;
+    padding: 5px;
+    color: #000;
+    background-color: #fff;
+    font-style: italic;
+  }
+
+  div.status /* Normal priority messages */
+  {
+  }
+
+  div.warning /* Medium priority messages */
+  {
+    border-color: #ff7;
+  }
+
+  div.warning,
+  tr.warning,
+  body.section-admin tr.warning
+  {
+    color: #000;
+    background-color: #ffc;
+  }
+
+  div.error /* High priority messages. See also the .error declaration below. */
+  {
+    border-color: #c00;
+  }
+
+  div.error,
+  tr.error,
+  body.section-admin tr.error
+  {
+    color: #900;
+    background-color: #fee;
+  }
+
+
+
+  .help /* Help text on a page */
+  {
+    margin: 1em 0;
+  }
+
+  .more-help-link /* Link to more help */
+  {
+    font-size: 0.85em;
+    text-align: right;
+  }
+
+  #content-area /* Wrapper for the actual page content */
+  {
+  }
+
+  .pager /* A list of page numbers when more than 1 page of content is available */
+  {
+    clear: both;
+    margin: 1em 0;
+    text-align: center;
+  }
+
+  .pager a, .pager strong.pager-current
+  {
+    padding: 0.5em;
+  }
+
+  .feed-icons /* The links to the RSS or Atom feeds for the current list of content */
+  {
+    margin: 1em 0;
+  }
+
+  #content-bottom /* Wrapper for any blocks placed in the "content bottom" region */
+  {
+  }
+
+/** navbar **/
+  #navbar
+  {
+  }
+
+  #navbar-inner
+  {
+  }
+  #mainsearch /* Wrapper for the search form */
+  {
+float: right;
+position: relative;
+top: 10px;
+  }
+  #search-box /* Wrapper for the search form */
+  {
+float: right;
+position: relative;
+  }
+
+  #primary /* Primary links */
+  {
+  }
+
+  #secondary /* Secondary links */
+  {
+  }
+
+/** sidebar-left **/
+  #sidebar-left
+  {
+
+  }
+
+  #sidebar-left-inner
+  {
+  }
+
+/** sidebar-right **/
+  #sidebar-right
+  {
+
+  }
+
+  #sidebar-right-inner
+  {
+	width: 230px;
+  }
+
+/** footer **/
+  #footer
+  {
+  }
+
+  #footer-inner
+  {
+  }
+
+  #footer-message /* Wrapper for the footer message from Drupal's "Site information"
+                     and for any blocks placed in the footer region */
+  {
+  }
+
+/** closure **/
+  #closure-blocks /* Wrapper for any blocks placed in the closure region */
+  {
+  }
+
+/** Drupal nodes **/
+  .node /* Node wrapper */
+  {
+	background-color:white;
+	padding: 10px;
+  }
+
+  .node-inner /* Additional wrapper for node */
+  {
+	background-color: white;
+
+  }
+    .node-inner h2.title /* Additional wrapper for node */
+  {
+	padding-top: 5px;
+	background-color: white;
+	font-weight: bold;
+
+  }
+
+  .sticky /* A sticky node (displayed before others in a list) */
+  {
+  }
+
+  .node-unpublished /* Unpublished nodes */
+  {
+    /* background-color: #fff4f4; */ /* Drupal core uses a #fff4f4 background */
+  }
+
+  .node-unpublished div.unpublished, /* The word "Unpublished" displayed beneath the content. */
+  .comment-unpublished div.unpublished
+  {
+    height: 0;
+    overflow: visible;
+    color: #d8d8d8;
+    font-size: 75px;
+    line-height: 1;
+    font-family: Impact, "Arial Narrow", Helvetica, sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: center;
+    word-wrap: break-word; /* A very nice CSS3 property */
+  }
+
+  .node-mine /* A node created by the current user */
+  {
+  }
+
+  .node-teaser /* A node displayed as teaser */
+  {
+  }
+
+  /* All nodes are given a node-type-FOO class that describes the type of
+   * content that it is. If you create a new content type called
+   * "my-custom-type", it will receive a "node-type-my-custom-type" class.
+   */
+  .node-type-page /* Page content node */
+  {
+  }
+
+  .node-type-story /* Story content node */
+  {
+  }
+
+  .node h2.title /* Node title */
+  {
+	font-size: 1em;
+	font-weight:bold;
+padding: 0;
+line-height: 1.2em;
+  }
+
+  .marker /* "New" or "Updated" marker for content that is new or updated for the current user */
+  {
+    color: #c00;
+  }
+
+  .node .picture /* The picture of the node author */
+  {
+  }
+
+  .node.node-unpublished .picture,
+  .comment.comment-unpublished .picture
+  {
+    position: relative; /* Otherwise floated pictures will appear below the "Unpublished" text. */
+  }
+
+  .node .submitted /* The "posted by" information */
+  {
+  }
+
+  .node .taxonomy /* Node taxonomy (categories) */
+  {
+  }
+
+  .node .content /* Node's content wrapper */
+  {
+  }
+
+  .node div.links /* Wrapper for node links */
+  {
+    margin: 1em 0;
+  }
+
+  ul.links /* Taxonomy links, node links, comment links */
+  {
+    margin: 0;
+    padding: 0;
+  }
+
+  ul.links.inline
+  {
+    display: inline;
+  }
+
+  ul.links li
+  {
+    display: inline;
+    list-style-type: none;
+    padding: 0 0.5em;
+  }
+
+  .preview .node /* Preview of the content before submitting new or updated content */
+  {
+    /* background-color: #ffffea; */ /* Drupal core uses a #ffffea background */
+  }
+
+/** Drupal comments **/
+  #comments /* Wrapper for all comments */
+  {
+    margin: 1em 0;
+  }
+
+  .comment /* Wrapper for a single comment */
+  {
+  }
+
+  .comment-inner /* Additional wrapper for a single comment */
+  {
+  }
+
+  .comment.odd /* An odd-numbered comment in the list of comments */
+  {
+  }
+
+  .comment.even /* An even-numbered comment in the list of comments */
+  {
+  }
+
+  .comment-unpublished /* Unpublished comments */
+  {
+    /* background-color: #fff4f4; */ /* Drupal core uses a #fff4f4 background */
+  }
+
+  .comment-unpublished div.unpublished /* The word "Unpublished" displayed beneath the content. See also the div.unpublished declaration in the node section above. */
+  {
+  }
+
+  .comment-by-author /* A comment created by the node's author */
+  {
+  }
+
+  .comment-by-anon /* A comment created by an anonymous user */
+  {
+  }
+
+  .comment-mine /* A comment created by the current user */
+  {
+  }
+
+  .comment h3.title /* Comment title */
+  {
+  }
+
+  .new /* "New" marker for comments that are new for the current user */
+  {
+    color: #c00;
+  }
+
+  .comment .picture /* The picture of the comment author */
+  {
+  }
+a.active img{
+	width: 145px;
+	
+}
+
+  .comment .submitted /* The "posted by" information */
+  {
+  }
+
+  .comment .content /* Comment's content wrapper */
+  {
+  }
+
+  .comment div.links /* Wrapper for comment links. See also the ul.links declaration in the node section above. */
+  {
+    margin: 1em 0;
+  }
+
+  .indented /* Nested comments are indented */
+  {
+    /* margin-left: 25px; */ /* Drupal core uses a 25px left margin */
+  }
+
+  .preview .comment /* Preview of the comment before submitting new or updated comment */
+  {
+    /* background-color: #ffffea; */ /* Drupal core uses a #ffffea background */
+  }
+
+/** Drupal blocks **/
+  .block /* Block wrapper */
+  {
+    margin-bottom: 1em;
+  }
+
+  .block.region-odd /* Zebra striping for each block in the region */
+  {
+  }
+
+  .block.region-even /* Zebra striping for each block in the region */
+  {
+  }
+
+  .block.odd /* Zebra striping independent of each region */
+  {
+  }
+
+  .block.even /* Zebra striping independent of each region */
+  {
+  }
+
+  .region-count-1 /* Incremental count for each block in the region */
+  {
+  }
+
+  .count-1 /* Incremental count independent of each region */
+  {
+  }
+
+  .block-inner /* Additional wrapper for block */
+  {
+  }
+
+  .block h2.title /* Block title */
+  {
+  }
+
+  .block .content /* Block's content wrapper */
+  {
+	width: 200px;
+
+  }
+
+  #block-aggregator-category-1 /* Block for the latest news items in the first category */
+  {
+  }
+
+  #block-aggregator-feed-1 /* Block for the latest news items in the first feed */
+  {
+  }
+
+  #block-block-1 /* First administrator-defined block */
+  {
+  }
+
+  #block-blog-0 /* "Recent blog posts" block */
+  {
+  }
+
+  #block-book-0 /* "Book navigation" block for the current book's table of contents */
+  {
+  }
+
+  #block-comments-0 /* "Recent comments" block */
+  {
+  }
+
+  #block-forum-0 /* "Active forum topics" block */
+  {
+  }
+
+  #block-forum-1 /* "New forum topics" block */
+  {
+  }
+
+  #block-menu-2 /* "Primary links" block */
+  {
+  }
+
+  #block-node-0 /* "Syndicate" block for primary RSS feed */
+  {
+  }
+
+  #block-poll-0 /* "Most recent poll" block */
+  {
+  }
+
+  #block-profile-0 /* "Author information" block for the profile of the page's author */
+  {
+  }
+
+  #search-block-form /* "Search form" block */
+  {
+
+	position: relative;
+	padding: 5px;
+	right: -810px;
+  }
+
+  #block-statistics-0 /* "Popular content" block */
+  {
+  }
+  .statistics_counter{
+	position: relative;
+	float: left;
+	left: 10px;
+}
+
+
+  #block-user-1 /* "Navigation" block for Drupal navigation menu */
+  {
+  }
+
+  #block-user-2 /* "Who's new" block for a list of the newest users */
+  {
+  }
+
+  #block-user-3 /* "Who's online" block for a list of the online users */
+  {
+  }
+
+/** Drupal boxes **/
+  /* Wrapper for Comment form, Comment viewing options, Menu admin, and
+   * Search results.
+   */
+  .box /* Wrapper for box */
+  {
+  }
+
+  .box-inner /* Additional wrapper for box */
+  {
+  }
+
+  .box h2.title /* Box title */
+  {
+  }
+
+  .box .content /* Box's content wrapper */
+  {
+  }
+
+/** Miscellaneous Drupal styles **/
+  .error /* Errors that are separate from div.messages status messages (see above.) */
+  {
+    color: #c00;
+  }
+
+  .more-link /* Aggregator, blog, and forum more link */
+  {
+    text-align: right;
+  }
+
+  tr.even, tr.odd /* Some tables have rows marked even or odd. See also the ".section-admin tr.even" declaration below. */
+  {
+    border-bottom: none;
+    padding: 0;
+  }
+
+  tr.even
+  {
+    /* background-color: #eee; */ /* Drupal core uses a #eee background */
+    background-color:whitesmoke;
+    padding: 5px;
+  }
+
+  tr.odd
+  {
+    /* background-color: #eee; */ /* Drupal core uses a #eee background 
+    */
+    background-color:#c0e7ff;
+    padding: 5px;
+  }
+
+  li a.active /* The active item in a Drupal menu */
+  {
+    color: #000;
+  }
+
+
+/** Drupal forms **/
+  .form-item, /* Wrapper for a form element (or group of form elements) and its label */
+  .form-checkboxes,
+  .form-radios
+  {
+    margin: 1em 0;
+  }
+
+  .form-item input.error, /* Highlight the form elements that caused a form submission error */
+  .form-item textarea.error,
+  .form-item select.error
+  {
+    border: 2px solid #c00;
+  }
+
+  .form-item label /* The label for a form element */
+  {
+    display: block;
+    font-weight: bold;
+  }
+
+  .form-item label.option /* The label for a radio button or checkbox */
+  {
+    display: inline;
+    font-weight: normal;
+  }
+
+  .form-required /* The part of the label that indicates a required field */
+  {
+    color: #c00;
+  }
+
+  .form-item .description /* The descriptive help text (separate from the label) */
+  {
+    font-size: 0.85em;
+  }
+
+  .form-checkboxes .form-item, /* Pack groups of checkboxes and radio buttons closer together */
+  .form-radios .form-item
+  {
+    margin: 0.4em 0;
+  }
+
+  .form-submit /* The submit button */
+  {
+  }
+
+  .container-inline div, .container-inline label /* Inline labels and form divs */
+  {
+    display: inline;
+  }
+
+  .tips /* Tips for Drupal's input formats */
+  {
+    margin: 0;
+    padding: 0;
+    font-size: 0.9em;
+  }
+
+/** Drupal admin tables **/
+  /* We overrode these styles in html-elements.css, but restore them for the
+   * admin section of the site.
+   */
+  .section-admin tbody
+  {
+    border-top: 1px solid #ccc;
+  }
+
+  .section-admin th
+  {
+    text-align: left;
+    padding-right: 1em;
+    border-bottom: 3px solid #ccc;
+  }
+
+  .section-admin tbody th
+  {
+    border-bottom: 1px solid #ccc;
+  }
+
+  .section-admin thead th
+  {
+    text-align: left;
+    padding-right: 1em;
+    border-bottom: 3px solid #ccc;
+  }
+
+  .section-admin tr.even,
+  .section-admin tr.odd
+  {
+    background-color: #eee;
+    border-bottom: 1px solid #ccc;
+    padding: 0.1em 0.6em;
+  }
+ 
+#loginstrip{
+z-index: 10;
+position: relative;
+top: -10px;
+
+
+}
+#loginblock{
+z-index: 10;
+position: relative;
+top: -10px;
+
+
+}
+#user-login-form .form-item label {
+display:inline;
+float:left;
+font-weight:bold;
+}
+#user-login-form .form-item {
+float:left;
+margin-bottom:1em;
+margin-top:0 !important;
+
+}
+#user-login-form {
+text-align:left;
+width: 600px;
+float: left;
+position: relative;
+left: 0px;
+}
+form#user-login-form ul li{
+display:inline;
+}
+form#user-login-form ul{
+width:300px;
+}
+form#user-login-form .item-list {
+float:left;
+margin-left:55px;
+margin-top:-20px;
+width:300px;
+display: none;
+}
+
+.form-checkboxes .form-item {
+float: left;
+width: 50%
+}
+
+
+/* $Id: nice_menus_default.css,v 1.1.2.5 2007/10/29 16:35:34 add1sun Exp $ */
+/*
+  This is the default layout template for nice menus, and will provide
+  a starting point for the look of your menus. To customize, it's
+  recommended to create a custom CSS file using this file as a template,
+  then configure the module to use your custom CSS file
+  (this is done in the global settings tab of the theme administration.)
+
+  To help understand the CSS, the HTML looks like this, where
+    x is a number;
+    TYPE is down/left/right;
+    PATH is the menu path such as node/343;
+    MID is the menu id such as 33):
+  <ul id='nice-menu-x' class='nice-menu nice-menu-TYPE'>
+    <li id='menu-MID' class='menu-path-PATH'><a href='#'>This is a menu item</a></li>
+    <li class='menuparent menu-path-PATH'><a href='#'>A submenu</a>
+      <ul...><li...>...</li>
+      </ul>
+    </li>
+    ...
+  </ul>
+
+  If you have more than one nice-menu and want to target a particular one,
+  use its id (e.g. ul#nice-menu-2).
+
+  See README.txt and the handbook page (http://drupal.org/node/185543)
+  for some CSS customization examples.
+*/
+
+/******************************
+ Global CSS for ALL menu types
+******************************/
+#nice-menu-primary{
+	width: 960px;
+	border: 0;
+	font-weight: bold;
+	font-size: 1.1em;
+
+	clear: both;
+	padding-bottom: 40px;
+	
+}
+
+#primarynav{
+	width: 960px;
+	position: relative;
+}
+
+ul.nice-menu,
+ul.nice-menu ul {
+  list-style: none;
+  margin: 0;
+
+
+}
+
+ul.nice-menu li {
+
+  border-top: 0;
+  float: left;
+background-color: #white;
+  /* Additional overrides to deal with Garland theme. */
+  margin: 0;
+  padding-left: 5px;
+   margin-right: 5px;
+  background-image: none;
+ position: relative;
+ 
+
+
+}
+
+/* Overrides for Garland header. */
+#header-region ul.nice-menu li {
+  margin: 0;
+  /* Padding rules are needed to deal with Garland's header line-height. */
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;
+
+}
+
+ul.nice-menu a {
+	padding: 0.3em 3px 0.35em;
+}
+
+ul.nice-menu ul,
+/* Repeat for Garland header. */
+#header-region ul.nice-menu ul {
+  top: 1.8em;
+  left: -1px;
+  border: 0;
+
+  margin-right: 0;
+}
+
+/* Override for Garland header. */
+#header-region ul.nice-menu ul {
+  top: 1.7em;
+}
+
+ul.nice-menu ul li {
+  width: 12.5em;
+  background-color:white;
+}
+
+/* Home Button*/
+#menu-326{
+	width: 5em;
+	margin-right:5px;
+	background-color:white;
+}
+/* About Button*/
+#menu-143{
+	width: 5em;
+	margin-right:5px;
+}
+/* FAQ Button*/
+#menu-229{
+	width: 4em;
+	margin-right:5px;
+}
+/* Strategy Button*/
+#menu-230{
+	width: 7em;
+	margin-right:5px;
+}
+/* Subscribe Button*/
+#menu-234{
+	width: 6em;
+	margin-right:5px;
+}
+/* Advertising Button*/
+#menu-233{
+	width: 9em;
+	margin-right:5px;
+}
+/* Partners Button*/
+#menu-231{
+	width: 7em;
+		margin-right:5px;
+}
+
+/* Community Button*/
+#menu-156{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Members Button*/
+#menu-551{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Companies Button*/
+#menu-564{
+	width: 7em;	
+	margin-right:5px;
+}
+/* Individuals Button*/
+#menu-563{
+	width: 7em;	
+	margin-right:5px;
+}
+/* Showcase Button*/
+#menu-565{
+	width: 7em;	
+	margin-right:5px;
+}
+/* Videos Button*/
+#menu-243{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Images Button*/
+#menu-242{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Blogs Button*/
+#menu-566{
+	width: 5em;	
+		margin-right:5px;
+}
+/* Forums Button*/
+#menu-154{
+	width: 6em;	
+		margin-right:5px;
+}/* Press Releases Button*/
+#menu-567{
+	width: 9em;	
+		margin-right:5px;
+}
+/* Resources Button*/
+#menu-241{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Sign Up Button*/
+#menu-241{
+	width: 7em;	
+		margin-right:5px;
+}
+/* Training & Education Button*/
+#menu-150{
+	width: 12em;
+		margin-right:5px;
+}
+
+/* Schools*/
+#menu-562{
+	width: 6em;
+	margin-right:5px;
+}
+
+/* Training Courses*/
+#menu-236{
+	width: 10em;
+	margin-right:5px;
+}
+
+/* internships*/
+#menu-239{
+	width: 10em;
+	margin-right:5px;
+}
+/* Resources*/
+#menu-235{
+	width: 10em;
+	margin-right:5px;
+}
+
+/* News & Events Button*/
+#menu-153{
+	width: 9em;
+	margin-right:5px;
+}
+/*Articles*/
+#menu-155{
+	width: 6em;
+	margin-right:5px;
+		background-color:white;
+}
+/*Jobs*/
+#menu-151{
+	width: 6em;
+	margin-right:5px;
+		background-color:white;
+}
+
+/******************************
+HORIZONTAL (downdown) menus
+******************************/
+
+ul.nice-menu-downdown {
+  width: 800em; /* width of the 2nd level menu horizontal line - if you have more items in the menu, you may need to change this value so they all fit in one horizontal line*/
+ border:0;
+  padding: 2px;
+
+}
+
+ul.nice-menu-downdown li {
+  width: 8em;
+  border:1;
+}
+
+ul.nice-menu-downdown ul {
+  width: 80em;  /* width of the 2nd level menu horizontal line - if you have more items in the menu, you may need to change this value so they all fit in one horizontal line*/
+  left: -5.7em; /* change if you want the 2nd level menu to be shifted to the right/left */
+  border:0;
+   font-weight: normal;
+  
+}
+
+ul.nice-menu-downdown ul ul {
+  width: 10em;  /* width of the 3rd level menu horizontal line - if you have more items in the menu, you may need to change this value so they all fit in one horizontal line*/
+  left: -2em; /* change if you want the 3rd level menu to be shifted to the right/left */
+  top: 1.8em; /* height of the 2st menu level and also margin after which 3rd level starts */
+  border:0;
+}
+
+ul.nice-menu-downdown li.menuparent,
+ul.nice-menu-downdown li li.menuparent {
+  background: white url(arrow-down.png) no-repeat right center;
+}
+
+#user-profile .panel-pane h2.title{
+  background-color: #00a3df;
+  color: #fff;
+  padding: 5px 3px;
+
+}
+
+
+#user-profile .panel-pane h2.title a{
+background-color: white;
+  color: #00a3df;
+  padding: 2px;
+
+}
+
+#mini-panel-user_basics div.panel-row-1 div.panel-col-1 { width: 20%; }
+#mini-panel-user_basics div.panel-row-1 div.panel-col-2 { width: 21%; }
+#mini-panel-user_basics div.panel-row-1 div.panel-col-3 { width: 58%; }
+
+#mini-panel-user_basics {
+  padding-top: 10px;
+  background: #eee;
+}
+
+#mini-panel-user_basics .picture {
+  float: none;
+}
+
+#mini-panel-user_basics .picture img {
+  border: 1px solid #999;
+  margin: 0 10px;
+  padding: 3px;
+  background: #fff;
+}
+
+.view-content-buddylist-of-uid .thumbnail {
+  float: left;
+  width: 100px;
+  height: 140px;
+  border: 1px solid #ccc;
+  margin: 10px;
+  padding: 5px;
+  text-align: center;
+}
+
+.view-content-buddylist-of-uid img {
+  width: 85px;
+}
+
+#user-interests {
+  /* No default CSS.. Fill this in if you want. */
+}
+#user-links {
+  /* No default CSS.. Fill this in if you want. */  
+}
+#user-contact{
+  /* No default CSS.. Fill this in if you want. */  
+}
+#user-buddies {
+  /* No default CSS.. Fill this in if you want. */    
+}
+#user-gallery {
+  /* No default CSS.. Fill this in if you want. */    
+}
+#user-guestbook {
+  /* No default CSS.. Fill this in if you want. */    
+}
+
+/********************************* BEGIN FORUM GENERAL******************************************/
+#forum a:hover {
+	text-decoration: none;
+}
+
+
+/********************************* BEGIN PAGER ************************************************/
+
+#forum .pager {
+	clear:none;
+	float:right;
+}
+
+#forum .pager a {
+  text-decoration: none;
+  border: 1px solid #2788C5;
+  background: #fff url(images/gradient-inner.png) repeat-x left top;
+  font-weight: bold;
+}
+
+#forum .pager a.active { 
+  color: #006; 
+}
+
+#forum .pager-current, 
+#forum .pager a:hover { 
+  background: black; 
+  color: #fff;
+}
+
+/********************************* END PAGER ************************************************/
+
+/********************************* BEGIN FORUM TABLES ********************************************/
+
+/* General */
+
+#forum table {
+  border: 1px solid #A7C1DF;
+  clear:both;
+}
+
+#forum th {
+  background-color: #00a3df;
+  color: white;	
+}
+
+#forum th a, #forum th a:link, #forum th a:hover, #forum th a:visited{
+  font-weight: bold;
+  color: white;
+	background-color: #00a3df;
+}
+
+/* Containers & Forums*/
+
+#forum td.container {
+  background-color: #666;
+
+}
+
+#forum td.container a { 
+  font-weight: bold;
+  color: white;
+}
+
+#forum .description {
+  font-size: 75%;
+
+}
+.forum-details .description{
+	color: grey;
+}
+
+#forum .forum .description { 
+ color: #444;
+}
+
+#forum tr td.forum {
+  background-image:url(images/forum.png);
+  background-position:2px 50%;
+  background-repeat:no-repeat;
+  padding-left:25px;
+}
+
+#forum tr td.forum .name,
+#forum tr td.forum .description {
+  margin-left: 12px;
+}
+
+/* Topic listings */
+
+#forum td.statistics, #forum td.settings, #forum td.pager {
+  border: 1px solid #bbb;
+}
+
+#forum td .links {
+  font-size: 0.9em;
+}
+
+#forum tr.notsticky {
+	
+}
+#forum tr.firstnotsticky {
+	
+}
+#forum tr.stickytopic {
+	background: #95CDEF;
+}
+
+/* Top links */
+#forum li {
+  list-style-type: none;
+  list-style-image: none;
+}
+
+#forum td.f-subject, #forum td.f-topics, #forum td.f-posts, #forum td.f-last-reply {
+  background: #B3D8EF;
+  color: #27729F;
+  font-size: 0.8em;
+  padding: 0.1em 1.2em;
+  border: none;
+} 
+
+.indent {
+	margin-left: 30px;
+}
+
+/********************************* END FORUM TABLES ********************************************/
+
+
+/********************************* BEGIN FORUM THREADS ********************************************/
+
+.toppost {
+/* This can be used for any special formatting of the main node */
+}
+
+.forum-comment {
+  border: 1px solid #2587C4;
+}
+
+/* Header at the top of each post */
+.post-info {
+  background: #00a3df;
+  color:white;
+  padding-top: 5px;
+}
+
+.postedon{
+	font-weight: bold;
+	font-size: .8em;
+}
+
+.posttitle{
+  font-weight: bold;
+  border-bottom: 1px solid #2587C4;
+}
+
+.forum-comment .new {
+  font-weight:bold;
+  font-family: "Trebuchet MS", Arial, Verdana, Sans-serif;
+}
+
+.post-num a, .post-num a:link, .post-num a:visited, .post-num a:active, .post-num a:hover {
+	color:white;
+	background-color: #00a3df;
+}
+
+.forum-post-wrapper {
+	background: url(images/forum-separater.jpg) repeat-y;
+	border-top: 1px solid #2587C4;
+	border-bottom: none;
+}
+
+.forum-comment-left{
+	background-color: #c0e7ff;
+}
+
+.forum-comment-left .author-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  padding: 0 0 0.2em;
+}
+
+.forum-comment-left .picture img {
+	border: 1px solid #2587C4;
+	background: White;
+}
+
+.forum-post-wrapper .links{
+	background-color: #00a3df;
+	color: whitesmoke;
+	padding: 2px;
+}
+.forum-post-wrapper .links a{
+	background-color: #00a3df;
+	color: #c0e7ff;
+}
+#main #content .node .forum-comment .forum-comment-right .content {
+  border:none;
+}
+.author-title, .author-posts, .author-regdate, .author-points {
+font-size: 0.8em;
+}
+.author-icons {
+  padding: 0.4em 0 0 0;
+}
+.forum-comment-right .posttitle, .forum-comment-right .content {
+  padding-left: 2.5%;
+  margin-left: 0;
+}
+.forum-comment-right p {
+  margin-right: 2%;
+}
+.pager strong.pager-current {
+  padding: 0.3em 0.4em;
+  margin: 0 0.1em 0 ;
+}
+#forum td.created, #forum td.last-reply {
+  font-size: 0.9em;
+  line-height: 1.7;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+#forum th {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+#forum td {
+  border: 1px solid #95CDEF;
+}
+
+/********************************* END FORUM THREADS ********************************************/
+
+/********************************* BEGIN USER INFO **********************************************/
+.user-info div {
+	margin-bottom: 6px;
+}
+/********************************* END USER INFO ************************************************/
+
+/********************************* BEGIN LINKS AS BUTTONS ***************************************/
+
+/* Attempt to override spacing around the buttons by theme */
+.forum-post-wrapper ul.inline li,
+.forum-post-wrapper ul.links li {
+   padding: 0pt;
+	padding-right: 0pt;
+	margin: 0pt;
+}
+
+.forum-top-links {
+	float:left;
+}
+
+.forumlinks li {
+	background: none;
+	margin: 0pt;
+	padding:0pt;
+	padding-right: 0pt;
+}
+
+.forumlinks li a {
+  background-color: #00a3df;
+  padding: 1px 4px;
+  color: white;
+  text-decoration: none;
+  font: bold 90% "Helvetica", "Arial", Verdana, sans-serif;
+}
+
+.forumlinks li a:link {
+  color: white;
+    background-color: #00a3df;
+}
+
+.forumlinks li a:active {
+  color: white;
+    background-color: #0085b7;
+}
+
+.forumlinks li a:visited {
+  color: white;
+    background-color: #0085b7;
+}
+
+.forumlinks li a:hover {
+  border-style: inset;
+  background-color: #0085b7;
+  padding: 2px 3px 0 5px; /*shift text 1px to the right and down*/
+}
+
+.topic_reply {
+	font-size: 1.2em;
+}
+/********************************* END LINKS AS BUTTONS ********************************************/
+
+/*********ROUNDED CORNERS FOR RIGHT SIDEBAR BLOCK ********************************************/
+.blockwrap{
+    background-color:#FFF;
+    margin-top:30px;
+    padding:20px;
+    width: 230px;
+    position: relative;
+    top: 30px;
+}
+
+
+
+
+/*
+ * Tabs CSS
+ *
+ * Adds styles for the primary and secondary tabs.
+ *
+ * Compare this with default CSS found in the system module's stylesheet (a copy
+ * of which is in drupal5-reference.css, line 510.)
+ *
+ */
+
+  div.tabs
+  {
+    margin: 0 0 5px 0;
+  }
+
+  ul.primary
+  {
+    margin: 0;
+    padding: 0 0 0 10px;
+    border-width: 0;
+    list-style: none;
+    white-space: nowrap;
+    line-height: normal;
+    background: url(images/tab-bar.png) repeat-x left bottom;
+  }
+
+  ul.primary li
+  {
+    float: left;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul.primary li a
+  {
+    display: block;
+    height: 24px;
+    margin: 0;
+    padding: 0 0 0 5px; /* width of tab-left.png */
+    border-width: 0;
+    font-weight: bold;
+    text-decoration: none;
+    color: #777;
+    background-color: transparent;
+    background: url(images/tab-left.png) no-repeat left -38px;
+  }
+
+  ul.primary li a .tab
+  {
+    display: block;
+    height: 20px; /* 24px (parent) - 4px (padding) */
+    margin: 0;
+    padding: 4px 13px 0 6px;
+    border-width: 0;
+    line-height: 20px;
+    background: url(images/tab-right.png) no-repeat right -38px;
+  }
+
+  ul.primary li a:hover
+  {
+    border-width: 0;
+    background-color: transparent;
+    background: url(images/tab-left.png) no-repeat left -76px;
+  }
+
+  ul.primary li a:hover .tab
+  {
+    background: url(images/tab-right.png) no-repeat right -76px;
+  }
+
+  ul.primary li.active a,
+  ul.primary li.active a:hover
+  {
+    border-width: 0;
+    color: #000;
+    background-color: transparent;
+    background: url(images/tab-left.png) no-repeat left 0;
+  }
+
+  ul.primary li.active a .tab,
+  ul.primary li.active a:hover .tab
+  {
+    background: url(images/tab-right.png) no-repeat right 0;
+  }
+
+  ul.secondary
+  {
+    margin: 0;
+    padding: 0 0 0 5px;
+    border-bottom: 1px solid #c0c0c0;
+    list-style: none;
+    white-space: nowrap;
+    background: url(images/tab-secondary-bg.png) repeat-x left bottom;
+  }
+
+  ul.secondary li
+  {
+    float: left;
+    margin: 0 5px 0 0;
+    padding: 5px 0;
+    border-right: none;
+  }
+
+  ul.secondary a
+  {
+    display: block;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #c0c0c0;
+    text-decoration: none;
+    color: #777;
+    background: url(images/tab-secondary.png) repeat-x left -56px;
+  }
+
+  ul.secondary a .tab
+  {
+    display: block;
+    height: 18px; /* 24px (parent) - 6px (padding) */
+    margin: 0;
+    padding: 3px 8px;
+    line-height: 18px;
+  }
+
+  ul.secondary a:hover
+  {
+    background: url(images/tab-secondary.png) repeat-x left bottom;
+  }
+
+  ul.secondary a.active,
+  ul.secondary a.active:hover
+  {
+    border: 1px solid #c0c0c0;
+    color: #000;
+    background: url(images/tab-secondary.png) repeat-x left top;
+  }
+
+/*
+TAB STYLES:
+Some more styles, not important for making tabs work, just for the look of it...
+*/
+.anchors {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 1px;
+}
+.anchors:after { /* clearing without presentational markup, IE gets extra treatment */
+    display: block;
+    clear: both;
+    content: " ";
+}
+.anchors li {
+    float: left;
+    margin: 0 1px 0 0;
+}
+.anchors a {
+    display: block;
+    position: relative;
+    top: 1px;
+    border: 1px solid #eaeaea;
+    border-bottom: 0;
+    z-index: 2;
+    padding: 2px 9px 1px;
+    color: #000;
+    text-decoration: none;
+}
+.anchors .tabs-selected a {
+    padding-bottom: 2px;
+    font-weight: bold;
+}
+.anchors a:focus, .anchors a:active {
+    outline: none; /* @ Firefox 1.5, remove ugly dotted border */
+}
+.anchors .tabs-selected a, .anchors a:hover, .anchors a:focus, .anchors a:active,
+.fragment {
+    background: #fff;
+}
+.anchors .tabs-selected a:link, .anchors .tabs-selected a:visited,
+.anchors .tabs-disabled a:link, .anchors .tabs-disabled a:visited { /* @ Opera, use pseudo classes otherwise it confuses cursor... */
+    cursor: text;
+}
+.anchors a:hover, .anchors a:focus, .anchors a:active {
+    cursor: pointer;
+}
+.anchors .tabs-disabled {
+    opacity: .4;
+}
+.anchors .tabs-disabled a:hover, .anchors .tabs-disabled a:focus, .anchors .tabs-disabled a:active {
+    background: transparent;
+}
+.fragment {
+    padding: 0 10px;
+}
+
+
+html.js div.drupal-tabs {
+  display: none;
+}
+html.js h2.drupal-tabs-title {
+  display: none;
+}
+.tabs-nav-previous, .tabs-nav-next {
+  font-size: 12px;
+  font-weight: bold;
+  float: left;
+  border: 1px solid;
+  padding: 5px;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+.tabs-nav-previous {
+  float: left;
+}
+.tabs-nav-next {
+  float: right;
+}
+.tabs-nav-link-sep {
+  border-top: 2px #999 solid;
+  margin-top: 10px;
+  margin-bottom: 10px
+}
+span.clear {
+  display: block;
+  clear: both;
+  height: 1px;
+  line-height: 0px;
+  font-size: 0px;
+  margin-bottom: -1px;
+}
+
+/*  event calendar table styles  */
+.event-calendar table {
+  border: 1px solid #242;
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 98%; /* Setting at 100% causes problem in Internet Explorer. */
+  margin-bottom: 1em;
+}
+.event-calendar tr {
+  padding: 0;
+  margin: 0;
+  background: white;
+}
+.event-calendar th {
+  color: white;
+  background: #00648b;
+  text-align: center;
+  padding: 1px 0.33em;
+  border: 1px solid #242;
+}
+.event-calendar .month-view td,
+.event-calendar .week-view td {
+  width: 14%; /* 14% is about 1/7 of total table width */
+}
+.event-calendar td {
+  border: 1px solid #bbb;
+  color: #777;
+  text-align: right;
+  vertical-align: top;
+  margin: 0;
+  padding: 0;
+}
+.event-calendar th.heading {
+  border-width: 1px 0px;
+}
+.event-calendar th.prev {
+  text-align: left;
+  border-width: 1px 0px 1px 1px;
+}
+.event-calendar th.next {
+  text-align: right;
+  border-width: 1px 1px 1px 0px;
+}
+.event-calendar th a {
+  font-weight: bold;
+  color: #363636;
+}
+.event-calendar td a {
+  color: #222244;
+  font-weight: bold;
+  text-decoration: none;
+}
+.event-calendar td a:hover {
+  text-decoration: underline;
+}
+.event-calendar td.sat, .event-calendar td.sun {
+  background:#c0e7ff;
+}
+.event-calendar td.selected {
+  background: #00a3df;
+}
+.event-calendar td.today {
+  background: #0085b7;
+  
+}
+.event-calendar td.year, .event-calendar td.month {
+  text-align: center;
+  border-width: 1px 0px;
+}
+
+/*  days of the week header cells */
+.event-calendar td.days {
+  color: #cce;
+  background: #224;
+  text-align: center;
+  border: 1px solid #242;
+  border-width: 0 1px 1px 0;
+}
+
+/*  floating day number div  */
+.event-calendar div.day {
+  float: right;
+  text-align: center;
+  border: 1px solid gray;
+  border-width: 0 0 1px 1px;
+  padding: 0.125em 0.25em 0 0.25em;
+  margin: 0;
+  background: #f3f3f3;
+}
+
+/*  event node times for the body */
+.event-nodeapi div {
+  color: #000;
+  padding: 0.5em 1em 0 0;
+}
+.event-nodeapi div label { color: #999; }
+
+/*  individual node container  */
+.event-calendar div.event {
+  font-style: italic;
+  background-color: #fff;
+  border: solid 1px #555;
+  text-align: left;
+  margin: 0.25em 0 0.5em 0.25em;
+}
+.event-calendar div.title {
+  padding-left: 3px;
+}
+.event-calendar div.title a {
+  color: #000;
+}
+.event-calendar div.title a:hover {
+  color: #00a3df;
+}
+.event-calendar .content {
+  margin: 5px;
+  padding: 3px;
+  border-left: solid 2px #ddd;
+  padding-left: 5px;
+}
+.event-calendar div.type {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
+.event-calendar div.type a {
+  color: #0085b7;
+}
+.event-calendar div.type a:hover {
+  color: #00a3df;
+}
+.event-calendar div.links {
+  padding-left: 3px;
+}
+.event-calendar div.links a {
+  color: #0085b7;
+}
+.event-calendar div.links a:hover {
+  color: #00a3df;
+}
+.event-calendar .start {
+  font-style: normal;
+  color: #555;
+  margin: 2px 0 2px 0;
+  padding-left: 3px;
+}
+.event-calendar .end {
+  font-style: normal;
+  color: #555;
+  margin: 2px 0 2px 0;
+  padding-left: 9px;
+  font-size: 0.8em;
+}
+.event-calendar .ongoing {
+  font-style: normal;
+  color: #555;
+  margin: 2px 0 2px 0;
+  padding-left: 9px;
+  font-size: 0.8em;
+}
+.event-calendar div.info {
+  visibility: hidden;
+  height: 0px;
+  overflow:hidden;
+  padding-left: 3px;
+}
+
+/*  individual node view styles  */
+.event-calendar div.monthview .title {
+  font-size: 0.8em;
+}
+.event-calendar div.dayview {
+  width: auto;
+}
+.event-calendar div.tableview {
+  width: auto;
+}
+.event-calendar div.tableview .links {
+}
+.event-calendar .event-empty {
+  min-height: 6em;
+}
+/* hack to make Internet Explorer for Windows display calendar height correctly \*/
+* html .event-calendar .event-empty {
+  height: 6em;
+}
+/* end of hack */
+.container-inline .day input {
+  width: auto;
+  display: inline;
+}
+
+/*  multi-day event top stripes  */
+.event-calendar .event .stripe {
+  height: 5px;
+}
+.event-calendar .event .stripe-1 {
+  background-color: #FF6;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-2 {
+  background-color: #F66;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-3 {
+  background-color: #668CFF;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-4 {
+  background-color: #FFB366;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-5 {
+  background-color: #85FF66;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-6 {
+  background-color: #A666FF;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-7 {
+  background-color: #FFE066;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-8 {
+  background-color: #66FFFF;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-9 {
+  background-color: #FF66D9;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar .event .stripe-10 {
+  background-color: #DDD;
+  height: 5px;
+  width: 100%;
+}
+.event-calendar div.month-view table.event-block thead,
+.event-calendar div.month-view table.event-block tbody {
+  font-size: .9em;
+}
+.event-calendar div.month-view table.event-block th { 
+  font-weight: normal;
+}
+#block-event-1 .item-list ul li a { 
+  margin-top: 8px; 
+}
+
+span.event-timeleft {
+  padding-bottom: 3px;
+  text-align: right;
+  width: auto;
+  display: block;
+}
+span.event-nodetype {
+  padding: 0px 0px 0px 5px;
+  display: block;
+  width: auto;
+  text-align: right;
+  float: right;
+}
+.ical-link {
+  text-align: right;
+}
+.event div.form-item {
+  white-space: normal;
+}
+
+/* ----------------------------------------------------------------------------------------------------------------*/
+/* ---------->>> thickbox specific link and font settings <<<------------------------------------------------------*/
+/* ----------------------------------------------------------------------------------------------------------------*/
+#TB_window {
+	font: 12px Arial, Helvetica, sans-serif;
+	color: #333333;
+}
+
+#TB_secondLine {
+	font: 10px Arial, Helvetica, sans-serif;
+	color:#666666;
+}
+
+#TB_window a:link {color: #666666;}
+#TB_window a:visited {color: #666666;}
+#TB_window a:hover {color: #000;}
+#TB_window a:active {color: #666666;}
+#TB_window a:focus{color: #666666;}
+
+ 
+
+/* --->>> thickbox settings -*/
+
+
+
+#TB_overlay {
+	position: fixed;
+	z-index:100;
+	top: 0px;
+	left: 0px;
+	background-color:#000;
+	filter:alpha(opacity=75);
+	-moz-opacity: 0.75;
+	opacity: 0.75;
+	height:100%;
+	width:100%;
+}
+
+* html #TB_overlay { /* ie6 hack */
+     position: absolute;
+     height: expression(document.body.scrollHeight > document.body.offsetHeight ? document.body.scrollHeight : document.body.offsetHeight + 'px');
+}
+
+#TB_window {
+	position: fixed;
+	background: #ffffff;
+	z-index: 102;
+	color:#000000;
+	display:none;
+	border: 4px solid #525252;
+	text-align:left;
+	top:50%;
+	left:50%;
+}
+
+* html #TB_window { /* ie6 hack */
+position: absolute;
+margin-top: expression(0 - parseInt(this.offsetHeight / 2) + (TBWindowMargin = document.documentElement && document.documentElement.scrollTop || document.body.scrollTop) + 'px');
+}
+
+#TB_window img#TB_Image {
+	display:block;
+	margin: 15px 0 0 15px;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	border-top: 1px solid #666;
+	border-left: 1px solid #666;
+}
+
+#TB_caption{
+	height:25px;
+	padding:7px 30px 10px 25px;
+	float:left;
+}
+
+#TB_closeWindow{
+	height:25px;
+	padding:11px 25px 10px 0;
+	float:right;
+}
+
+#TB_closeAjaxWindow{
+	padding:7px 10px 5px 0;
+	margin-bottom:1px;
+	text-align:right;
+	float:right;
+}
+
+#TB_ajaxWindowTitle{
+	float:left;
+	padding:7px 0 5px 10px;
+	margin-bottom:1px;
+}
+
+#TB_title{
+	background-color:#e8e8e8;
+	height:27px;
+}
+
+#TB_ajaxContent{
+	clear:both;
+	padding:2px 15px 15px 15px;
+	overflow:auto;
+	text-align:left;
+	line-height:1.4em;
+}
+
+#TB_ajaxContent.TB_modal{
+	padding:15px;
+}
+
+#TB_ajaxContent p{
+	padding:5px 0px 5px 0px;
+}
+
+#TB_load{
+	position: fixed;
+	background: url(loading_animation.gif);
+	display:none;
+	height:13px;
+	width:208px;
+	z-index:103;
+	top: 50%;
+	left: 50%;
+	margin: -6px 0 0 -104px; /* -height/2 0 0 -width/2 */
+}
+
+* html #TB_load { /* ie6 hack */
+position: absolute;
+margin-top: expression(0 - parseInt(this.offsetHeight / 2) + (TBWindowMargin = document.documentElement && document.documentElement.scrollTop || document.body.scrollTop) + 'px');
+}
+
+#TB_HideSelect{
+	z-index:99;
+	position:fixed;
+	top: 0;
+	left: 0;
+	background-color:#fff;
+	border:none;
+	filter:alpha(opacity=0);
+	-moz-opacity: 0;
+	opacity: 0;
+	height:100%;
+	width:100%;
+}
+
+* html #TB_HideSelect { /* ie6 hack */
+     position: absolute;
+     height: expression(document.body.scrollHeight > document.body.offsetHeight ? document.body.scrollHeight : document.body.offsetHeight + 'px');
+}
+
+#TB_iframeContent{
+	clear:both;
+	border:none;
+	margin-bottom:-1px;
+	margin-top:1px;
+	_margin-bottom:1px;
+}
+
+/* --->>> simplemenu styling for the admin menu -*/
+
+#simplemenu {
+	background:#000;
+	color:#fff;
+	font:11px Verdana, Helvetica, sans-serif;
+	width:985px;
+	z-index:9999;
+	text-align:left;
+	margin: auto;
+	padding: 10px 5px 0;
+	left: 5px;
+}
+#simplemenu a {
+	color: #ececec;
+	text-decoration:none;
+	padding:3px 12px 5px 12px;
+	width:auto;
+	
+}
+#simplemenu li {
+  background:transparent;
+
+}
+#simplemenu li.expanded > a {
+	background:url(arrow_right.gif) no-repeat 94%;
+	padding-right:18px;
+}
+#simplemenu li.root > a {
+	background:url(arrow_down.gif) no-repeat 94%;
+	padding-right:18px;
+}
+#simplemenu li:hover, #simplemenu li.sfHover,
+#simplemenu a:focus, #simplemenu a:hover, #simplemenu a:active {
+  background: #00a3df;
+	color:#fff;
+	
+}
+#simplemenu li ul {
+  border:1px solid #ccc;
+	background:#fafcff;
+}
+#simplemenu li ul a {
+	color:#4e4e4e; 
+	height:auto;
+}
+#simplemenu li ul li:hover, #simplemenu li ul li.sfHover,
+#simplemenu li ul a:focus, #simplemenu li ul a:hover, #simplemenu li ul a:active {
+  background-color: gray;
+	color: #ececec;
+}
+.avatar-name{
+	font-size: 10px;
+}
+
+ul.jcarousel_target {
+  padding-left: 0;
+}
+
+ul.jcarousel_target li {
+  width: 75px;
+  height: auto;
+  padding: 0;
+  background: none;
+}
+
+.hidden {
+  display: none;
+}
+
+/* block-nodecarousel-nc_test_access_2 */
+
+.jcarousel-container-horizontal {
+  width: 450px;
+  height: auto;
+
+  overflow: auto;
+}
+
+.jcarousel-clip-horizontal {
+  width: 395px;
+  height: auto;
+  margin: 5px auto;
+  clear: both;
+}
+
+.jcarousel-clip-vertical {
+  width: 100%;
+  height: 280px;
+  clear: both;
+}
+
+div.jcarousel-prev {
+  float: left;
+  cursor: pointer;
+}
+
+div.jcarousel-next {
+  float: right;
+  cursor: pointer;
+}
+
+div.jcarousel-last {
+  float: right;
+  clear: right;
+  cursor: pointer;
+}
+
+div.jcarousel-first {
+  cursor: pointer;
+}
+
+li.index_control_item.visible {
+  font-weight: bold;
+}
+
+.field-field-news-image{
+padding-right: 8px;
+	float: left;
+	position:relative;
+}
+.field-field-blog-image{
+padding-right: 8px;
+	float: left;
+	position:relative;
+}
+.field-field-article-image{
+padding-right: 8px;
+	float: left;
+	position:relative;
+}
+
+

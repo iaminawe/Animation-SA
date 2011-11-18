@@ -1,0 +1,40 @@
+/* $Id$ */
+
+.ubrowser-div {
+  border: 1px dashed #bbb;
+  padding: 2px;
+  float: left;
+  width: auto;
+}
+
+.ubrowser-table {
+  width: auto;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+.ubrowser-table tbody {
+  border: none;
+}
+
+#ubrowser-tree .form-item {
+  margin-right: 1em;
+}
+
+.ubrowser-tree {
+  display: inline;
+  border-style: dashed;
+  border-width: 2px;
+  border-color: #ccc;
+  padding: 4px;
+}
+
+.ubrowser-nodes {
+  display: inline;
+  border-style: dashed;
+  border-width: 2px;
+  border-color: #ccc;
+  padding: 4px;
+  margin-left: 1em;
+}
+

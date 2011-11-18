@@ -1,0 +1,259 @@
+<?php
+// $Id: views_bonus_export.module,v 1.1.2.13 2008/05/10 15:08:29 dmitrig01 Exp $
+
+/**
+ *  Implementaion of hook_perm
+ */
+function views_bonus_export_perm() {
+  return array('export views');
+}
+
+/**
+ *  Implementation of hook_views_style_plugins
+ */
+function views_bonus_export_views_style_plugins() {
+  return array(
+    'views_csv' => array(
+      'name' => t('Views Bonus: CSV file'),
+      'theme' => 'views_bonus_export_csv',
+      'needs_table_header' => TRUE,
+      'needs_fields' => TRUE,
+      'even_empty' => TRUE,
+    ),
+    'views_doc' => array(
+      'name' => t('Views Bonus: DOC file'),
+      'theme' => 'views_bonus_export_doc',
+      'needs_table_header' => TRUE,
+      'needs_fields' => TRUE,
+      'even_empty' => TRUE,
+    ),
+    'views_txt' => array(
+      'name' => t('Views Bonus: TXT file'),
+      'theme' => 'views_bonus_export_txt',
+      'needs_table_header' => TRUE,
+      'needs_fields' => TRUE,
+      'even_empty' => TRUE,
+    ),
+  );
+}
+
+/*
+ * Implementation of hook_views_arguments to add the CSV
+ * and DOC argument selectors.
+ */ 
+function views_bonus_export_views_arguments() {
+  $arguments = array(
+    'csv' => array(
+      'name' => t('CSV: CSV File Selector'),
+      'handler' => 'views_bonus_export_views_handler',
+      'option' => 'string',
+      'help' => t('This argument specifies a specific CSV file selector; it will only select CSV files.'),
+    ),
+    'doc' => array(
+      'name' => t('DOC: DOC File Selector'),
+      'handler' => 'views_bonus_export_views_handler',
+      'option' => 'string',
+      'help' => t('This argument specifies a specific DOC file selector; it will only select CSV files.'),
+    ),
+    'txt' => array(
+      'name' => t('TXT: TXT File Selector'),
+      'handler' => 'views_bonus_export_views_handler',
+      'option' => 'string',
+      'help' => t('This argument specifies a specific TXT file selector; it will only select TXT files.'),
+    ),
+  );
+  return $arguments;
+}
+
+/**
+ * handler for our own CSV or DOC argument handler
+ */
+function views_bonus_export_views_handler($op, &$query, $argtype, $arg = '') {
+  if ($op == 'filter') {
+    views_bonus_export_views_file_argument('argument', $GLOBALS['current_view'], $arg);
+  }
+}
+
+/**
+ * argument hook that will display the file or display export icons.
+ */
+function views_bonus_export_views_file_argument($op, &$view, $arg) {
+  if ($op == 'argument' && ($arg == 'csv' || $arg == 'doc' || $arg == 'txt')) {
+    $view->page_type = 'views_'. $arg;
+    $view->use_pager = 0;
+    $view->pager_limit = 0;
+  }
+  else if ($op == 'post_view' && $view->build_type != 'block') {
+    $args = views_post_view_make_args($view, $arg, $arg);
+    $url = views_get_url($view, $args);
+    $title = views_get_title($view, 'page', $args);
+    $links = array();
+    // Add the exposed filters to the URL.
+    if ($view->used_filters) {
+      foreach($view->used_filters as $key => $value) {
+        $url_filter[] = $key .'='. $value;
+      }
+      $url_filter = implode('&', $url_filter);
+    }
+
+    if (user_access('export views')) {
+      if ($arg == 'csv') {
+        if (($image = theme('image', drupal_get_path('module', 'views_bonus_export') .'/csv.png', t('CSV export'), t('Export @title to an Spreadsheet-readable CSV file', array('@title' => $title))))) {
+          $links[] = l($image, $url, array('class' => 'xml-icon'), $url_filter, NULL, FALSE, TRUE);
+        }
+      }
+      else if ($arg == 'doc') {
+        if (($image = theme('image', drupal_get_path('module', 'views_bonus_export') .'/doc.png', t('DOC export'), t('Export @title to an Wordprocessor-readable DOC file', array('@title' => $title))))) {
+          $links[] = l($image, $url, array('class' => 'xml-icon'), $url_filter, NULL, FALSE, TRUE);
+        }
+      } 
+      else if ($arg == 'txt') {
+        if (($image = theme('image', drupal_get_path('module', 'views_bonus_export') .'/txt.png', t('TXT export'), t('Export @title to a TXT file', array('@title' => $title))))) {
+          $links[] = l($image, $url, array('class' => 'xml-icon'), $url_filter, NULL, FALSE, TRUE);
+        }
+      }
+    }
+    return implode('&nbsp;&nbsp;', $links);
+  }
+}
+
+/*
+ * describes how to theme a doc view
+ */
+function theme_views_doc($view, $nodes, $type) {
+  views_bonus_export('doc', $view->vid);
+}
+
+/*
+ * describes how to theme a csv view
+ */
+function theme_views_csv($view, $nodes, $type) {
+  views_bonus_export('csv', $view->vid);
+}
+
+/*
+ * describes how to theme a txt view
+ */
+function theme_views_txt($view, $nodes, $type) {
+  views_bonus_export('txt', $view->vid);
+}
+
+/**
+ * post view to display the export icons
+ */
+function views_bonus_export_views_post_view($view, $items, $output) {
+  $links = '';
+  foreach ($view->argument as $id => $argument) {
+    if ($argument['type'] == 'csv' || $argument['type'] == 'doc' || $argument['type'] == 'txt') {
+      $links .= views_bonus_export_views_file_argument('post_view', $view, $argument['type']);
+    }
+  }
+  return $links;
+}
+
+/**
+ *  Menu callback to make the CSV/DOC
+ */
+function views_bonus_export($type, $vid) {
+  if (!is_numeric($vid)) {
+    drupal_not_found();
+    return;
+  }
+
+  $view = views_load_view($vid);
+  $result = views_build_view('items', $view);
+
+  if ($type == 'csv' || $type == 'doc' || $type == 'txt') {
+    if (user_access('export views')) {
+      drupal_set_header("Cache-Control: no-store, no-cache, must-revalidate");
+      theme('views_bonus_export_'. $type, $view, $result['items']);
+    }
+    else {
+      drupal_access_denied();
+    }
+  }
+}
+
+/**
+ *  Main Function to export a view as CSV
+ */
+function theme_views_bonus_export_csv($view, $nodes) {
+  if (!user_access('export views')) {
+    return;
+  }
+  $fields = _views_get_fields();
+  drupal_set_header('Content-Type: text/x-comma-separated-values');
+  drupal_set_header('Content-Disposition: attachment; filename="view-'. $view->name .'.csv"');
+
+  // headings row
+  $headings = array();
+  foreach ($view->field as $field) {
+    if ($fields[$field['id']]['visible'] !== false) {
+      $headings[] = $field['label'] ? $field['label'] : $fields[$field['fullname']]['name'];
+    }
+  }
+  $comma = t(',');
+  print implode($comma, $headings) ."\r\n";
+
+  // one row for each node
+  foreach ($nodes as $node) {
+    $values = array();
+    foreach ($view->field as $field) {
+      if ($fields[$field['id']]['visible'] !== false) {
+        $value = views_theme_field('views_handle_field', $field['queryname'], $fields, $field, $node, $view);
+        $values[] = '"' . str_replace('"', '""', decode_entities(strip_tags($value))) . '"';
+      }
+    }
+    print implode($comma, $values) ."\r\n";
+  }
+  module_invoke_all('exit');
+  exit;
+}
+
+/**
+ *  Main Function to export a view as DOC
+ */
+function theme_views_bonus_export_doc($view, $nodes) {
+  if (!user_access('export views')) {
+    return;
+  }
+
+  drupal_set_header('Content-Type: application/msword');
+  drupal_set_header('Content-Disposition: attachment; filename="view-'. $view->name .'.doc"');
+  $table = theme('views_view_table', $view, $nodes, null);
+  $table = preg_replace('/<\/?(a|span) ?.*?>/', '', $table); // strip 'a' and 'span' tags
+  print $table;
+  module_invoke_all('exit');
+  exit;
+}
+
+/**
+ * Main Function to export a view as TXT
+ */
+function theme_views_bonus_export_txt($view, $nodes) {
+  if (!user_access('export views')) {
+    return;
+  }
+  $separator = theme('views_bonus_export_txt_separator');
+
+  drupal_set_header('Content-Type: text/plain');
+  drupal_set_header('Content-Disposition: attachment; filename="view-'. $view->name .'.txt"');
+  
+  $fields = _views_get_fields();
+  $output = '';
+  foreach ($nodes as $node) {
+    foreach ($view->field as $field) {
+      if ($fields[$field['id']]['visible'] !== FALSE) {
+        print "[" . $field['label'] . "]\n\n";
+        print filter_xss(views_theme_field('views_handle_field', $field['queryname'], $fields, $field, $node, $view) , array()) . "\n\n";
+      }
+    }
+    print $separator;
+  }
+  module_invoke_all('exit');
+  exit;
+}
+
+function theme_views_bonus_export_txt_separator() {
+  return "----------------------------------------\n\n";
+}

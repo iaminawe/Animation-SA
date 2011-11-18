@@ -1,0 +1,90 @@
+# Danish translation of Drupal (mimemail.module)
+# Copyright 2007 Morten Wulff <wulff@ratatosk.net>
+msgid ""
+msgstr ""
+"Project-Id-Version: Danish translation of Drupal (mimemail.module) $Id: da.po,v 1.1.2.1 2008/09/21 00:52:50 jerdavis Exp $\n"
+"POT-Creation-Date: 2007-12-09 13:55+0100\n"
+"PO-Revision-Date: 2007-12-09 14:04+0100\n"
+"Last-Translator: Morten Wulff <wulff@ratatosk.net>\n"
+"Language-Team: Danish <l10n@drupaldanmark.dk>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-Language: Danish\n"
+"X-Poedit-Country: DENMARK\n"
+
+#: mimemail.module:14
+#: mimemail.info:0
+msgid "Mail"
+msgstr "Post"
+
+#: mimemail.module:15
+msgid "HTML E-mail settings"
+msgstr "HTML e-mail-indstillinger"
+
+#: mimemail.module:44
+msgid "E-mail address"
+msgstr "E-mail-adresse"
+
+#: mimemail.module:48
+msgid "A valid e-mail address for this website, used by the auto-mailer during registration, new password requests, notifications, etc."
+msgstr "Netstedets e-mail-adresse. Bruges af Drupal ved oprettelse af nye brugere, genudsendelse af adgangskoder, påmindelser osv."
+
+#: mimemail.module:52
+msgid "Use mime mail for all messages"
+msgstr "Brug mime mail for alle beskeder"
+
+#: mimemail.module:54
+msgid "Use the mime mail module to deliver all site messages.  With this option, system emails will have styles and formatting"
+msgstr "Brug mime mail modulet til at levere alle beskeder fra sitet. System-beskeder vil indeholde grafik og formattering"
+
+#: mimemail.module:58;117
+msgid "Plaintext email only"
+msgstr "Kun e-mail som ren tekst"
+
+#: mimemail.module:60
+msgid "This option disables the use of email messages with graphics and styles.  All messages will be converted to plain text."
+msgstr "Deaktiver brugen af grafik og typografi i e-mailbeskeder. Alle meddelelser konverteres til ren tekst."
+
+#: mimemail.module:68;77
+msgid "E-mail engine"
+msgstr "E-mail motor"
+
+#: mimemail.module:71;80
+msgid "Choose an e-mail engine for sending mails from your site."
+msgstr "Vælg en mail-motor til afsendelse af mail fra dit site."
+
+#: mimemail.module:89
+msgid "Engine specific settings"
+msgstr "Motor-specifikke indstillinger"
+
+#: mimemail.module:97
+msgid "Please choose a mail engine."
+msgstr "Vælg en mail-motor."
+
+#: mimemail.module:111
+msgid "Email settings"
+msgstr "E-mail-indstillinger"
+
+#: mimemail.module:119
+msgid "Check this option if you do not wish to receive email messages with graphics and styles"
+msgstr "Marker dette hvis du ikke ønsker at modtage e-mail-beskeder med grafik og typografier"
+
+#: mimemail.module:226
+#: mimemail.info:0
+msgid "Mime Mail"
+msgstr "Mime Mail"
+
+#: mimemail.module:229
+msgid "Default mailing engine using drupal_mail()."
+msgstr "Standard mail-motor vha. drupal_mail()."
+
+#: mimemail.module:0
+msgid "mimemail"
+msgstr "mimemail"
+
+#: mimemail.info:0
+msgid "E-mail with HTML and attachments"
+msgstr "E-mail med HTML og bilag"
+

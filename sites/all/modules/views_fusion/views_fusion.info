@@ -1,0 +1,10 @@
+; $Id: views_fusion.info,v 1.1 2007/02/25 21:27:37 fago Exp $
+name = Views fusion
+description = Provides fusing of multiple views
+package = Views
+dependencies = views
+; Information added by drupal.org packaging script on 2007-05-12
+version = "5.x-1.2"
+project = "views_fusion"
+datestamp = "1178977211"
+

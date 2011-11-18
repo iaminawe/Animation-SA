@@ -1,0 +1,244 @@
+# $Id: comment_notify.pot,v 1.1.2.1 2008/12/24 19:49:56 goofyx Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  comment_notify.module,v 1.8.2.24 2008/12/16 13:20:42 greggles
+#  comment_notify.install,v 1.4.2.4 2008/12/16 12:26:28 greggles
+#  comment_notify.info,v 1.2 2008/07/29 19:38:28 greggles
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-12-23 01:46+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: comment_notify.module:62
+msgid "Comment follow-up e-mail notification for anonymous and registered users."
+msgstr ""
+
+#: comment_notify.module:88;92
+msgid "Preview comment"
+msgstr ""
+
+#: comment_notify.module:89
+msgid "ATTENTION: Your comment is NOT YET posted - please click the post button to confirm your post"
+msgstr ""
+
+#: comment_notify.module:92;102
+msgid "Post comment"
+msgstr ""
+
+#: comment_notify.module:95
+msgid "Comment is not posted yet - please click post button to confirm your post"
+msgstr ""
+
+#: comment_notify.module:109;301;525
+msgid "No notifications"
+msgstr ""
+
+#: comment_notify.module:110;302;526
+msgid "For all comments on this post"
+msgstr ""
+
+#: comment_notify.module:111;303;527
+msgid "Just for replies to my comment"
+msgstr ""
+
+#: comment_notify.module:130
+msgid "Notify me of follow-up comments posted here"
+msgstr ""
+
+#: comment_notify.module:139
+msgid "Notify me of follow-up comments posted here."
+msgstr ""
+
+#: comment_notify.module:142
+msgid "You can change the default for this field in \"Comment follow-up notification settings\" on <a href=\"!uri\">your account edit page</a>."
+msgstr ""
+
+#: comment_notify.module:168;230
+msgid "Comment notify"
+msgstr ""
+
+#: comment_notify.module:169;178
+msgid "Configure settings for e-mails about new comments."
+msgstr ""
+
+#: comment_notify.module:176
+msgid "Settings"
+msgstr ""
+
+#: comment_notify.module:185
+msgid "Unsubscribe"
+msgstr ""
+
+#: comment_notify.module:188
+msgid "Unsubscribe an email from all notifications."
+msgstr ""
+
+#: comment_notify.module:197
+msgid "comment notify"
+msgstr ""
+
+#: comment_notify.module:226
+msgid "Your comment follow-up notification for this post was disabled. Thanks."
+msgstr ""
+
+#: comment_notify.module:227
+msgid "Disabled comment follow-up notification feature for this post."
+msgstr ""
+
+#: comment_notify.module:249
+msgid "If you want to subscribe to comments you must supply a valid e-mail address."
+msgstr ""
+
+#: comment_notify.module:284
+msgid "Comment follow-up notification settings"
+msgstr ""
+
+#: comment_notify.module:291
+msgid "Receive node follow-up notification e-mails"
+msgstr ""
+
+#: comment_notify.module:293
+msgid "Check this box to receive an e-mail notification for follow-ups on your nodes (pages, forum topics, etc). You can not disable notifications for individual threads."
+msgstr ""
+
+#: comment_notify.module:298
+msgid "Receive comment follow-up notification e-mails"
+msgstr ""
+
+#: comment_notify.module:305
+msgid "Check this box to receive e-mail notification for follow-up comments to comments you posted. You can later disable this on a post-by-post basis... so if you leave this to YES, you can still disable follow-up notifications for comments you don't want follow-up mails anymore - i.e. for very popular posts."
+msgstr ""
+
+#: comment_notify.module:346
+msgid "!site :: new comment for your post."
+msgstr ""
+
+#: comment_notify.module:422
+msgid "Notified: <a href=\"!url\">@user_mail</a>"
+msgstr ""
+
+#: comment_notify.module:426
+msgid "Notified @user_mail"
+msgstr ""
+
+#: comment_notify.module:431
+msgid "source comment"
+msgstr ""
+
+#: comment_notify.module:446
+msgid "Email to unsubscribe"
+msgstr ""
+
+#: comment_notify.module:450
+msgid "Unsubscribe this e-mail"
+msgstr ""
+
+#: comment_notify.module:472
+msgid "There were no active comment notifications for that email."
+msgstr ""
+
+#: comment_notify.module:495
+msgid "Anonymous commenters have the permission to subscribe to comments but cannot leave their contact infromation. You should either revoke the <a href=\"!permission-url\">permission for anonymous users</a>, or enable anonymous users to leave their contact information in the <a href=\"!comment-setting-url\">comment settings.</a>"
+msgstr ""
+
+#: comment_notify.module:501
+msgid "Content types to enable for comment notification"
+msgstr ""
+
+#: comment_notify.module:504
+msgid "Comments on content types enabled here will have the option of comment notification."
+msgstr ""
+
+#: comment_notify.module:509
+msgid "Available subscription modes"
+msgstr ""
+
+#: comment_notify.module:512
+msgid "Choose which notification subscription styles are available for users"
+msgstr ""
+
+#: comment_notify.module:514
+msgid "For all comments on a post"
+msgstr ""
+
+#: comment_notify.module:515
+msgid "Just for replies to a comment"
+msgstr ""
+
+#: comment_notify.module:521
+msgid "Default state for the notification selection box for anonymous users"
+msgstr ""
+
+#: comment_notify.module:533
+msgid "Default mail text for sending out notifications to commenters."
+msgstr ""
+
+#: comment_notify.module:534
+msgid "You can use the following variables to be replaced:\n      <ul>\n      <li>!commname = the username who posted the comment\n      <li>!commtext = the text of the posted comment\n      <li>!commsubj = the subject of the posted comment\n      <li>!comment_url = the full url of the post and comment - note: if you have paging enabled, this does not work correct - set your max comments per page so that all fit on one page or reverse order them\n      <li>!node_title = the title of the node that was commented on\n      <li>!node_teaser = the teaser of the node that was commented on\n      <li>!node_body = the body of the node that was commented on\n      <li>!mission = site_mission text\n      <li>!name = username receiving the alert\n      <li>!site = your site\n      <li>!uri = base_url of site\n      <li>!uri_brief = base_url of site w/o http\n      <li>!date = the current time\n      <li>!login_uri  uri to login the user\n      <li>!edit_uri = uri to edit user profile\n      <li>!link1 the QUICKLINK to disable future follow-up otifications for the user\n      </ul>"
+msgstr ""
+
+#: comment_notify.module:563
+msgid "Default mail text for sending out the notifications to node authors"
+msgstr ""
+
+#: comment_notify.module:564
+msgid "You can use the following variables to be replaced:\n      <ul>\n      <li>!commname = the username who posted the comment\n      <li>!commtext = the text of the posted comment\n      <li>!commsubj = the subject of the posted comment\n      <li>!comment_url = the full url of the post and comment - note: if you have paging enabled, this does not work correct - set your max comments per page so that all fit on one page or reverse order them\n      <li>!node_title = the title of the node that was commented on\n      <li>!node_teaser = the teaser of the node that was commented on\n      <li>!node_body = the body of the node that was commented on\n      <li>!mission = site_mission text\n      <li>!name = username receiving the alert\n      <li>!site = your site\n      <li>!uri = base_url of site\n      <li>!uri_brief = base_url of site w/o http\n      <li>!date = the current time\n      <li>!login_uri  uri to login the user\n      <li>!edit_uri = uri to edit user profile\n      </ul>"
+msgstr ""
+
+#: comment_notify.module:430;0
+msgid "comment_notify"
+msgstr ""
+
+#: comment_notify.module:475
+msgid "Email unsubscribed from 1 comment notification."
+msgid_plural "Email unsubscribed from @count comment notifications."
+msgstr[0] ""
+msgstr[1] ""
+
+#: comment_notify.module:155
+msgid "administer comment notify"
+msgstr ""
+
+#: comment_notify.module:155
+msgid "subscribe to comments"
+msgstr ""
+
+#: comment_notify.install:44
+msgid "Database modifications for the comment_notify module were unsuccessful. The modifications may need to be made by hand."
+msgstr ""
+
+#: comment_notify.install:70
+msgid "comment_notify module weight config update successfully."
+msgstr ""
+
+#: comment_notify.install:73
+msgid "comment_notify module weight config update unsuccessful."
+msgstr ""
+
+#: comment_notify.install:87
+msgid "comment_notify mail text migration successful."
+msgstr ""
+
+#: comment_notify.install:90
+msgid "comment_notify mail text migration unsuccessful."
+msgstr ""
+
+#: comment_notify.info:0
+msgid "Comment Notify"
+msgstr ""
+
+#: comment_notify.info:0
+msgid "Comment follow-up e-mail notification for anonymous as well as registered users."
+msgstr ""
+

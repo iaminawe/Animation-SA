@@ -1,0 +1,5 @@
+; $Id: uc_donate.info,v 1.1 2008/05/02 00:36:05 greenskin Exp $
+name = "Donate"
+description = "Provides a page with donation products."
+dependencies = uc_store uc_donation
+package = Ubercart - extra

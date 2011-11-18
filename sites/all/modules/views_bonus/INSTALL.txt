@@ -1,0 +1,4 @@
+Simply enable this module. Nothing will happen if you don't have views
+installed. Other modules may also be required to use some features.
+
+See README.txt for more.

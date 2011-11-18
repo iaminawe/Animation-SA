@@ -1,0 +1,118 @@
+<?php
+// $Id: ad_notify.install,v 1.1.2.2.2.6 2007/06/08 14:56:04 jeremy Exp $
+
+/**
+ * Ad_notify module database schema.
+ * Copyright (c) 2007 Jeremy Andrews <jeremy@kerneltrap.org>
+ * All rights reserved.
+ */
+function ad_notify_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+    /**
+     * Notifications can be granted to each owner of each ad.  The same owner
+     * can own multiple ads, and can have different notifications for each
+     * ad.  Notifications are defined by their type and an offset in seconds.
+     * For example, 'day, 0' would send a notification at the start of 
+     * every day, and 'expire, -86400' would send a notification one day
+     * before the ad expires.
+     */
+    db_query("CREATE TABLE {ad_notify} (
+      notid SERIAL NOT NULL PRIMARY KEY,
+      aid INT NOT NULL DEFAULT '0',
+      oid INT NOT NULL DEFAULT '0',
+
+      event VARCHAR(255) NOT NULL DEFAULT '',
+      delay INT NOT NULL DEFAULT '0',
+      queued INT NOT NULL DEFAULT '0',
+      time INT NOT NULL DEFAULT '0',
+      sent INT NOT NULL DEFAULT '0',
+      counter INT NOT NULL DEFAULT '0',
+      locked INT NOT NULL DEFAULT '0',
+      expire INT NOT NULL DEFAULT '0',
+      status INT NOT NULL DEFAULT '0',
+
+      address VARCHAR(255) NOT NULL DEFAULT '',
+      subject VARCHAR(255) NOT NULL DEFAULT '',
+      body TEXT NOT NULL DEFAULT '',
+
+      UNIQUE (oid, event, delay)
+      );");
+      break;
+
+    case 'mysql':
+    case 'mysqli':
+    default:
+
+    /**
+     * Notifications can be granted to each owner of each ad.  The same owner
+     * can own multiple ads, and can have different notifications for each
+     * ad.  Notifications are defined by their type and an offset in seconds.
+     * For example, 'day, 0' would send a notification at the start of 
+     * every day, and 'expire, -86400' would send a notification one day
+     * before the ad expires.
+     */
+    db_query("CREATE TABLE {ad_notify} (
+      notid INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+      aid INT(11) UNSIGNED NOT NULL DEFAULT '0',
+      oid INT(11) UNSIGNED NOT NULL DEFAULT '0',
+
+      event VARCHAR(255) NOT NULL DEFAULT '',
+      delay INT(11) SIGNED NOT NULL DEFAULT '0',
+      queued INT(11) SIGNED NOT NULL DEFAULT '0',
+      sent INT(11) SIGNED NOT NULL DEFAULT '0',
+      counter INT(7) UNSIGNED NOT NULL DEFAULT '0',
+      locked TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
+      expire TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
+      status TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
+
+      address VARCHAR(255) NOT NULL DEFAULT '',
+      subject VARCHAR(255) NOT NULL DEFAULT '',
+      body TEXT NULL,
+
+      PRIMARY KEY  (notid),
+      UNIQUE KEY  (oid, event, delay),
+      KEY  (oid),
+      KEY  (event),
+      KEY  (delay),
+      KEY  (queued),
+      KEY  (sent),
+      KEY  (status)
+    ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+  }
+  drupal_set_message(t('The ad_notify table has been created.'));
+}
+
+/**
+ * Allow complete uninstallation of the ad_notify module.
+ */
+function ad_notify_uninstall() {
+  // Drop all ad_notify module tables.
+  db_query('DROP TABLE {ad_notify}');
+}
+
+function ad_notify_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    default:
+      $ret[] = update_sql("ALTER TABLE {ad_notify} ADD aid INT(11) UNSIGNED NOT NULL DEFAULT '0'");
+  }
+  return $ret;
+}
+
+/**
+ * Convert to utf8 character set for all tables to allow for proper 
+ * internationalization.
+ */
+function ad_notify_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      break;
+    default:
+      $ret[] = update_sql("ALTER TABLE {ad_notify} CONVERT TO CHARACTER SET utf8");
+  }
+  return $ret;
+}
+
+?>

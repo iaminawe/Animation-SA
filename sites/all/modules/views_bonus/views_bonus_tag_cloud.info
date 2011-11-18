@@ -1,0 +1,10 @@
+name = Bonus: Tag cloud summary View
+description = "Displays summary View as a tag cloud."
+dependencies = views
+package = Views
+
+; Information added by drupal.org packaging script on 2007-08-16
+version = "5.x-1.2-alpha1"
+project = "views_bonus"
+datestamp = "1187292608"
+

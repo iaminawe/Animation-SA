@@ -1,0 +1,23 @@
+#views_bonus_summary_top {
+  clear:both;
+  margin:5px 0;
+  padding:5px;
+  border-bottom:1px #CCC solid;
+  text-align:center;
+  color:#666;
+  }
+#views_bonus_summary_top ul, #views_bonus_summary_top li {
+  margin:0;
+  padding:0;
+  }  
+#views_bonus_summary_top li {
+  display:inline;
+  }
+
+table.view-grid {
+  width: 100%;
+}
+
+.view-summary-panels_by_term table {
+  margin-bottom: 20px;
+}

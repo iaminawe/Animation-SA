@@ -1,0 +1,338 @@
+<?php
+// $Id: uc_attribute.install,v 1.9.2.10 2009/01/16 22:12:36 rszrama Exp $
+
+function uc_attribute_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysqli':
+    case 'mysql':
+      db_query("CREATE TABLE {uc_attributes} (
+        `aid` mediumint(9) NOT NULL auto_increment,
+        `name` varchar(255) NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        `required` tinyint(2) NOT NULL default 0,
+        `display` tinyint(2) NOT NULL default 1,
+        `description` varchar(255) NOT NULL,
+        PRIMARY KEY (`aid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_attribute_options} (
+        `aid` mediumint(9) NOT NULL,
+        `oid` mediumint(9) NOT NULL auto_increment,
+        `name` varchar(255) NOT NULL,
+        `cost` decimal(10,2) NOT NULL,
+        `price` decimal(10,2) NOT NULL,
+        `weight` float NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        PRIMARY KEY (`oid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_class_attributes} (
+        `pcid` varchar(32) NOT NULL,
+        `aid` mediumint(9) NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        `default_option` mediumint(9) NOT NULL default '0',
+        `required` tinyint(2) NOT NULL default 0,
+        `display` tinyint(2) NOT NULL default 1,
+        PRIMARY KEY (`pcid`, `aid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_class_attribute_options} (
+        `pcid` varchar(32) NOT NULL,
+        `oid` mediumint(9) NOT NULL,
+        `cost` decimal(10,2) NOT NULL,
+        `price` decimal(10,2) NOT NULL,
+        `weight` float NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        PRIMARY KEY (`pcid`,`oid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_product_attributes} (
+        `nid` mediumint(9) NOT NULL,
+        `aid` mediumint(9) NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        `default_option` mediumint(9) NOT NULL default '0',
+        `required` tinyint(2) NOT NULL default 0,
+        `display` tinyint(2) NOT NULL default 1,
+        PRIMARY KEY (`nid`, `aid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_product_options} (
+        `nid` mediumint(9) NOT NULL,
+        `oid` mediumint(9) NOT NULL,
+        `cost` decimal(10,2) NOT NULL,
+        `price` decimal(10,2) NOT NULL,
+        `weight` float NOT NULL,
+        `ordering` tinyint(2) NOT NULL default 0,
+        PRIMARY KEY  (`nid`,`oid`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+      db_query("CREATE TABLE {uc_product_adjustments} (
+        `nid` mediumint(9) NOT NULL,
+        `combination` varchar(255) NOT NULL,
+        `model` varchar(255) NOT NULL,
+        PRIMARY KEY  (`nid`, `combination`)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ;");
+    break;
+    case 'pgsql':
+      db_query("CREATE TABLE {uc_attributes} (
+        aid serial NOT NULL,
+        name varchar(255) NOT NULL default '',
+        ordering smallint NOT NULL default 0,
+        required smallint NOT NULL default 0,
+        display smallint NOT NULL default 1,
+        description varchar(255) NOT NULL default '',
+        PRIMARY KEY (aid)
+      );");
+      db_query("CREATE TABLE {uc_attribute_options} (
+        aid integer NOT NULL default 0,
+        oid serial NOT NULL,
+        name varchar(255) NOT NULL default '',
+        cost decimal(10,2) NOT NULL default 0.00,
+        price decimal(10,2) NOT NULL default 0.00,
+        weight float NOT NULL default 0.0,
+        ordering smallint NOT NULL default 0,
+        PRIMARY KEY (oid)
+      ) WITHOUT OIDS;");
+      db_query("CREATE TABLE {uc_class_attributes} (
+        pcid varchar(32) NOT NULL default '',
+        aid integer NOT NULL default 0,
+        ordering smallint NOT NULL default 0,
+        default_option integer NOT NULL default '0',
+        required smallint NOT NULL default 0,
+        display smallint NOT NULL default 1,
+        PRIMARY KEY (pcid, aid)
+      );");
+      db_query("CREATE TABLE {uc_class_attribute_options} (
+        pcid varchar(32) NOT NULL default '',
+        oid integer NOT NULL default 0,
+        cost decimal(10,2) NOT NULL default 0.00,
+        price decimal(10,2) NOT NULL default 0.00,
+        weight float NOT NULL default 0.0,
+        ordering smallint NOT NULL default 0,
+        PRIMARY KEY (pcid,oid)
+      ) WITHOUT OIDS;");
+      db_query("CREATE TABLE {uc_product_attributes} (
+        nid integer NOT NULL default 0,
+        aid integer NOT NULL default 0,
+        ordering smallint NOT NULL default 0,
+        default_option integer NOT NULL default 0,
+        required smallint NOT NULL default 0,
+        display smallint NOT NULL default 1,
+        PRIMARY KEY (nid, aid)
+      );");
+      db_query("CREATE TABLE {uc_product_options} (
+        nid integer NOT NULL default 0,
+        oid integer NOT NULL default 0,
+        cost decimal(10,2) NOT NULL default 0.00,
+        price decimal(10,2) NOT NULL default 0.00,
+        weight float NOT NULL default 0,
+        ordering smallint NOT NULL default 0,
+        PRIMARY KEY  (nid,oid)
+      ) WITHOUT OIDS;");
+      db_query("CREATE TABLE {uc_product_adjustments} (
+        nid integer NOT NULL default 0,
+        combination varchar(255) NOT NULL default '',
+        model varchar(255) NOT NULL default '',
+        PRIMARY KEY (nid, combination)
+      );");
+    break;
+  }
+}
+
+function uc_attribute_uninstall() {
+  db_query("DROP TABLE {uc_attributes}");
+  db_query("DROP TABLE {uc_attribute_options}");
+  db_query("DROP TABLE {uc_class_attributes}");
+  db_query("DROP TABLE {uc_class_attribute_options}");
+  db_query("DROP TABLE {uc_product_attributes}");
+  db_query("DROP TABLE {uc_product_options}");
+  db_query("DROP TABLE {uc_product_adjustments}");
+  variable_del('uc_attribute_option_price_format');
+}
+
+function uc_attribute_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_attributes} CHANGE name name varchar(255) NOT NULL");
+      $ret[] = update_sql("ALTER TABLE {uc_attributes_options} CHANGE name name varchar(255) NOT NULL");
+      $ret[] = update_sql("RENAME TABLE {uc_attributes_options} TO {uc_attribute_options}");
+      $ret[] = update_sql("ALTER TABLE {uc_product_adjustments} CHANGE model model varchar(255) NOT NULL");
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {uc_class_attributes} (
+        `pcid` mediumint(9) NOT NULL,
+        `aid` mediumint(9) NOT NULL,
+        `default_option` mediumint(9) NOT NULL default '0',
+        PRIMARY KEY (`pcid`, `aid`)
+      );");
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {uc_class_attribute_options} (
+        `pcid` mediumint(9) NOT NULL,
+        `oid` mediumint(9) NOT NULL,
+        `price` decimal(10,2) NOT NULL,
+        `weight` float NOT NULL,
+        PRIMARY KEY (`pcid`,`oid`)
+      );");
+    break;
+    case 'pgsql':
+      db_change_column($ret, 'uc_attributes', 'name', 'name', 'varchar(255)', array('not null' => true, 'default' => "''"));
+      db_change_column($ret, 'uc_attributes_options', 'name', 'name', 'varchar(255)', array('not null' => true, 'default' => "''"));
+      $ret[] = update_sql("ALTER TABLE {uc_attributes_options} RENAME TO {uc_attribute_options}");
+      db_change_column($ret, 'uc_product_adjustments', 'model', 'model', 'varchar(255)', array('not null' => true, 'default' => "''"));
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {uc_class_attributes} (
+        pcid integer NOT NULL default '0',
+        aid integer NOT NULL '0',
+        default_option integer NOT NULL default '0',
+        PRIMARY KEY (pcid, aid)
+      );");
+      $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {uc_class_attribute_options} (
+        pcid integer NOT NULL default '0',
+        oid integer NOT NULL default '0',
+        price decimal(10,2) NOT NULL,
+        weight float NOT NULL,
+        PRIMARY KEY (pcid,oid)
+      );");
+    break;
+  }
+
+  return $ret;
+}
+
+function uc_attribute_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_attributes} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER name");
+      $ret[] = update_sql("ALTER TABLE {uc_attribute_options} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER weight");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attributes} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER aid");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attribute_options} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER weight");
+      $ret[] = update_sql("ALTER TABLE {uc_product_attributes} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER aid");
+      $ret[] = update_sql("ALTER TABLE {uc_product_options} ADD COLUMN ordering tinyint(2) NOT NULL default 0 AFTER weight");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_attributes', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+      db_add_column($ret, 'uc_attribute_options', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+      db_add_column($ret, 'uc_class_attributes', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+      db_add_column($ret, 'uc_class_attribute_options', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+      db_add_column($ret, 'uc_product_attributes', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+      db_add_column($ret, 'uc_product_options', 'ordering', 'smallint', array('not null' => true, 'default' => 0));
+  }
+  return $ret;
+}
+
+function uc_attribute_update_3() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_class_attributes} CHANGE pcid pcid varchar(32) NOT NULL");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attribute_options} CHANGE pcid pcid varchar(32) NOT NULL");
+    break;
+    case 'pgsql':
+      db_change_column($ret, 'uc_class_attributes', 'pcid', 'pcid', 'varchar(32)', array('not null' => true, 'default' => "''"));
+      db_change_column($ret, 'uc_class_attribute_options', 'pcid', 'pcid', 'varchar(32)', array('not null' => true, 'default' => "''"));
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_4() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_product_adjustments} CHANGE combination combination varchar(255) NOT NULL");
+      $ret[] = update_sql("ALTER TABLE {uc_product_adjustments} ADD PRIMARY KEY  (`nid`, `combination`)");
+    break;
+    case 'pgsql':
+      db_change_column($ret, 'uc_product_adjustments', 'combination', 'combination', 'varchar(255)', array('not null' => true, 'default' => "''"));
+      $ret[] = update_sql("ALTER TABLE {uc_product_adjustments} ADD PRIMARY KEY  (nid, combiination)");
+  }
+  return $ret;
+}
+
+function uc_attribute_update_5() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_attribute_options} ADD COLUMN cost decimal(10,2) NOT NULL AFTER name");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attribute_options} ADD COLUMN cost decimal(10,2) NOT NULL AFTER oid");
+      $ret[] = update_sql("ALTER TABLE {uc_product_options} ADD COLUMN cost decimal(10,2) NOT NULL AFTER oid");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_attribute_options', 'cost', 'decimal(10,2)', array('not null' => true, 'default' => 0.0));
+      db_add_column($ret, 'uc_class_attribute_options', 'cost', 'decimal(10,2)', array('not null' => true, 'default' => 0.0));
+      db_add_column($ret, 'uc_product_options', 'cost', 'decimal(10,2)', array('not null' => true, 'default' => 0.0));
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_6() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_product_attributes} ADD COLUMN required tinyint(2) NOT NULL default 0 AFTER default_option");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_product_attributes', 'required', 'smallint', array('not null' => true, 'default' => 0));
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_7() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_class_attributes} ADD COLUMN required tinyint(2) NOT NULL default 0 AFTER default_option");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_class_attributes', 'required', 'smallint', array('not null' => true, 'default' => 0));
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_8() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'pgsql':
+      $ret[] = update_sql("ALTER TABLE {uc_attribute_options} SET WITHOUT OIDS");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attribute_options} SET WITHOUT OIDS");
+      $ret[] = update_sql("ALTER TABLE {uc_product_options} SET WITHOUT OIDS");
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_9() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_attributes} ADD COLUMN required tinyint(2) NOT NULL default 1");
+      $ret[] = update_sql("ALTER TABLE {uc_attributes} ADD COLUMN display tinyint(2) NOT NULL default 1");
+      $ret[] = update_sql("ALTER TABLE {uc_class_attributes} ADD COLUMN display tinyint(2) NOT NULL default 1");
+      $ret[] = update_sql("ALTER TABLE {uc_product_attributes} ADD COLUMN display tinyint(2) NOT NULL default 1");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_attributes', 'required', 'smallint', array('not null' => true, 'default' => 1));
+      db_add_column($ret, 'uc_attributes', 'display', 'smallint', array('not null' => true, 'default' => 1));
+      db_add_column($ret, 'uc_class_attributes', 'display', 'smallint', array('not null' => true, 'default' => 1));
+      db_add_column($ret, 'uc_product_attributes', 'display', 'smallint', array('not null' => true, 'default' => 1));
+    break;
+  }
+  return $ret;
+}
+
+function uc_attribute_update_10() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {uc_attributes} ADD COLUMN description varchar(255) NOT NULL");
+    break;
+    case 'pgsql':
+      db_add_column($ret, 'uc_attributes', 'description', 'varchar(255)', array('not null' => true, 'default' => "''"));
+    break;
+  }
+  return $ret;
+}

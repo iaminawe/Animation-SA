@@ -1,0 +1,60 @@
+ul.jcarousel_target {
+  padding-left: 0;
+}
+
+ul.jcarousel_target li {
+  width: 75px;
+  height: auto;
+  padding: 0;
+  background: none;
+}
+
+.hidden {
+  display: none;
+}
+
+/* block-nodecarousel-nc_test_access_2 */
+
+.jcarousel-container-horizontal {
+  width: 450px;
+  height: auto;
+  border: 1px solid black;
+  overflow: auto;
+}
+
+.jcarousel-clip-horizontal {
+  width: 395px;
+  height: auto;
+  margin: 5px auto;
+  clear: both;
+}
+
+.jcarousel-clip-vertical {
+  width: 100%;
+  height: 280px;
+  clear: both;
+}
+
+div.jcarousel-prev {
+  float: left;
+  cursor: pointer;
+}
+
+div.jcarousel-next {
+  float: right;
+  cursor: pointer;
+}
+
+div.jcarousel-last {
+  float: right;
+  clear: right;
+  cursor: pointer;
+}
+
+div.jcarousel-first {
+  cursor: pointer;
+}
+
+li.index_control_item.visible {
+  font-weight: bold;
+}

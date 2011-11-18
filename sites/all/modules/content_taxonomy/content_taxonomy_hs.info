@@ -1,0 +1,11 @@
+; $Id: content_taxonomy_hs.info,v 1.1.2.1 2008/07/07 09:10:24 mh86 Exp $
+name = Hierarchical Select Content Taxonomy
+description = Use Hierarchical Select as the widget for Content Taxonomy CCK fields.
+dependencies = hierarchical_select content_taxonomy hs_taxonomy
+package = CCK
+
+; Information added by drupal.org packaging script on 2008-07-07
+version = "5.x-1.x-dev"
+project = "content_taxonomy"
+datestamp = "1215432192"
+

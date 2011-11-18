@@ -1,0 +1,30 @@
+--- fieldgroup.module.orig	2007-03-27 05:27:42.000000000 -0700
++++ fieldgroup.module	2007-10-12 10:38:47.000000000 -0700
+@@ -392,15 +392,18 @@ function fieldgroup_nodeapi(&$node, $op,
+         $node->content[$group_name] = $element;
+ 
+         $visible = FALSE;
+-        foreach ($group['fields'] as $field_name => $field) {
+-          if (isset($node->content[$field_name])) {
+-            $node->content[$group_name][$field_name] = $node->content[$field_name];
+-            if ($node->content[$field_name]['#access'] && !empty($node->content[$field_name]['#value'])) {
+-              $visible = TRUE;
+-            }
+-            unset($node->content[$field_name]);
+-          }
+-        }
++		// entered a test to see if $group['fields'] was an array, to avoid getting an error when other modules pass poor arguements
++		if (is_array($group['fields'])){
++			foreach ($group['fields'] as $field_name => $field) {
++			  if (isset($node->content[$field_name])) {
++				$node->content[$group_name][$field_name] = $node->content[$field_name];
++				if ($node->content[$field_name]['#access'] && !empty($node->content[$field_name]['#value'])) {
++				  $visible = TRUE;
++				}
++				unset($node->content[$field_name]);
++			  }
++			}
++		}
+         if (!$visible) {
+           // Hide the group, because the fields are empty or not accessible.
+           unset($node->content[$group_name]);

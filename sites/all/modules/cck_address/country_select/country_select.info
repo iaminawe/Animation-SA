@@ -1,0 +1,7 @@
+; $Id: country_select.info,v 1.1 2009/05/03 03:00:35 newzeal Exp $
+core          = "5.x"
+name          = "Country Select"
+package 	  = CCK
+dependencies  = cck_address
+description   = "Activeselect select form and country and province/state data for cck address module"
+

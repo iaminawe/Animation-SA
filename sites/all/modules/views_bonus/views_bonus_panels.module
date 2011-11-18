@@ -1,0 +1,283 @@
+<?php
+// $Id: views_bonus_panels.module,v 1.1.2.6 2008/05/10 15:21:42 dmitrig01 Exp $
+
+function views_bonus_panels_views_style_plugins() {
+  $items['panels_threecol'] = array(
+    'name' => t('Panels: Teasers, 3 columns'),
+    'theme' => 'views_bonus_panels_threecol',
+    'summary_theme' => 'views_summary',
+  );
+  $items['panels_threecol_stk'] = array(
+    'name' => t('Panels: Teasers, 1 top + 3 columns'),
+    'theme' => 'views_bonus_panels_threecol_stacked',
+    'summary_theme' => 'views_summary',
+  );
+  $items['panels_twocol'] = array(
+    'name' => t('Panels: Teasers, 2 columns'),
+    'theme' => 'views_bonus_panels_twocol',
+    'summary_theme' => 'views_summary',
+  );
+  $items['panels_twocol_stk'] = array(
+    'name' => t('Panels: Teasers, 1 top + 2 columns'),
+    'theme' => 'views_bonus_panels_twocol_stacked',
+    'summary_theme' => 'views_summary',
+  );
+  $items['panels_threecol_term'] = array(
+    'name' => t('Panels: Teasers, By Term, 3 columns'),
+    'theme' => 'views_view_teasers',
+    'summary_theme' => 'views_bonus_panels_byterm_summary',
+  );
+  return $items;
+}
+function theme_views_bonus_panels_inversion($items, $cols, $inverted) {
+  $content = array();
+
+  if (!is_array($items) || !count($items)) {
+    return array();
+  }
+
+  if ($inverted == false) {
+    $count = 0;
+    foreach ($items as $item) {
+      switch ($count % $cols) {
+        case 0:
+          $section = 'left';
+          break;
+        case 1:
+          if($cols == 2) {
+            $section = 'right';
+          }
+          else {
+            $section = 'middle';
+          }
+          break;
+        case 2:
+          $section = 'right';
+          break;
+      }
+      $content[$section] .= $item;
+      $count++;
+    }
+  }
+  else {
+    $max = (int) count($items) / $cols;
+    $count = 0;
+    $section = 'left';
+    foreach ($items as $item) {
+      if($count >= $max) {
+        switch($section) {
+          case 'left':
+            $section = 'middle';
+            break;
+          case 'middle':
+            if($cols == 3) {
+              $section = 'right';
+            }
+            break;
+          case 'right':
+            // Let all extra nodes go into the right column. 
+            // Reset count to 0 to prevent unneed processing,
+            // because it will execute this statement for no reason
+            // if it's not reset.
+        }    
+        $count = 0;
+      }
+      $content[$section] .= $item;
+      $count++;
+    }
+  }
+  return $content;
+}
+
+
+function theme_views_bonus_panels_layout_engine($nodes, $config, $panel_name, $cols, $stacked = false) {
+  if ($stacked) { 
+    $top_node = array_shift($nodes);
+    $top_node = node_view(node_load($top_node->nid), $config['top_teaser'], false, $config['top_links']);
+  }
+  foreach ($nodes as $node) {
+    $pre_content[] = node_view(node_load($node->nid), $config['teasers'], false, $config['links']);
+  }
+  
+  $content = theme('views_bonus_panels_inversion', $pre_content, $cols, $config['inverted']);
+  if ($stacked) {
+    $content['top'] = $top_node;
+  }
+  return panels_print_layout($panel_name, $content);
+}
+
+/*
+ * Display a teaser list in three columns
+ *
+ * Because views doesn't currently support configuration options for
+ * plugins, the best way to make configuration changes here is 
+ * to override the theme.
+ */
+function theme_views_bonus_panels_threecol_config($name) {
+  return array(
+    'teasers'  => true, 
+    'links'    => true, 
+    'inverted' => false,
+  );
+}
+function theme_views_bonus_panels_threecol($view, $nodes, $type) {
+  $config = theme('views_bonus_panels_threecol_config', $view);
+
+  return theme('views_bonus_panels_layout_engine', $nodes, $config, 'threecol_33_34_33', 3);
+}
+
+
+/**
+ * Configuration for the three column stacked view
+ */
+function theme_views_bonus_panels_threecol_stacked_config($name) {
+  return array(
+    'top_teaser' => false, // Should the top node be a teaser?
+    'top_links'  => true, // Should the top node have links (like "read more" and "add new comment")?
+    'teasers'    => true, // Should other nodes be shown in teaser form?
+    'links'      => true, // Should the other nodes have links?
+    'inverted'   => false, 
+  );
+}
+
+function theme_views_bonus_panels_threecol_stacked($view, $nodes, $type) {
+  $config = theme('views_bonus_panels_threecol_stacked_config', $view);
+
+  return theme('views_bonus_panels_layout_engine', $nodes, $config, 'threecol_33_34_33_stacked', 3, true);
+}
+
+function theme_views_bonus_panels_twocol_config($name) {
+  return array(
+    'teasers'  => true,
+    'links'    => true, 
+    'inverted' => false, 
+  );
+}
+
+function theme_views_bonus_panels_twocol($view, $nodes, $type) {
+  $config = theme('views_bonus_panels_twocol_config', $view);
+
+  return theme('views_bonus_panels_layout_engine', $nodes, $config, 'twocol', 2);
+}
+
+/**
+ * Configuration for the two column stacked view
+ */
+function theme_views_bonus_panels_twocol_stacked_config($name) {
+  return array(
+    'top_teaser' => false, // Should the top node be a teaser?
+    'top_links'  => true, // Should the top node have links (like "read more" and "add new comment")?
+    'teasers'    => true, // Should other nodes be shown in teaser form?
+    'links'      => true, // Should the other nodes have links?
+    'inverted'   => false, 
+  );
+}
+
+function theme_views_bonus_panels_twocol_stacked($view, $nodes, $type) {
+  $config = theme('views_bonus_panels_twocol_stacked_config', $view);
+  
+  return theme('views_bonus_panels_layout_engine', $nodes, $config, 'twocol_stacked', 2, true);
+}
+
+
+
+/*
+ * Panels: Teasers, By Term, 3 columns
+ * Inspired by the the 3 column classifieds in the middle section of http://sfbay.craigslist.org/
+ */
+function theme_views_bonus_panels_byterm_summary($view) {
+  drupal_add_css(drupal_get_path('module', 'views_bonus_panels_threecol_term') .'/views_bonus.css');
+  // Argument 0 must be a vocabulary ID
+  $vid = $view->args[0];
+  $tree = taxonomy_get_tree($vid);
+  // group terms with their parent
+  foreach ($tree as $term) {
+    $cnt = taxonomy_term_count_nodes($term->tid);
+    if ($term->depth > 1) {
+      $prefix = $prefix = str_repeat('--', $term->depth-1) .'&nbsp;';
+    }
+    $txt = array($prefix . l($term->name, "$view->real_url/$term->tid") ."&nbsp;($cnt)"); 
+    if ($term->depth == 0) {
+      $parent_tid = $term->tid;
+      $groups[$parent_tid]['header'] = $txt;
+    }
+    else {
+      $groups[$parent_tid]['rows'][] = $txt;
+    }
+  }
+  
+  // Render the groups into tables spread across 3 columns
+  $content = array();
+  foreach ($groups as $group) {
+    $content[] = theme('table', $group['header'], $group['rows']);
+  }
+  return panels_print_layout('threecol_33_34_33', $content);
+}
+
+
+function views_bonus_panels_views_default_views() {
+  $view = new stdClass();
+  $view->name = 'panels_by_term';
+  $view->description = t('Bonus Pack: Standard taxonomy presentation except the summary view presents terms within narrow tables in a 3 col layout.');
+  $view->access = array();
+  $view->view_args_php = '';
+  $view->page = TRUE;
+  $view->page_title = 'panels_by_term';
+  $view->page_header = '';
+  $view->page_header_format = '1';
+  $view->page_footer = '';
+  $view->page_footer_format = '1';
+  $view->page_empty = '';
+  $view->page_empty_format = '1';
+  $view->page_type = 'panels_threecol_term';
+  $view->url = 'panels_by_term';
+  $view->use_pager = TRUE;
+  $view->nodes_per_page = '10';
+  $view->sort = array(
+    array(
+      'tablename' => 'node',
+      'field' => 'sticky',
+      'sortorder' => 'DESC',
+      'options' => '',
+    ),
+    array(
+      'tablename' => 'node',
+      'field' => 'created',
+      'sortorder' => 'DESC',
+      'options' => '',
+    ),
+  );
+  $view->argument = array(
+    array(
+      'type' => 'vocid',
+      'argdefault' => '1',
+      'title' => '%1',
+      'options' => '',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+    array(
+      'type' => 'taxid',
+      'argdefault' => '6',
+      'title' => '%1 - %2',
+      'options' => '9',
+      'wildcard' => '',
+      'wildcard_substitution' => '',
+    ),
+  );
+  $view->field = array(
+    array(
+      'tablename' => 'node',
+      'field' => 'title',
+      'label' => '',
+      'handler' => 'views_handler_field_nodelink',
+      'options' => 'link',
+    ),
+  );
+  $view->filter = array();
+  $view->exposed_filter = array();
+  $view->requires = array('node');
+  $views[$view->name] = $view;
+
+  return $views;
+}

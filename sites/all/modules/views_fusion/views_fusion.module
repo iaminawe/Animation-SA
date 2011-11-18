@@ -1,0 +1,487 @@
+<?php
+// $Id: views_fusion.module,v 1.7.2.7 2007/05/12 13:34:57 fago Exp $
+
+/**
+ * @file
+ * Provides fusing of multiple views.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function views_fusion_help($section) {
+  switch ($section) {
+    case 'admin/build/views/fusion':
+      return '<p>'. t('This screen allows the fusion of two views.  Select the main view you want to use and then select a second view you would like to "fuse" with the first view.  Fields, filters and sorts from the fused view will be intelligently merged into the primary view.') .'</p>';
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function views_fusion_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+        'path' => 'admin/build/views/fusion',
+        'title' => t('Fusion'),
+        'callback' => 'drupal_get_form',
+        'callback arguments' => array('views_fusion_admin'),
+        'access' => user_access('administer views'),
+        'type' => MENU_LOCAL_TASK,
+    );
+  }
+  return $items;
+}
+
+
+function views_fusion_admin() {
+
+  $tables = _views_fusion_get_tables();
+  
+  if (!$tables['fields']) {
+    return array('msg' => array('#value' => t('If you want to use views fusion you have to activate an appropriate node relation module, e.g. the nodefamily module.')));
+  }
+  $form = array();
+  $form['overview'] = array('#type' => 'markup', '#value' => views_fusion_overview());
+
+  $form['add'] = array('#type' => 'fieldset', '#title' => t('Add another views fusion'));
+  $form['add']['vid'] = array(
+    '#type' => 'select',
+    '#title' => t('primary view'),
+    '#options' => _views_fusion_get_views_list(),
+    '#required' => true,
+  );
+  $form['add']['mvid'] = array(
+    '#type' => 'select',
+    '#title' => t('fuse with view'),
+    '#options' => _views_fusion_get_views_list(),
+    '#required' => true,
+  );
+  $form['add']['uses'] = array(
+    '#type' => 'select',
+    '#title' => t('using'),
+    '#options' => $tables['titles'],
+    '#required' => true,
+  );  
+  $form['add']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add fusion'),
+    '#weight' => 10,
+  );
+
+  return $form;      
+}
+
+
+function _views_fusion_get_views_list() {
+
+  $result = db_query("SELECT vid, name FROM {view_view} ORDER BY name");
+  
+  $views = array();
+  while ($row = db_fetch_object($result)) {
+    $views[$row->vid] = $row->name;
+  } 
+  return $views;
+}
+
+/*
+ * Return an array of all tables that can be used for fusing views.
+ * 
+ * To get their tables listed other modules have to implement hook_views_fusion(), which has to
+ * return an array where the key is the table name and the value is an array containing the values
+ * for a title and the field, which is used to join to the fused view's node table.
+ * 
+ * These tables must be described through hook_views_tables(), so that it's possible to join them.
+ */
+
+function _views_fusion_get_tables($sort_by_table = false) {
+  
+  if ($sort_by_table) {
+    static $by_table = array();
+
+    if ($by_table) {
+      return $by_table;
+    }
+    $by_table = module_invoke_all('views_fusion');
+    return $by_table;
+  }
+  
+  static $tables = array();
+  
+  if ($tables) {
+    return $tables;
+  }
+  
+  foreach (module_invoke_all('views_fusion') as $table => $array) {
+    $titles[$table] = $array['title'];
+    $fields[$table] = $array['field'];
+  }
+  $tables = array('titles' => $titles, 'fields' => $fields);
+
+  return $tables;
+}
+
+
+
+function views_fusion_admin_validate($form_id, &$form_values, &$form) {
+
+  if ($form_values['vid'] == $form_values['mvid']) {
+    form_set_error('mvid', t('You have to select two different views.'));
+  }  
+
+  $fusions = _views_fusion_load(0);
+  
+  if ($fusions[$form_values['mvid']]) {
+    foreach ($fusions[$form_values['mvid']] as $fusion) {
+      if ($fusion->vid == $form_values['vid']) {
+        form_set_error('mvid', 'This fusion already exists.');
+      }
+    }
+  }
+  views_fusion_check_cycle($form_values['vid'], $form_values['mvid'], $fusions);
+  
+}
+
+/*
+ * Determins if adding the fusion would result in a cycle
+ * @param $vid The vid
+ * @param $mvid The mvid
+ * @param $fusions A array of all fusions sorted by mvid
+ */
+function views_fusion_check_cycle($vid, $mvid, &$fusions) {
+
+  if ($fusions[$vid]) {
+    foreach($fusions[$vid] as $fusion) {
+      if ($mvid == $fusion->vid) {
+        form_set_error('vid', t('You must not add this fusion as it would result in a loop.'));
+      }
+      else {
+        views_fusion_check_cycle($fusion->vid, $mvid, $fusions);
+      }
+    }
+  }
+}
+
+function views_fusion_admin_submit($form_id, &$form_values) {
+  db_query("INSERT INTO {views_fusion} (vid, mvid, uses) VALUES(%d, %d, '%s')", 
+    $form_values['vid'], $form_values['mvid'], $form_values['uses']);
+
+  //reset caches
+  views_invalidate_cache();
+  _views_fusion_load(0, TRUE);
+
+  //we need to prevent caching of the primary view
+  $view1 = views_get_view($form_values['vid']);
+  $view1->no_cache = TRUE;
+  _views_save_view($view1);
+}
+
+
+/*
+ * Displays existing fusions in a table
+ */
+function views_fusion_overview() {
+
+  $result = db_query("SELECT vf.*, v1.name, v2.name as mname FROM {views_fusion} vf ".
+                     "LEFT JOIN {view_view} v1 ON vf.vid = v1.vid ".
+                     "LEFT JOIN {view_view} v2 ON vf.mvid = v2.vid");
+  
+  if (!db_num_rows($result)) {
+      return '';
+  }
+  
+  if (arg(4) && arg(5)) {
+      //delete the fusion
+      db_query("DELETE FROM {views_fusion} WHERE vid=%d AND mvid=%d", arg(4), arg(5));
+      views_invalidate_cache();
+      drupal_set_message('Your fusion has been deleted.');
+      drupal_goto('admin/build/views/fusion');
+  }
+  
+  $header = array(t('primary view'), t('fused view'), t('using'), '');
+  $rows = array();
+  $tables = _views_fusion_get_tables();
+  
+  while ($fusion = db_fetch_object($result)) {
+    $rows[] = array($fusion->name, $fusion->mname, $tables['titles'][$fusion->uses], 
+                    l(t('delete'),'admin/build/views/fusion/' . $fusion->vid .'/'. $fusion->mvid));
+  }  
+  
+  return theme('table', $header, $rows, array('class' => 'views_fusion'));
+}
+
+/*
+ * Returns a array of all fusions sorted by vids ($vid = 1) or by mvids ($vid = 0)
+ */
+function _views_fusion_load($vid = 1, $reset = FALSE) {
+  static $fusions = array();
+  
+  if ($reset) {
+    $fusions = array();
+  }
+
+  if(!$fusions[$vid]) {
+    $result = db_query("SELECT * FROM {views_fusion}");
+    
+    $fusions[$vid] = array();
+    while ($fusion = db_fetch_object($result)) {
+      if ($vid) {
+        $fusions[$vid][$fusion->vid][] = $fusion;
+      }
+      else {
+        $fusions[$vid][$fusion->mvid][] = $fusion;
+      }
+    }
+  }
+  return $fusions[$vid];
+}
+
+/*
+ * returnes a table alias prefix to use
+ * 
+ * @param $fused If the alias 'll be used for aliasing the fused view
+ */
+function _views_fusion_get_alias(&$fusion, $fused = true) {
+  if ($fused) {
+    return 'v' . $fusion->mvid;
+  }
+  else {
+    return 'v' . $fusion->vid;
+  }
+}
+
+/*
+ * Implementation of hook_views_tables()
+ */
+function views_fusion_views_tables() {
+  
+  $fusion_tables = _views_fusion_get_tables();
+  $tables = array();
+  
+  $fusions = _views_fusion_load(0);
+  
+  foreach($fusions as $array) {
+    foreach($array as $fusion) {
+      $tables[_views_fusion_get_alias($fusion) .'node'] = array(
+        'name' => 'node',
+        'provider' => 'internal', // won't show up in external list.
+        'join' => array(
+          'left' => array(
+            'table' => $fusion->uses,
+            'field' => $fusion_tables['fields'][$fusion->uses],
+            'alias' => $fusions[$fusion->vid] ? _views_fusion_get_alias($fusion, false) : '',
+          ),
+          'right' => array(
+            'field' => 'nid'
+          ),
+        )
+      );
+    }
+  }
+  return $tables;  
+}
+
+
+/*
+ * Implementation of hook_views_query_alter()
+ */
+function views_fusion_views_query_alter(&$query, &$view, &$summary, &$level) {
+  
+  $table_data = _views_get_tables();
+  $fusions = _views_fusion_load();
+  
+  //care for a appropriate filter offset for all fused views
+  static $filter_offset = -1;
+  static $arg_offset = 0;
+  $arg_offset += count($view->argument);
+
+  if ($fusions[$view->vid]) {
+    if ($filter_offset == -1) { //init
+      $view->display = TRUE; //remember, that this view is the view, which is going to be built primary
+      $filter_offset = is_array($view->exposed_filter) ? count($view->exposed_filter) : 0;
+    }
+
+    foreach ($fusions[$view->vid] as $fusion) {
+
+      $fuse_view = views_load_view($fusion->mvid);
+      $fuse_view->use_alias_prefix = _views_fusion_get_alias($fusion);
+
+      //take care of the filter offsets
+      $fuse_view->exposed_filter_offset = $filter_offset;
+      if (is_array($fuse_view->exposed_filter)) {
+        $filter_offset += count($fuse_view->exposed_filter);
+      }
+
+      //set page type to table view, so that the fields get built
+      $fuse_view->page = 1;
+      $fuse_view->page_type = 'table';
+      
+      // call this hook for the fused view and set the query object reference
+      $info = _views_build_query($fuse_view, $view->args, views_get_filter_values());
+      $fuse_query = &$fuse_view->the_query;
+
+      //remember if a view wants to display a summary
+      if ($info['summary'] && !$summary) {
+        $summary = $info['summary'];
+        $level = $arg_offset - count($fuse_view->argument) + $info['level'];
+      }
+      
+      //clear the alias_prefix for the add_table calls, we have to care for each prefix ourself
+      $saved_alias_prefix = $query->use_alias_prefix;
+      $query->use_alias_prefix = '';
+      
+      //add the node relation table
+      $joininfo = $table_data[$fusion->uses]['join'];
+      $joininfo['left']['alias'] = $view->use_alias_prefix;
+      //remember how often this table has been added
+      $query->tables[$fusion->uses] += $fuse_query->tables[$fusion->uses];
+      $num = $query->add_table($fusion->uses, false, 1, $joininfo); 
+      
+      //join new node table for the fused view
+      $joininfo = $table_data[$fuse_view->use_alias_prefix . 'node']['join'];
+      if ($num > 1) {
+        $joininfo['left']['table'] = $joininfo['left']['table'] . $num;
+      }
+      $joininfo['left']['alias'] = '';
+      
+      $query->add_table($fuse_view->use_alias_prefix . 'node', false, 1, $joininfo);
+      
+      //restore the alias_prefix
+      $query->use_alias_prefix = $saved_alias_prefix;
+      
+      //merge query and fields
+      views_fusion_query_merge($query, $fuse_query);
+      views_fusion_views_merge($view, $fuse_view);
+
+      if (is_array($view->table_header) && is_array($fuse_view->table_header)) {
+        //reconstruct table headers with the merged field information
+        $view->table_header = _views_construct_header($view, _views_get_fields());
+        $query->set_header($view->table_header);
+      }
+    }
+    if ($view->display) {
+      $filter_offset = -1; //reset offsets for the next (new) view
+      $arg_offset = 0;
+    }
+  }
+  
+  if ($filter_offset != -1) {
+    //this view will be fused
+    $query->set_header(array()); //clear header, so that no custom orderby clause is going to be generated for fused views
+    $view->the_query = &$query;  //save query object reference
+    //prevent the application of a possible distinct to the query, this has to do the primary query
+    $query->no_distinct = TRUE;
+  }
+}
+
+/*
+ * Merges two views query objects
+ * 
+ * The second object will be merged into the first. 
+ * Table aliases have to be unique for both queries and the second query object mustn't contain 
+ * any group by clauses.
+ */
+function views_fusion_query_merge(&$query1, &$query2) {
+  
+  if ($query2->groupby && !$query1->groupby) {
+    $query1->groupby = $query2->groupby;
+  }
+  else {
+    //add an alias to the nid field
+    $query2->fields[0] .= ' AS '. $query2->use_alias_prefix . 'node_nid';
+  }
+  
+  //if query2 is set to be distinct, set query1 to distinct
+  if ($query2->distinct) {
+    $query1->set_distinct();
+  } 
+  
+  $query1->tablequeue = array_merge($query1->tablequeue, $query2->tablequeue);
+  $query1->joins = array_merge($query1->joins, $query2->joins);
+  $query1->fields = array_merge($query1->fields, $query2->fields);
+  $query1->where = array_merge($query1->where, $query2->where); 
+  $query1->where_args = array_merge($query1->where_args, $query2->where_args);
+  $query1->orderby = array_merge($query1->orderby, $query2->orderby);  
+}
+
+/*
+ * Merges the fields and exposed filters of the two views, so that view1 contains all
+ */
+function views_fusion_views_merge(&$view1, &$view2) {
+  
+  foreach ($view2->field as $field) {
+    //each field must be prefixed once appropriate to its view
+    if ($view2->use_alias_prefix && !$field['prefixed']) {
+      //we don't prefix the fullname, as it is needed unprefixed for retrieving the fieldinfo
+      $field['id'] = $view2->use_alias_prefix . $field['id'];
+      $field['queryname'] = $view2->use_alias_prefix . $field['queryname'];
+      $field['tablename'] = $view2->use_alias_prefix . $field['tablename'];
+      $field['prefixed'] = TRUE;
+      //save the prefix so that field handler can use it
+      $field['alias_prefix'] = $view2->use_alias_prefix;
+    }
+    $view1->field[] = $field;
+  }
+  
+  $view1->exposed_filter = array_merge($view1->exposed_filter, $view2->exposed_filter);
+  $view1->argument = array_merge($view1->argument, $view2->argument);
+}
+
+
+
+
+
+/*
+ * Implementation of hook_form_alter().
+ */
+function views_fusion_form_alter($form_id, &$form) { 
+
+  if ($form_id == 'views_edit_view') {
+    $vid = $form['vid']['#value'];
+    
+    if (!views_fusion_check_cacheable($vid)) {
+      //prevent caching
+      $form['basic-info']['no_cache'] = array('#type' => 'hidden', '#default_value' => 1);
+    }
+  }
+  if ($form_id == 'views_delete_confirm') {
+    $form['#submit']['views_fusion_delete_submit'] = array();
+  }
+}
+
+
+/*
+ * The view gets deleted, so delete all according fusions
+ */
+function views_fusion_delete_submit($form_id, &$form_values) {
+  
+  $vid = $form_values['vid'];
+
+  db_query("DELETE FROM {views_fusion} WHERE vid=%d OR mvid=%d", $vid, $vid);
+  views_invalidate_cache();
+}
+
+
+/*
+ * Determines if the the view is fused with views that are not cacheable
+ */
+function views_fusion_check_cacheable($vid) {
+
+  $fusions = _views_fusion_load();
+  
+  if ($fusions[$vid]) {
+    foreach ($fusions[$vid] as $fusion) {
+      //is fused view cacheable?
+      $view = views_get_view($fusion->mvid);
+      if (!$view->is_cacheable) {
+        return false;   
+      }
+      else if (!views_fusion_check_cacheable($fusion->mvid)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}

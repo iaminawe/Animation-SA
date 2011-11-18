@@ -1,0 +1,141 @@
+# $Id: es.po,v 1.1.2.4 2007/06/09 14:44:04 gusgsm1 Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from file: sitemenu.module,v 1.23.2.15 2007/05/01 20:12:11 kbahey
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Module sitemenu Drupal 5.1\n"
+"POT-Creation-Date: 2007-06-09 10:12-0400\n"
+"PO-Revision-Date: 2007-06-09 16:10+0100\n"
+"Last-Translator: Gustavo <gusgsm@gmail.com>\n"
+"Language-Team: gusgsm <gusgsm@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-Language: Spanish\n"
+"X-Poedit-Country: SPAIN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: sitemenu.module:26
+msgid "This module provides a site map based on the hierarchy of the site's taxonomy. The site map page shows all vocabularies, terms, and recent nodes within each term. It also provides a block that can be used in the side bar as a navigation menu."
+msgstr "Este módulo construye un mapa del sitio basándose en la jerarquía de las categorías taxonómicas del sitio. El mapa del sitio muestra los vocabularios, términos y nodos recientes dentro de cada término. También construye un bloque que se puede usar en la zona lateral como menú de navegación."
+
+#: sitemenu.module:39
+msgid "Site map"
+msgstr "Mapa del sitio"
+
+#: sitemenu.module:48
+msgid "Sitemenu"
+msgstr "Mapa del sitio"
+
+#: sitemenu.module:49
+msgid "Settings for the sitemenu module."
+msgstr "Construir y configurar un mapa de este sitio web basándose en la taxonomía."
+
+#: sitemenu.module:68
+msgid "none"
+msgstr "ninguno"
+
+#: sitemenu.module:75
+msgid "Description"
+msgstr "Descripción"
+
+#: sitemenu.module:76
+msgid "This is the site map page."
+msgstr "Esta página es el mapa de este sitio web."
+
+#: sitemenu.module:79
+msgid "This text will be displayed at the top of the site menu page"
+msgstr "Este será el texto que se vea en la zona superior de la página con el mapa del sitio"
+
+#: sitemenu.module:84
+msgid "Omitted vocabularies"
+msgstr "Vocabularios omitidos"
+
+#: sitemenu.module:88
+msgid "Select vocabularies which should be <b>omitted</b> from listings."
+msgstr "Seleccione los vocabularios que deben <strong>omitirse</strong> de los listados."
+
+#: sitemenu.module:93
+msgid "Navigation link text"
+msgstr "Texto del enlace de navegación"
+
+#: sitemenu.module:95;369
+msgid "site map"
+msgstr "mapa del sitio"
+
+#: sitemenu.module:98
+msgid "The text in the navigation link which points to the site menu page."
+msgstr "El texto que tendrá el enlace de navegación que apunta a la página con el mapa del sitio web."
+
+#: sitemenu.module:103
+msgid "Block title text"
+msgstr "Texto del título del bloque"
+
+#: sitemenu.module:105;321
+msgid "Menu"
+msgstr "Menú"
+
+#: sitemenu.module:108
+msgid "If configured as a block, this text shows as the block title."
+msgstr "Si se ha configurado como bloque, éste será el texto que se verá como título del bloque."
+
+#: sitemenu.module:113
+msgid "Show number of nodes for each term"
+msgstr "Mostrar el número de nodos asignado a cada término"
+
+#: sitemenu.module:119
+msgid "Cache the taxonomy tree for performance."
+msgstr "Activar caché del árbol de categorías para mejorar el rendimiento."
+
+#: sitemenu.module:121
+msgid "This reduces the load of generating the site menu block for every page, as well as the site map page. It may be suitable only for sites with one language. In some cases, using the i18n module is incompatible with this caching option. In this case, uncheck this box."
+msgstr "Esto reduce la carga que implica generar para cada página el bloque del mapa del sitio y la misma página con el mapa del sitio. Puede ser conveniente sólo en aquellos sitios que tengan sólo un idioma activo. En algunos casos, cuando se usa el módulo i18n, la opción de caché es incompatible. En esos casos, desactive esta opción."
+
+#: sitemenu.module:126
+msgid "Show Author and number of Comments (in mousover)"
+msgstr "Mostrar autor y número de comentarios al pasar el cursor por encima"
+
+#: sitemenu.module:132
+msgid "Show vocabulary title in sitemenu block"
+msgstr "Mostrar el título del vocabulario en el bloque de mapa del sitio"
+
+#: sitemenu.module:138
+msgid "Number of nodes to show"
+msgstr "Número de nodos que se mostrarán"
+
+#: sitemenu.module:143
+msgid "Number of nodes to show per taxonomy term. Set to 0 if you do not want nodes to listed."
+msgstr "Número de nodos que se mostrarán por término de taxonomía. Déjelo en \"0\" si no quiere que se muestre nodo alguno."
+
+#: sitemenu.module:148
+msgid "Closing description"
+msgstr "Descripción de cierre"
+
+#: sitemenu.module:152
+msgid "This text will be displayed at the bottom of the site menu page"
+msgstr "Este texto se mostrará al final de la página con el mapa del sitio"
+
+#: sitemenu.module:220
+msgid "Author: "
+msgstr "Autor:"
+
+#: sitemenu.module:222
+msgid ", comments: "
+msgstr ", comentarios: "
+
+#: sitemenu.module:60
+msgid "use sitemenu"
+msgstr "usar sitemenu"
+
+#: sitemenu.module:60
+msgid "administer sitemenu"
+msgstr "Administrar módulo sitemenu"
+
+#: sitemenu.module:0
+msgid "sitemenu"
+msgstr "sitemenu"
+

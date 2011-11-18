@@ -1,0 +1,3 @@
+; $Id: thickbox.info,v 1.2.2.2 2007/06/16 10:11:28 frjo Exp $
+name = Thickbox
+description = Enables Thickbox, a jQuery plugin.

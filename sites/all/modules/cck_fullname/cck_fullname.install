@@ -1,0 +1,95 @@
+<?php
+//$Id: cck_fullname.install,v 1.1.2.4 2007/12/15 01:01:28 rconstantine Exp $;
+/**
+ * Not needed unless upgrading from an older version;
+ * see the updates below.
+ */
+function cck_fullname_install() {
+
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function cck_fullname_update_1() {
+  $ret = array();
+
+  //first, handle existing table issues
+  include_once('./'. drupal_get_path('module', 'content') .'/content.module');
+  include_once('./'. drupal_get_path('module', 'content') .'/content_admin.inc');
+
+  content_clear_type_cache();
+  $fields = content_fields();
+  
+  foreach ($fields as $field) {
+    switch ($field['type']) {
+      case 'cck_fullname':
+        $db_info = content_database_info($field);
+        $table = $db_info['table'];
+        $fieldname = $field['field_name'] .'_';
+        $sql = "SHOW COLUMNS FROM {%s}";
+        $results = db_query($sql, $table);
+        while ($result = db_fetch_object($results)) {
+          if ($result->Field == $fieldname .'last') {
+            $last_type = $result->Type;
+            if ($result->Null == 'Yes') {
+              $last_null = 'NULL';
+            }
+            else {
+              $last_null = 'NOT NULL';
+            }
+            if (isset($result->Default)) {
+              $last_default = $result->Default;
+            }
+            else {
+              $last_default = '';
+            }
+          }
+          elseif ($result->Field == $fieldname .'first') {
+            $first_type = $result->Type;
+            if ($result->Null == 'Yes') {
+              $first_null = 'NULL';
+            }
+            else {
+              $first_null = 'NOT NULL';
+            }
+            if (isset($result->Default)) {
+              $first_default = $result->Default;
+            }
+            else {
+              $first_default = '';
+            }
+          }
+          elseif ($result->Field == $fieldname .'middle') {
+            $middle_type = $result->Type;
+            if ($result->Null == 'Yes') {
+              $middle_null = 'NULL';
+            }
+            else {
+              $middle_null = 'NOT NULL';
+            }
+            if (isset($result->Default)) {
+              $middle_default = $result->Default;
+            }
+            else {
+              $middle_default = '';
+            }
+          }
+        }
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."prefix varchar(6) NOT NULL");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."suffix varchar(6) NOT NULL");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."last_preferred $last_type $last_null $last_default");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."first_preferred $first_type $first_null $first_default");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."middle_preferred $middle_type $middle_null $middle_default");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."prefix_preferred varchar(6) NOT NULL");
+        $ret[] = update_sql("ALTER TABLE {". $table ."} ADD COLUMN ". $fieldname ."suffix_preferred varchar(6) NOT NULL");
+        
+        $ret[] = array(
+          'query' => strtr('The field %field_name has been updated in several respects.', array('%field_name' => $field['field_name'])),
+          'success' => TRUE
+        );
+        break;
+      }
+    }
+return $ret;
+}

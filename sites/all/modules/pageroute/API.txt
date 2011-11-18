@@ -1,0 +1,199 @@
+Pageroute 5.x API documentation
+-------------------------------
+by Wolfgang Ziegler, nuppla@zites.net
+
+Pageroute allows each module to provide own page types. This file shows you how
+to do this and where you can adapt pageroute's default behaviour.
+
+You might also have a look at the existing implementations, which can be found in
+the file pageroute_pages.inc. If you are creating a page types, which should contain
+a node form consider reusing one of the existing functions in pageroute_pages.inc.
+
+FormAPI Subform element
+-----------------------
+
+Pageroute's API builds upon a new form element of the type 'subform'. This form element
+allows you to reuse existing forms inside another form!
+It's provided by the subform_element module, on which pageroute depends on. Read its
+API documentation as this form element is used by most page types.
+
+Pageroute does already invoke the subform_element_submit() handler for you, so you
+don't have to care about this, if you want to use a subform. Just add the subform
+form element and it will work as expected :)
+
+So the subform element makes reusing forms really easy, however you have to take care
+about proper access checks yourself! Pageroute doesn't do any access control checking
+for you!
+
+So the page types have to do it, e.g. the node edit form checks node update access
+or the node display page checks node view access. Don't forget proper access checks! 
+Furthermore consider which access permissions are necessary if a user want's to go
+through a route of another user or if your page type just doesn't care about other
+users!
+
+
+Creating a page type
+-----------------------
+
+So for creating a new page type you need to implement at least two functions:
+hook_pageroute_info and hook_page_PAGE_TYPE
+
+
+hook_pageroute_info()
+-------------------
+Arguments: none
+Optional: No
+
+An example take from nodefamily:
+/**
+ * Implementation of hook_pageroute_info().
+ */
+function nodefamily_pageroute_info() {
+  return array(
+    'manage_lonely' => array('name' => t('Lonely node management'), 'base' => 'nodefamily', 'default_target' => PAGEROUTE_FORWARD),
+    'view_lonely' => array('name' => t('Lonely node display'), 'base' => 'nodefamily'),
+  );
+}
+
+You have to return array, which contains for each page type at least the machine readable name (array key),
+the human readable name ('name') and the base of your page type ('base'). The base and the machine readable
+name will be used as prefix for generated function names, so pageroute will call the function
+ nodefamily_page_manage_lonely() if it wants to invoke hook_page_PAGE_TYPE() for the lonely node management
+ page.
+Furthermore you can specifiy a default_target. This will be used, when pageroute determines
+the redirect target after the form has been submitted. If a button inside your page type's form
+has been pressed, you can either implement your own routing logic through hook_page_target() or
+the default_target will be used.
+Possible values are: PAGEROUTE_BACK, PAGEROUTE_CURRENT, PAGEROUTE_FORWARD, PAGEROUTE_NONE or fixed path (as string).
+If you don't specify a value and don't implement the hook pageroute will use PAGEROUTE_CURRENT.
+
+
+hook_page_PAGE_TYPE or also called hook_page()
+----------------------------------------------
+Arguments: $route (The route's object), $page (The page's object), $form
+Optional: No
+
+Pageroute will create a new $form array for your page type, which contains
+all pageroute buttons like the user has configured it. Your page type has
+to add its form elements and return the new $form.
+
+In a usual case you should just add your form items and return the new $form,
+but in some cases it might be nice to hide the pageroute buttons. For this
+you could create a new $form and return it, for an example have a look at
+pageroute's pageroute_node_delete_confirm().
+
+Your page type should make use of the URL arguments: the node id and the
+user id, as appropriate. For this make use of the functions
+pageroute_page_get_nid or pageroute_page_get_uid.
+
+If you want to introduce some own arguments, that shouldn't be kept through
+the whole pageroute but are only useful inside your page use of pageroute_arg(),
+but update the arg_offset parameter as appropriate. 
+Have a look at pageroute_page_manage() to see how this can be done!
+
+
+hook_page_target()
+------------------
+Arguments: $route, $page, $form_values
+Optional: Yes
+
+This allows your page type to implement an own routing logic for further 
+added buttons. It will be called on form submit, so the validated
+$form_values are available.
+
+You have to return PAGEROUTE_BACK, PAGEROUTE_CURRENT, PAGEROUTE_FORWARD,
+PAGEROUTE_NONE or a path (as string). 
+If you don't return anything, the default behaviour will be used. If you
+want to create your own path, which points somewhere inside the pageroute
+use pageroute_create_path() to create the path, so that the pageroute arguments
+are kept.
+Example: pageroute_page_manage_target
+
+
+hook_page_options()
+-------------------
+Arguments: $route, $page
+Optional: yes
+
+This allows you to modify the configured options of your page type on run
+time!
+Per default pageroute stores it back/forward button labels inside $page->options
+and uses them. But you may use different button labes from inside one page, e.g.
+the node management page types allows you to set different labels dependent on
+if you are on a node add/edit form or not.
+
+So this hook is called before the buttons are generated. It allows you to
+return another set of options than the default one.
+
+Example: pageroute_page_manage_options
+
+Furthermore a lot page types use a node form. So a pageroute provides some default options
+for node forms (show preview button, show submit button?, ...). Pageroute does
+even apply the options for you. Per default it reads the from $page->options,
+if you have multiple options like the page type "node management" has, you can
+return the suitable options from this hook.
+
+Then this hook allows you to manually activate / deactivate pageroute's 
+back/forward buttons as long as the user has entered a label for them.
+This is useful if you provide some sub-pages inside your page type, for
+which you want the back/forward buttons appear regardless if the page is
+the first or last one in the route.
+To force the activation set $page->options['show_route_buttons'] to TRUE.
+
+again an exmaple is: pageroute_page_manage_options
+
+
+hook_page_ui()
+---------------
+Arguments: $route, $page, &$form, $type (the page type to be added/edited)
+Optional: Yes
+
+This hook allows you to add further options to the administrative page
+edit form. Just take $form as reference and modify it as appropriate.
+You should only add new settings into $form['options'], so that pageroute
+take's automatically care of saving and loading the options.
+Your options will be available in the array $page->options!
+
+Not that if a new page type is to be added $page might be null.
+
+If your page type uses a node form, you might want to call 
+pageroute_pages_node_ui($route, $page, $form, $type), which adds the
+usual and automatically applied options for node forms.
+
+Example: pageroute_page_edit_ui
+
+
+hook_page_help()
+----------------
+Arguments: none
+Optional: yes
+
+Just return a translated string, which provides help for site administrators.
+It will be shown on the page add/edit form and in the pageroute help center.
+
+Example: pageroute_page_edit_help
+
+
+
+hook_pagerouteapi
+-----------------
+This a general hook that may be implemented by every module similar than hook_nodeapi().
+
+Arguments: $op, further arguments differ by $op
+Optional: yes
+
+Currently available operations ($op) are:
+ (*) boot:   further arguments are $route
+             This is called even after a route has been loaded, but before the page, which
+             shall be shown has been calculated. Modules can alter $route->page_access in 
+             this phase to deny access to certain pages.
+ (*) show:   further arguments are $page
+             This is called before a page is rendered. It may be used to modify
+             the page object by taking it by reference.
+ (*) target: further arguments are $page, $form_values
+             The redirect target is calculated and may be forced to another value by 
+             returning a new redirect target!
+
+
+
+If you have any problems or questions don't hesitate to contact me.

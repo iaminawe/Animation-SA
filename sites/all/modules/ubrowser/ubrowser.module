@@ -1,0 +1,1036 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Core code for uBrowser, a new way to browse and select nodes!
+ *
+ * uBrowser lets you browse taxonomy vocabularies like they were file systems.
+ * You can browse for nodes, search them for keywords, and choose to view or
+ * take an action on the node(s) you select.
+ *
+ * Development sponsored by the Ubercart project.  http://www.ubercart.org
+ */
+
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_menu().
+ */
+function ubrowser_menu($may_cache) {
+  if ($may_cache) {
+    // Main ubrowser URL.. returns the HTML for the uBrowser to be placed in a div.
+    $items[] = array(
+      'path' => 'ubrowser/main',
+      'title' => t('Browse taxonomy'),
+      'description' => t('Browse taxonomy like a file tree.'),
+      'callback' => 'ubrowser_display',
+      'access' => user_access('access content'),
+      'type' => MENU_CALLBACK,
+    );
+    // Search URL, displays results in the node div
+    $items[] = array(
+      'path' => 'ubrowser/nodesearch',
+      'title' => t('Search nodes'),
+      'description' => t('Display search results in the node box.'),
+      'callback' => 'ubrowser_nodesearch',
+      'access' => user_access('access content'),
+      'type' => MENU_CALLBACK,
+    );
+    // Let admin browse their content with uBrowser
+    $items[] = array(
+      'path' => 'admin/content/ubrowser',
+      'title' => t('Category browser'),
+      'description' => t('Browse nodes in your vocabularies using uBrowser.'),
+      'callback' => 'ubrowser_admin',
+      'access' => user_access('administer taxonomy'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  else {
+    drupal_add_css(drupal_get_path('module', 'ubrowser') .'/ubrowser.css');
+    if (is_numeric(arg(2))) {
+      // URL to display nodes in the node div
+      $items[] = array(
+        'path' => 'ubrowser/nodes/'. arg(2),
+        'title' => t('Display nodes'),
+        'description' => t('Display the child nodes of a taxonomy term.'),
+        'callback' => 'ubrowser_nodes',
+        'callback arguments' => array(arg(2), arg(3)),
+        'access' => user_access('access content'),
+        'type' => MENU_CALLBACK,
+      );
+    }
+  }
+
+  return $items;
+}
+
+
+/*******************************************************************************
+ * Callback Functions, Forms, and Tables
+ ******************************************************************************/
+
+/**
+ * Allow admin to build a uBrowser and browse their content with it.
+ */
+function ubrowser_admin() {
+
+  $output = '<p>'. t('uBrowser allows you to browse the content of your site by taxonomy vocabulary. Use the form to build uBrowser here. The textarea beneath the uBrowser will display the PHP to put the browser on a page in your site.') .'</p>';
+
+  $settings = array(
+    'div' => '#ubrowser',
+    'class' => '',
+    'vid' => TRUE,
+    'nids' => TRUE,
+    'search' => TRUE,
+    'view' => TRUE,
+    'window' => TRUE,
+    'close' => TRUE,
+    'multi' => TRUE,
+    'filter' => TRUE,
+    'select' => TRUE,
+    'categ' => TRUE,
+    'nodesg' => TRUE,
+    'nodepl' => TRUE,
+    'code' => '#php-results',
+  );
+
+  $output .= drupal_get_form('ubrowser_builder', $settings) .'<br />'
+           . ubrowser_div('ubrowser', t('Make your choices and click display.'));
+
+  $output .= '<div style="clear: both;"></div><br />'
+            .'<p><b>'. t('PHP to build this uBrowser on a page:') .'</b><br />'
+            .'<textarea id="php-results" rows="8" cols="60" readonly></textarea></p>';
+
+  return $output;
+}
+
+/**
+ * Return the HTML to display the uBrowser inside a div.
+ */
+function ubrowser_display($settings = NULL) {
+  if ($settings === NULL && (empty($_POST) || !isset($_POST['div']))) {
+    drupal_goto('<front>');
+  }
+
+  /**
+   * List of settings array keys and values:
+   * div    = CSS selector of the div in which the uBrowser should display.
+   * class  = Class to add to the div when uBrowser is loaded and remove when
+   *            uBrowser is closed.
+   * vid    = Vocabulary ID the uBrowser should browse.
+   * nids   = String true or false to display node IDs in the node select box.
+   * filter = Comma delimeted string of node types to display.
+   * search = String true or false to display a node search form.
+   * close  = String true or false to display a close button that wipes the div.
+   * view   = String true or false to display a view button that browses
+   *            to the selected node.
+   * window = String current or new for which window to view nodes in.
+   * categ  = String of text to replace 'category' in displays, or leave blank.
+   * nodesg = String of text to replace 'node' in displays, or leave blank.
+   * nodepl = String of text to replace 'nodes' in displays, or leave blank.
+   * select = String of Javascript to execute on the select button
+   *            (not displayed if no Javascript is set).
+   * multi  = String true or false to allow users to select multiple nodes.
+   */
+  if ($settings === NULL) {
+    $settings = array(
+      'div' => $_POST['div'],
+      'class' => $_POST['class'],
+      'vid' => intval($_POST['vid']),
+      'nids' => (($_POST['nids'] == 'true') ? '' : '/no_nids'),
+      'filter' => $_POST['filter'],
+      'search' => $_POST['search'],
+      'close' => $_POST['close'],
+      'view' => $_POST['view'],
+      'window' => (($_POST['window'] == 'new') ? 'new' : 'current'),
+      'categ' => ((strlen($_POST['categ']) > 0) ? $_POST['categ'] : 'category'),
+      'nodesg' => ((strlen($_POST['nodesg']) > 0) ? $_POST['nodesg'] : 'node'),
+      'nodepl' => ((strlen($_POST['nodepl']) > 0) ? $_POST['nodepl'] : 'nodes'),
+      'select' => $_POST['select'],
+      'multi' => (($_POST['multi'] == 'true') ? TRUE : FALSE),
+    );
+    $return_output = FALSE;
+  }
+  else {
+    if ($settings['nids'] == 'false') {
+      $settings['nids'] = '/no_nids';
+    }
+    else {
+      $settings['nids'] = '';
+    }
+    if (is_null($settings['categ']) || strlen($settings['categ']) == 0) {
+      $settings['categ'] = 'category';
+    }
+    if (is_null($settings['nodesg']) || strlen($settings['nodesg']) == 0) {
+      $settings['nodesg'] = 'node';
+    }
+    if (is_null($settings['nodepl']) || strlen($settings['nodepl']) == 0) {
+      $settings['nodepl'] = 'nodes';
+    }
+    $return_output = TRUE;
+  }
+
+  if ($settings['vid'] > 0) {
+    $tree = taxonomy_get_tree($settings['vid']);
+    $options = array();
+    if ($tree && (count($tree) > 0)) {
+      foreach ($tree as $term) {
+        $options[$term->tid] = str_repeat('-', $term->depth) . $term->name;
+      }
+    }
+    if (count($options) == 0) {
+      $options[0] = t('No terms found.');
+    }
+  }
+
+  // Get the appropriate forms into variables.
+  $term_select_form = drupal_get_form('ubrowser_tree_form', $options, $settings);
+  $node_select_form = drupal_get_form('ubrowser_nodes_form', NULL, $settings['categ'], $settings['nodesg'], $settings['multi']);
+  $search_form = '';
+  $actions_form = '';
+  if ($settings['search'] == 'true') {
+    $search_form = drupal_get_form('ubrowser_node_search_form');
+  }
+  if (strlen($settings['select']) > 0 || $settings['view'] == 'true' || $settings['close'] == 'true') {
+    $actions_form = drupal_get_form('ubrowser_node_actions_form', $settings);
+  }
+
+  // Output the table with appropriate classes and IDs for uBrowser and the CSS.
+  $output = '<table class="ubrowser-table"><tr>'
+           .'<td id="ubrowser-tree">'. $term_select_form .'</td>'
+           .'<td id="ubrowser-nodes">'. $node_select_form .'</td>'
+           .'</tr><tr>'
+           .'<td id="ubrowser-search">'. $search_form .'</td>'
+           .'<td id="ubrowser-actions">'. $actions_form .'</td>'
+           .'</tr></table>';
+
+  if ($return_output) {
+    return $output;
+  }
+
+  print $output;
+  exit();
+}
+
+/**
+ * Create the form for the term select box; also stores the widget settings.
+ */
+function ubrowser_tree_form($options, $settings = NULL) {
+  if (strlen($settings['categ']) > 0) {
+    $category = $settings['categ'];
+  }
+  else {
+    $category = 'category';
+  }
+
+  $form['tid'] = array(
+    '#type' => 'select',
+    '#title' => t('Select a !category', array('!category' => $category)),
+    '#size' => 10,
+    '#options' => $options,
+    '#attributes' => array('onchange' => "load_node_select(this.value, '". base_path() ."');"),
+  );
+
+  /**
+   * Save the settings array as hidden input fields in the uBrowser form.
+   * Settings are accessed by ID for different onclick actions:
+   *   $('#edit-ub-key').val();  // Get the value of settings key using jQuery.
+   */
+  if (!is_null($settings)) {
+    foreach ($settings as $key => $value) {
+      $form['settings']['ub-'. $key] = array(
+        '#type' => 'hidden',
+        '#value' => $value,
+      );
+    }
+  }
+
+  return $form;
+}
+
+/**
+ * Return the HTML for the node select box.
+ */
+function ubrowser_nodes($tid, $nids) {
+  if ($_POST['multi'] == 'true' || $_POST['multi'] == '1') {
+    $multi = TRUE;
+  }
+  else {
+    $multi = FALSE;
+  }
+
+  if (isset($_POST['filter'])) {
+    $filter = $_POST['filter'];
+  }
+  else {
+    $filter = NULL;
+  }
+
+  if (strlen($_POST['categ']) > 0) {
+    $category = $_POST['categ'];
+  }
+  else {
+    $category = 'category';
+  }
+
+  if (strlen($_POST['nodesg']) > 0) {
+    $nodesg = $_POST['nodesg'];
+  }
+  else {
+    $nodesg = 'node';
+  }
+
+  if (strlen($_POST['nodepl']) > 0) {
+    $nodepl = $_POST['nodepl'];
+  }
+  else {
+    $nodepl = 'nodes';
+  }
+
+  if ($tid == 0) {
+    $options = array(0 => t('Select a !category...'), array('!category' => $category));
+  }
+  else {
+    $result = _ubrowser_select_nodes(array($tid), $filter);
+    $options = array(0 => t('!Category contains !count !nodes!punctuation',
+                            array('!Category' => ucfirst($category),
+                                  '!count' => db_num_rows($result),
+                                  '!nodes' => ((db_num_rows($result) == 1) ? $nodesg : $nodepl),
+                                  '!punctuation' => ((db_num_rows($result) == 0) ? '.' : ':'))));
+    while($node = db_fetch_object($result)) {
+      if ($nids == 'no_nids') {
+        $options[$node->nid] = $node->title;
+      }
+      else {
+        $options[$node->nid] = '('. $node->nid .') '. $node->title;
+      }
+    }
+  }
+
+  $output = drupal_get_form('ubrowser_nodes_form', $options, $category, $nodesg, $multi);
+
+  print $output;
+  exit();
+}
+
+/**
+ * Create the form for the node select box.
+ */
+function ubrowser_nodes_form($options, $categ = 'category', $nodesg = 'node', $multi = FALSE) {
+  if ($options === NULL) {
+    $options = array(0 => t('Select a !category...', array('!category' => $categ)));
+  }
+  else {
+    foreach ($options as $nid => $title) {
+      if ($nid > 0) {
+        $result = db_query("SELECT dst FROM {url_alias} WHERE src = 'node/". $nid ."'");
+        if ($alias = db_fetch_object($result)) {
+          $url = $alias->dst;
+        }
+        else {
+          $url = 'node/'. $nid;
+        }
+        $form['unid-path-'. $nid] = array(
+          '#type' => 'hidden',
+          '#value' => $url,
+        );
+      }
+    }
+  }
+
+  $form['unid'] = array(
+    '#type' => 'select',
+    '#multiple' => $multi,
+    '#title' => t('Select a !nodesg', array('!nodesg' => $nodesg)),
+    '#size' => 10,
+    '#options' => $options,
+  );
+
+  return $form;
+}
+
+/**
+ * Perform a search for nodes and display the results in the node box.
+ */
+function ubrowser_nodesearch() {
+  $keys = check_plain($_POST['keys']);
+  $filter = check_plain($_POST['filter']);
+  $category = check_plain($_POST['categ']);
+  $nodesg = check_plain($_POST['nodesg']);
+  $nodepl = check_plain($_POST['nodepl']);
+
+  if (is_null($keys) || strlen($keys) < 3) {
+    print '';
+    exit();
+  }
+
+  if (strlen($filter) > 0) {
+    $filter = "'". str_replace(',', "','", $filter) ."'";
+    $results = _ubrowser_search($keys, 'node',
+                                'INNER JOIN {node} n ON n.nid = i.sid',
+                                "(n.type IN ($filter))");
+  }
+  else {
+    $results = _ubrowser_search($keys, 'node');
+  }
+  if (($j = count($results)) == 0) {
+    $options = array(
+      -1 => t('Search yielded no results for:'),
+      0 => $keys,
+    );
+  }
+  elseif ($j == 1) {
+    $options = array(0 => t('Search yielded 1 result:'));
+    $result = db_query("SELECT nid, title FROM {node} WHERE nid = %d", $results[0]->sid);
+    if ($node = db_fetch_object($result)) {
+      if ($_POST['nids'] == '/no_nids') {
+        $options[$node->nid] = $node->title;
+      }
+      else {
+        $options[$node->nid] = '('. $node->nid .') '. $node->title;
+      }
+    }
+  }
+  else {
+    $options = array(0 => t('Search yielded !count results:', array('!count' => $j)));
+    foreach($results as $result) {
+      $nid_array[] = $result->sid;
+    }
+    $result = db_query("SELECT nid, title FROM {node} WHERE nid IN (%s)", implode(',', $nid_array));
+    while ($node = db_fetch_object($result)) {
+      if ($_POST['nids'] == '/no_nids') {
+        $options[$node->nid] = $node->title;
+      }
+      else {
+        $options[$node->nid] = '('. $node->nid .') '. $node->title;
+      }
+    }
+  }
+
+  $output = drupal_get_form('ubrowser_nodes_form', $options, $category, $nodesg);
+  print $output;
+  exit();
+}
+
+/**
+ * Create the form for the node search box.
+ */
+function ubrowser_node_search_form() {
+  $form = array(
+    '#attributes' => array('onsubmit' => 'return ubrowser_search_submit();'),
+  );
+
+  $form['usearch_keys'] = array(
+    '#type' => 'textfield',
+    '#size' => 10,
+  );
+  $form['usearch_submit'] = array(
+    '#type' => 'button',
+    '#value' => t('Search'),
+    '#attributes' => array('onclick' => "return load_node_search('". base_path() ."');"),
+  );
+
+  return $form;
+}
+
+/**
+ * Theme the node search box.
+ */
+function theme_ubrowser_node_search_form($form) {
+  $output = '<table id="ubrowser-search-table"><tr>'
+           .'<td>'. drupal_render($form['usearch_keys']) .'</td>'
+           .'<td>'. drupal_render($form['usearch_submit']) .'</td>'
+           .'</tr></table>';
+
+  return $output;
+}
+
+/**
+ * Create the form to display the actions buttons:
+ * view   = Browses to the selected node.
+ * select = Executes the select Javascript using eval().
+ * close  = Empties the uBrowser div and removes its class where applicable.
+ */
+function ubrowser_node_actions_form($settings) {
+  if ($settings['view'] == 'true') {
+    $form['uview'] = array(
+      '#type' => 'button',
+      '#value' => t('View'),
+      '#attributes' => array('onclick' => "return ubrowser_action_view('". base_path() ."');"),
+    );
+  }
+
+  if (strlen($settings['select']) > 0) {
+    $form['uselect'] = array(
+      '#type' => 'button',
+      '#value' => t('Select'),
+      '#attributes' => array('onclick' => 'return ubrowser_action_select();'),
+    );
+  }
+
+  if ($settings['close'] == 'true') {
+    $form['uclose'] = array(
+      '#type' => 'button',
+      '#value' => t('Close'),
+      '#attributes' => array('onclick' => 'return ubrowser_action_close();'),
+    );
+  }
+
+  return $form;
+}
+
+function theme_ubrowser_node_actions_form($form) {
+  $output = '<table class="ubrowser-table"><tr>'
+           .'<td>'. drupal_render($form) .'</td>'
+           .'</tr></table>';
+
+  return $output;
+}
+
+/*******************************************************************************
+ * Module and Helper Functions
+ ******************************************************************************/
+
+/**
+ * Return the HTML for a uBrowser populated div.
+ *
+ * @param $settings
+ *   Associate array with the keys that define settings for uBrowser... see
+ *   ubrowser_button() for a complete list.
+ * @return
+ *   A string containing the HTML of the uBrowser div.
+ */
+function ubrowser($settings, $id = 'ubrowser') {
+  drupal_add_css(drupal_get_path('module', 'ubrowser') .'/ubrowser.css');
+  drupal_add_js(drupal_get_path('module', 'ubrowser') .'/ubrowser.js', 'module');
+
+  $settings = ubrowser_check_settings($settings);
+
+  $output = '<div id="'. $id .'" class="'. $settings['class'] .'">'
+          . ubrowser_display($settings) .'</div>';
+
+  return $output;
+}
+
+/**
+ * Return the HTML for an empty uBrowser div.
+ *
+ * @param $id
+ *   The ID of the generated div.
+ * @param $message
+ *   The message to display in the div before loading uBrowser.  Defaults to
+ *   uBrowser, but can be set to NULL to display nothing.
+ * @param $class
+ *   An optional class you can set for the div.
+ * @return
+ *   A string containing the HTML of the div.
+ */
+function ubrowser_div($id = 'ubrowser', $message = 'uBrowser', $class = 'ubrowser-div') {
+  if ($message !== NULL) {
+    $message = '<em>'. $message .'</em>';
+  }
+  if ($class !== NULL) {
+    $class = ' class="'. $class .'"';
+  }
+
+  drupal_add_css(drupal_get_path('module', 'ubrowser') .'/ubrowser.css');
+  drupal_add_js(drupal_get_path('module', 'ubrowser') .'/ubrowser.js', 'module');
+
+  return '<div id="'. $id .'"'. $class .'>'. $message .'</div>';
+}
+
+/**
+ * Return the HTML for a button to display uBrowser in a div.
+ *
+ * I pondered how to make this work.  In the end I decided to just put the
+ * Javascript in the button element itself.  An alternative was to write a
+ * function out in the page and call it with a button click, but since this is
+ * all transparent, I'm going to uglify the HTML and leave it like it is.
+ *
+ * @param $value
+ *   Text displayed on the button.
+ * @param $settings
+ *   Associate array with the following keys that define settings for uBrowser:
+ *   - div    = CSS selector of the div in which the uBrowser should display.
+ *   - class  = Class to add to the div when uBrowser is loaded and remove when
+ *                uBrowser is closed.
+ *   - vid    = Vocabulary ID the uBrowser should browse.
+ *   - nids   = String true or false to display node IDs in the node select box.
+ *   - filter = Comma delimeted string of node types to display.
+ *   - search = String true or false to display a node search form.
+ *   - close  = String true or false to display a close button that wipes the div.
+ *   - view   = String true or false to display a view button that browses
+ *                to the selected node.
+ *   - window = String current or new for which window to view nodes in.
+ *   - categ  = String of text to replace 'category' in displays, or leave blank.
+ *   - nodesg = String of text to replace 'node' in displays, or leave blank.
+ *   - nodepl = String of text to replace 'nodes' in displays, or leave blank.
+ *   - select = String of Javascript to execute on the select button, not
+ *                displayed if no value is set.
+ *   - multi  = String true or false to allow users to select multiple nodes.
+ * @param $name
+ *   Optional name of the button.
+ * @param $id
+ *   Optional id of the button.
+ * @return
+ *   A string containing the HTML of the button.
+ */
+function ubrowser_button($value, $settings, $name = NULL, $id = NULL) {
+  $value = str_replace('"', '', $value);
+  if (strlen($value) == 0) {
+    $value = t('Display uBrowser');
+  }
+  if ($name !== NULL) {
+    $name = ' name="'. $name .'"';
+  }
+  if ($id !== NULL) {
+    $id = ' id="'. $id .'"';
+  }
+
+  drupal_add_css(drupal_get_path('module', 'ubrowser') .'/ubrowser.css');
+  drupal_add_js(drupal_get_path('module', 'ubrowser') .'/ubrowser.js', 'module');
+
+  $js_settings = str_replace('"', "'", drupal_to_js((object) $settings));
+
+  $output = '<input type="button" value="'. $value .'"'. $name . $id
+           .' onclick="display_ubrowser(\''. base_path() .'\', '. $js_settings
+           .');" />';
+
+  return $output;
+}
+
+/**
+ * Return the settings array with any ommitted settings set to defaults.
+ *
+ * @param $settings
+ *   The settings array.  See ubrowser_button() for available keys.
+ * @return
+ *   The settings array with all ommitted settings set to their defaults.
+ */
+function ubrowser_check_settings($settings) {
+  $defaults = array(
+    'class' => '',
+    'nids' => '',
+    'filter' => '',
+    'search' => 'false',
+    'close' => 'false',
+    'view' => 'false',
+    'select' => '',
+    'multi' => 'false',
+  );
+
+  foreach($defaults as $key => $value) {
+    if (!array_key_exists($key, $settings)) {
+      $settings[$key] = $value;
+    }
+  }
+
+  return $settings;
+}
+
+/**
+ * Display a form that lets you build and display uBrowser on the fly.
+ *
+ * ubrowser_builder() lets you print a form to a page that can be used for
+ * custom building of uBrowsers.  This is used from ubrowser_admin() to display
+ * the form at admin/content/browse.
+ *
+ * @param $settings
+ *   A settings array that specifies what to set as default settings and what
+ *     to display as options on the form.  The following keys should either be
+ *     set to TRUE, meaning they will be displayed on the form, or to an actual
+ *     value to be used as the default value:
+ *   - div    = MUST be set, cannot be TRUE.  Use a CSS selector for the div the
+ *                custom built uBrowser will populate.
+ *   - class  = MUST be set, cannot be TRUE.  The name of the class to add to
+ *                the uBrowser div when it's loaded.
+ *   - vid    = TRUE to display a select box of vocabularies, otherwise specify
+ *                the vocabulary ID this uBrowser must use.
+ *   - nids   = TRUE to display a checkbox for displaying node IDs, otherwise
+ *                specify the string true or false.
+ *   - search = TRUE to display a checkbox for displaying the search form,
+ *                otherwise specify the string true or false.
+ *   - view   = TRUE to display a checkbox for displaying the view button,
+ *                otherwise specify the string true or false.
+ *   - window = TRUE to display a checkbox for choosing the view target window,
+ *                otherwise specify the string new or current.
+ *   - close  = TRUE to display a checkbox for displaying the close button,
+ *                otherwise specify the string true or false.
+ *   - multi  = TRUE to display a checkbox for displaying the multi select box,
+ *                otherwise specify the string true or false.
+ *   - filter = TRUE to display a set of checkboxes to filter displayed nodes by
+ *                node type; only shows node types associated with current
+ *                vocabularies.  Alternately, specify a comma delimited string
+ *                of node types to filter by default.
+ *   - select = TRUE to display a textfield for entering Javascript for the
+ *                select button, otherwise specify an empty string to not show
+ *                a select button or a string of Javascript to execute.
+ *   - nodesg = TRUE to display a textfield for entering the replacement text
+ *                for the word 'node' in uBrowser displays.  May be a string
+ *                for the default replacement, or may be left unset for 'node'.
+ *   - nodepl = TRUE to display a textfield for entering the replacement text
+ *                for the word 'nodes' in uBrowser displays.  May be a string
+ *                for the default replacement, or may be left unset for 'nodes'.
+ *   - code   = MUST be either not set (to not display code) or set to the
+ *                CSS selector of a textarea to populate with the PHP code to
+ *                reproduce the built uBrowser.  I can't imagine anyone else
+ *                using this but figured it should be documented.
+ *   - display = Optional, replacement text for the "Display uBrowser" button.
+ */
+function ubrowser_builder($settings) {
+  $form['ubb-div'] = array(
+    '#type' => 'hidden',
+    '#value' => $settings['div'],
+  );
+
+  // Add the vocabulary select box
+  if ($settings['vid'] === TRUE) {
+    $vocabs = taxonomy_get_vocabularies();
+    $options = array();
+    foreach($vocabs as $vocab) {
+      $options[$vocab->vid] = $vocab->name;
+    }
+    $form['ubb-vid'] = array(
+      '#type' => 'select',
+      '#title' => t('Vocabulary'),
+      '#description' => t('Select which vocabulary to browse.'),
+      '#options' => $options,
+    );
+  }
+  else {
+    $form['ubb-vid'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['vid'],
+    );
+  }
+
+  // Add the node type selection boxes
+  $form['filter-options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Filter by node type'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  if ($settings['filter'] === TRUE) {
+    $options = array();
+    $result = db_query("SELECT DISTINCT type FROM {vocabulary_node_types}");
+    while ($type = db_fetch_object($result)) {
+      $options[$type->type] = $type->type;
+    }
+    $form['filter-options']['ubb-filter'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Filter results for the following node types'),
+      '#description' => t('Selecting none will display all nodes.'),
+      '#options' => $options,
+      '#prefix' => '<span id="filter-checkboxes">',
+      '#suffix' => '</span>',
+    );
+  }
+  else {
+    $form['filter-options']['ubb-filter-desc'] = array(
+      '#value' => '<div>Using default filter: '. $settings['filter'] .'</div>',
+    );
+    $form['filter-options']['ubb-filter'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['filter'],
+    );
+  }
+
+  // Add a select button textfield
+  if ($settings['select'] === TRUE) {
+    $form['ubb-select'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Select button Javascript'),
+      '#description' => t('Leave blank for no select button.'),
+      '#size' => 48,
+    );
+  }
+  else {
+    $form['ubb-select'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['select'],
+    );
+  }
+
+  // Add the various settings checkboxes
+
+  $form['display-options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  if ($settings['nids'] === TRUE) {
+    $form['display-options']['ubb-nids'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display node IDs'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-nids'] = array(
+      '#type' => 'hidden',
+      '#value' => 'false',
+    );
+  }
+
+  if ($settings['search'] === TRUE) {
+    $form['display-options']['ubb-search'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display the search form'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-search'] = array(
+      '#type' => 'hidden',
+      '#value' => 'false',
+    );
+  }
+
+  if ($settings['view'] === TRUE) {
+    $form['display-options']['ubb-view'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display view button'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-view'] = array(
+      '#type' => 'hidden',
+      '#value' => 'false',
+    );
+  }
+
+  if ($settings['window'] === TRUE) {
+    $form['display-options']['ubb-window'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('View nodes in new window'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-window'] = array(
+      '#type' => 'hidden',
+      '#value' => 'current',
+    );
+  }
+
+  if ($settings['close'] === TRUE) {
+    $form['display-options']['ubb-close'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display close button'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-close'] = array(
+      '#type' => 'hidden',
+      '#value' => 'false',
+    );
+  }
+
+  if ($settings['multi'] === TRUE) {
+    $form['display-options']['ubb-multi'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow multiple node selection'),
+    );
+  }
+  else {
+    $form['display-options']['ubb-multi'] = array(
+      '#type' => 'hidden',
+      '#value' => 'false',
+    );
+  }
+
+  $form['display-options']['ubb-class'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CSS class name'),
+    '#description' => t('Add a CSS class to the browser.'),
+    '#default_value' => $settings['class'],
+    '#size' => 24,
+  );
+
+  $form['display-names'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Alter display terms'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['display-names']['instructions'] = array(
+    '#value' => '<div>'. t('Use the following textfields to provide alternate words for display in uBrowser.') .'</div>',
+  );
+
+  if ($settings['categ'] === TRUE) {
+    $form['display-names']['ubb-categ'] = array(
+      '#type' => 'textfield',
+      '#title' => t('category'),
+      '#size' => 16,
+      '#prefix' => '<span style="float: left; margin-right: 1em;">',
+      '#suffix' => '</span>',
+    );
+  }
+  else {
+    $form['display-names']['ubb-categ'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['categ'],
+    );
+  }
+
+  if ($settings['nodesg'] === TRUE) {
+    $form['display-names']['ubb-nodesg'] = array(
+      '#type' => 'textfield',
+      '#title' => t('node'),
+      '#size' => 16,
+      '#prefix' => '<span style="float: left; margin-right: 1em;">',
+      '#suffix' => '</span>',
+    );
+  }
+  else {
+    $form['display-names']['ubb-nodesg'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['nodesg'],
+    );
+  }
+
+  if ($settings['nodepl'] === TRUE) {
+    $form['display-names']['ubb-nodepl'] = array(
+      '#type' => 'textfield',
+      '#title' => t('nodes'),
+      '#size' => 16,
+      '#prefix' => '<span style="float: left; margin-right: 1em;">',
+      '#suffix' => '</span>',
+    );
+  }
+  else {
+    $form['display-names']['ubb-nodepl'] = array(
+      '#type' => 'hidden',
+      '#value' => $settings['nodepl'],
+    );
+  }
+
+  if (isset($settings['code'])) {
+    $code_id = $settings['code'];
+  }
+  else {
+    $code_id = 'null';
+  }
+
+  $form['ubb-build'] = array(
+    '#type' => 'submit',
+    '#value' => isset($settings['display']) ? $settings['display'] : t('Display uBrowser'),
+    '#attributes' => array('onclick' => "return build_ubrowser('". base_path()
+                                       ."', '$code_id');"),
+  );
+
+  return $form;
+}
+
+function theme_ubrowser_builder($form) {
+  $output = '<table cellpadding="5"><tr valign="top">'
+           .'<td>'. drupal_render($form['ubb-vid']) .'</td>'
+           .'<td>'. drupal_render($form['ubb-select']) .'</td>'
+           .'</tr><tr valign="top">'
+           .'<td>'. drupal_render($form['display-options']) .'</td>'
+           .'<td>'. drupal_render($form['filter-options']) .'</td>'
+           .'</tr><tr>'
+           .'<td colspan="2">'. drupal_render($form['display-names']) .'</td>'
+           .'</tr><tr>'
+           .'<td colspan="2">'. drupal_render($form) .'</td>'
+           .'</tr></table>';
+
+  return $output;
+}
+
+/**
+ * Rewrite of taxonomy_select_nodes() to return every matching node, not just
+ * a subset for paged display. Includes ability to filter by node type.
+ */
+function _ubrowser_select_nodes($tids = array(), $filter = NULL, $operator = 'or', $depth = 0, $pager = TRUE, $order = 'n.sticky DESC, n.title ASC') {
+  if (count($tids) > 0) {
+    if ($filter != NULL) {
+      if (strpos($filter, ',') > 0) {
+        $filter_array = explode(',', $filter);
+        $filter_where = '';
+        foreach ($filter_array as $type) {
+          $filter_where .= ($filter_where == '') ? ' AND (' : ' OR ';
+          $filter_where .= "n.type = '". $type ."'";
+        }
+        $filter_where .= ')';
+      }
+      else {
+        $filter_where = " AND n.type = '". $filter ."'";
+      }
+    }
+
+    $descendant_tids = array();
+    if ($depth === 'all') {
+      $depth = NULL;
+    }
+    foreach ($tids as $index => $tid) {
+      $term = taxonomy_get_term($tid);
+      $tree = taxonomy_get_tree($term->vid, $tid, -1, $depth);
+      $descendant_tids[] = array_merge(array($tid), array_map('_taxonomy_get_tid_from_term', $tree));
+    }
+
+    if ($operator == 'or') {
+      $str_tids = implode(',', call_user_func_array('array_merge', $descendant_tids));
+      $sql = 'SELECT DISTINCT(n.nid), n.sticky, n.title, n.created FROM {node} n INNER JOIN {term_node} tn ON n.nid = tn.nid WHERE tn.tid IN ('. $str_tids .') AND n.status = 1 '. $filter_where .' ORDER BY '. $order;
+    }
+    else {
+      $joins = '';
+      $wheres = '';
+      foreach ($descendant_tids as $index => $tids) {
+        $joins .= ' INNER JOIN {term_node} tn'. $index .' ON n.nid = tn'. $index .'.nid';
+        $wheres .= ' AND tn'. $index .'.tid IN ('. implode(',', $tids) .')';
+      }
+      $sql = 'SELECT DISTINCT(n.nid), n.sticky, n.title, n.created FROM {node} n '. $joins .' WHERE n.status = 1 '. $wheres . $filter_where .' ORDER BY '. $order;
+    }
+    $sql = db_rewrite_sql($sql);
+    $result = db_query($sql);
+  }
+
+  return $result;
+}
+
+/**
+ * Rewrite of do_search() to return every matching node, not just a subset
+ * for paged display.
+ */
+function _ubrowser_search($keywords, $type, $join1 = '', $where1 = '1', $arguments1 = array(), $select2 = 'i.relevance AS score', $join2 = '', $arguments2 = array(), $sort_parameters = 'ORDER BY score DESC') {
+  $query = search_parse_query($keywords);
+
+  if ($query[2] == '') {
+    form_set_error('keys', t('You must include at least one positive keyword with @count characters or more.', array('@count' => variable_get('minimum_word_size', 3))));
+  }
+  if ($query === NULL || $query[0] == '' || $query[2] == '') {
+    return array();
+  }
+
+  $conditions = $where1 .' AND ('. $query[2] .") AND i.type = '%s'";
+  $arguments = array_merge($arguments1, $query[3], array($type, $query[4]));
+  $result = db_query_temporary("SELECT i.type, i.sid, SUM(i.score * t.count) AS relevance, COUNT(*) AS matches FROM {search_index} i INNER JOIN {search_total} t ON i.word = t.word $join1 WHERE $conditions GROUP BY i.type, i.sid HAVING COUNT(*) >= %d", $arguments, 'temp_search_sids');
+
+  $normalize = db_result(db_query('SELECT MAX(relevance) FROM temp_search_sids'));
+  if (!$normalize) {
+    return array();
+  }
+  $select2 = str_replace('i.relevance', '('. (1.0 / $normalize) .' * i.relevance)', $select2);
+
+  $conditions = '('. $query[0] .')';
+  $arguments = array_merge($arguments2, $query[1]);
+  $result = db_query_temporary("SELECT i.type, i.sid, $select2 FROM temp_search_sids i INNER JOIN {search_dataset} d ON i.sid = d.sid AND i.type = d.type $join2 WHERE $conditions $sort_parameters", $arguments, 'temp_search_results');
+  if (($count = db_result(db_query('SELECT COUNT(*) FROM temp_search_results'))) == 0) {
+    return array();
+  }
+  $count_query = "SELECT $count";
+
+  $result = db_query("SELECT * FROM temp_search_results");
+  $results = array();
+  while ($item = db_fetch_object($result)) {
+    $results[] = $item;
+  }
+  return $results;
+}

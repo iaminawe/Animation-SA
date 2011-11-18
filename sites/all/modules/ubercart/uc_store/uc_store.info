@@ -1,0 +1,5 @@
+; $Id: uc_store.info,v 1.6.2.3 2008/11/03 21:26:36 rszrama Exp $
+name = Store
+description = REQUIRED. Setup the store settings and manage your Ubercart site.
+dependencies = tapir workflow_ng_ui
+package = Ubercart - core

@@ -1,0 +1,175 @@
+<?php
+// ; $Id: imagecache_profiles.module,v 1.1.2.2 2008/06/18 03:16:28 v1nce Exp $
+
+/**
+ * Implementation of hook_help().
+ */
+function imagecache_profiles_help($section) {
+  switch($section) {
+    case 'admin/modules#description':
+      return t('utilizes imagecache presets for user profile pictures');
+  }
+}
+
+/**
+ * Theme override for user.module
+ * Utilize imagecache module to scale down large uploaded profile pictures
+ * @param $size
+ *   ImageCache preset applied to user images set at admin/user/settings
+ */
+function phptemplate_user_picture($account, $size = NULL) {
+  if (variable_get('user_pictures', 0)) {
+    if (variable_get('user_picture_imagecache_profiles_default', 0)) {
+      // Define default user picture size
+      $defaultquery = db_query("SELECT presetname FROM {imagecache_preset} WHERE presetid = '%s'", variable_get('user_picture_imagecache_profiles_default', 0));
+      $size = db_result($defaultquery);
+    }
+    // If on user profile page
+    if (arg(0) == 'user' && is_numeric(arg(1))) {
+      if (variable_get('user_picture_imagecache_profiles', 0)) {
+        $query = db_query("SELECT presetname FROM {imagecache_preset} WHERE presetid = '%s'", variable_get('user_picture_imagecache_profiles', 0));
+        $size = db_result($query);
+      }
+    }
+    // If viewing a comment
+    if ($account->cid) {
+      if (variable_get('user_picture_imagecache_comments', 0)) {
+        $query = db_query("SELECT presetname FROM {imagecache_preset} WHERE presetid = '%s'", variable_get('user_picture_imagecache_comments', 0));
+        $size = db_result($query);
+      }
+    }
+
+    if ($account->picture && file_exists($account->picture)) {
+      $alt = t("@user's picture", array('@user' => $account->name ? $account->name : variable_get('anonymous', t('Anonymous'))));
+      if (isset($size)) {
+        $picture = theme('imagecache', $size, $account->picture, $alt, $alt);
+      } else {
+        $picture = theme('image', file_create_url($account->picture), $alt, $alt, '', FALSE);
+      }
+    } else if (variable_get('user_picture_default', '')) {
+      $picture = variable_get('user_picture_default', '');
+      if (isset($size)) {
+        $picture = theme('imagecache', $size, $picture, $alt, $alt);
+      } else {
+        $picture = theme('image', file_create_url($picture), $alt, $alt, '', FALSE);
+      }
+    }
+
+    if (isset($picture)) {
+      if (!empty($account->uid) && user_access('access user profiles')) {
+        $picture = l($picture, "user/$account->uid", array('title' => t('View user profile.')), NULL, NULL, FALSE, TRUE);
+      }
+
+      return '<div class="picture">'. $picture .'</div>';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function imagecache_profiles_form_alter($form_id, &$form) {
+  switch($form_id) {
+    case 'user_edit':
+      $form['#validate']['imagecache_profiles_user_edit_validate'] = array();
+      $form['#submit']['imagecache_profiles_user_edit_submit'] = array();
+      break;
+    case 'user_admin_settings':
+      // Load imagecache presets
+      $result = db_query('SELECT presetid, presetname FROM {imagecache_preset} ORDER BY presetname');
+      $presets[] = '';
+      while ($row = db_fetch_array($result)) {
+        $presets[$row['presetid']] .= $row['presetname'];
+      }
+      $form['pictures']['user_picture_imagecache_profiles'] = array(
+        '#type' => 'select',
+        '#title' => t('Set user profile picture size with this ImageCache preset'),
+        '#default_value' => variable_get('user_picture_imagecache_profiles', ''),
+        '#options' => $presets,
+        '#description' => t("This will set the picture size when viewing a user's profile page."),
+      );
+      $form['pictures']['user_picture_imagecache_comments'] = array(
+        '#type' => 'select',
+        '#title' => t('Set the user picture size within comments with this ImageCache preset'),
+        '#default_value' => variable_get('user_picture_imagecache_comments', ''),
+        '#options' => $presets,
+        '#description' => t("This will set the picture size when viewing a comment post."),
+      );
+      $form['pictures']['user_picture_imagecache_profiles_default'] = array(
+        '#type' => 'select',
+        '#title' => t('Set default user picture size with this ImageCache preset'),
+        '#default_value' => variable_get('user_picture_imagecache_profiles_default', ''),
+        '#options' => $presets,
+        '#description' => t('This will set the default user picture size throughout the site.'),
+      );
+      $form['pictures']['user_picture_imagecache_profiles_min_width'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Picture minimum width'),
+        '#default_value' => variable_get('user_picture_imagecache_profiles_min_width', ''),
+        '#description' => t('Minimum width dimension for picture, in pixels.'),
+        '#size' => 10,
+      );
+      $form['pictures']['user_picture_imagecache_profiles_min_height'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Picture minimum height'),
+        '#default_value' => variable_get('user_picture_imagecache_profiles_min_height', ''),
+        '#description' => t('Minimum height dimension for picture, in pixels.'),
+        '#size' => 10,
+      );
+      $form['#submit']['imagecache_profiles_user_admin_settings_submit'] = array();
+      break;
+  }
+}
+
+/**
+ * Additional form validation for the user_edit form
+ */
+function imagecache_profiles_user_edit_validate($form_id, $form_values) {
+  // Add a minimum size requirement to the image upload form
+  if ($info = file_check_upload('picture_upload')) {
+    $image_info = image_get_info($form_values['picture']);
+    if ($image_info['width'] < variable_get('user_picture_imagecache_profiles_min_width', 0) || $image_info['height'] < variable_get('user_picture_imagecache_profiles_min_height', 0)) {
+      form_set_error('picture_upload',t('The image must be at least @min_user_picture_width pixels wide and @min_user_picture_height pixels tall (your image was @width x @height pixels).',array('@min_user_picture_width' => check_plain(variable_get('user_picture_imagecache_profiles_min_width', 0)), '@min_user_picture_height' => check_plain(variable_get('user_picture_imagecache_profiles_min_height', 0)), '@width' => $image_info['width'], '@height' => $image_info['height'])));
+    }
+  }
+}
+
+/**
+ * Check for new or deleted uploads and clear the imagecache if necessary
+ */
+function imagecache_profiles_user_edit_submit($form_id, $form_values) {
+  if (file_check_upload('picture_upload') || $form_values['picture_delete']) {
+    imagecache_image_flush($form_values['picture']);
+  }
+}
+
+/**
+ * Check submitted form values and set variables or delete as necessary
+ */
+function imagecache_profiles_user_admin_settings_submit($form_id, $form_values) {
+  if ($form_values['user_picture_imagecache_profiles'] != '0') {
+    variable_set('user_picture_imagecache_profiles', check_plain($form_values['user_picture_imagecache_profiles']));
+  } else {
+    variable_del('user_picture_imagecache_profiles');
+  }
+  if ($form_values['user_picture_imagecache_comments'] != '0') {
+    variable_set('user_picture_imagecache_comments', check_plain($form_values['user_picture_imagecache_comments']));
+  } else {
+    variable_del('user_picture_imagecache_comments');
+  }
+  if ($form_values['user_picture_imagecache_profiles_default'] != '0') {
+    variable_set('user_picture_imagecache_profiles_default', check_plain($form_values['user_picture_imagecache_profiles_default']));
+  } else {
+    variable_del('user_picture_imagecache_profiles_default');
+  }
+  if ($form_values['user_picture_imagecache_profiles_min_width'] != '') {
+    variable_set('user_picture_imagecache_profiles_min_width', check_plain($form_values['user_picture_imagecache_profiles_min_width']));
+  } else {
+    variable_del('user_picture_imagecache_profiles_min_width');
+  }
+  if ($form_values['user_picture_imagecache_profiles_min_height'] != '') {
+    variable_set('user_picture_imagecache_profiles_min_height', check_plain($form_values['user_picture_imagecache_profiles_min_height']));
+  } else {
+    variable_del('user_picture_imagecache_profiles_min_height');
+  }
+}

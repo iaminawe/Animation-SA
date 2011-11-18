@@ -1,0 +1,6 @@
+; $Id: number_facets.info,v 1.4 2008/04/23 14:58:40 davidlesieur Exp $
+name = CCK Number Facets
+description = "Exposes CCK Number fields as facets."
+dependencies = content number faceted_search cck_facets search
+package = Faceted Search
+

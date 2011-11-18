@@ -1,0 +1,9 @@
+<?php
+// $Id: pageroute_nodefamily.install,v 1.1.2.2 2007/03/27 17:00:24 fago Exp $
+
+/*
+ * Implementation of hook_uninstall()
+ */
+function pageroute_nodefamily_uninstall() {
+  variable_del('pageroute_nodefamilies');
+}

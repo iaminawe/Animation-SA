@@ -1,0 +1,192 @@
+<?php
+/* $Id: rolesignup.module,v 1.3 2007/01/20 21:45:13 sym Exp $ */
+
+/**
+ *  Patched by mybesinformatik to include Role Descriptions and Sorting options
+ *  see http://drupal.org/node/186431. Some minor changes were made to that patch, here.
+ **/
+
+/**
+ * Implementation of hook_menu()
+ */
+function rolesignup_menu($may_cache) {
+  $items = array();
+  $items[] = array(
+    'path' => 'user/register/role',
+    'callback' => 'rolesignup_register_page',
+    'title' => t('Register'),
+    'type' => MENU_LOCAL_TASK);
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/rolesignup',
+      'title' => t('Role Signup'),
+      'description' => t('Add descriptions to the user roles, for display on the role select page.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('rolesignup_admin_settings'),
+      'access' => user_access('administer site configuration'),
+    );
+  }
+ return $items;
+}
+
+/**
+ * Implementation of hook_perm()
+ */
+function rolesignup_perm() {
+  return array('register for role');
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function rolesignup_form_alter($form_id, &$form) {
+  if ($form_id == "user_register") {
+    global $user;
+    if (!user_access('administer users') && !$_SESSION['role']) {
+      drupal_goto('user/register/role', drupal_get_destination());
+    } else {
+      $form['role'] = array(
+        '#type' => 'value',
+        '#value' => $_SESSION['role'],
+        );
+    }
+    $form['rolelink'] = array(
+      '#value' => theme('select_role'),
+      '#weight' => -11,
+      );
+  }
+}
+
+function rolesignup_register_page() {
+  $roles = user_roles(1, 'register for role');
+  if (isset($roles[arg(3)])) {
+    $_SESSION['role'] = arg(3);
+    drupal_goto('user/register');
+  }
+  return theme('rolelist', $roles);
+}
+
+/**
+ * Implementation of hook_user()
+ */
+function rolesignup_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'insert':
+    $roles = user_roles(1,'register for role');
+    if ($roles[$_SESSION['role']]) {
+      db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)", $account->uid, $_SESSION['role']);
+    }
+  }
+}
+
+/**
+ * Theme functions
+ **/
+function theme_rolelist($roles) {
+  $output = t(variable_get('rolesignup-desc', 'Please select what type of account you would like:'));
+  $output .= '<ul id="role-signup">'."\n";
+  switch (variable_get('rolesignup-sort', '')) {
+    case 1:
+      ksort($roles);
+      break;
+    case 2:
+      krsort($roles);
+      break;
+    case 3:
+      asort($roles);
+      break;
+    case 4:
+      arsort($roles);
+      break;
+  }
+  foreach ($roles as $roleid => $role) {
+    $url = 'user/register/role/'. $roleid;
+    if (variable_get(role_safe($role) .'-description', '') != '') {
+      $roledescription = '<br /><span class="role-description">'. variable_get(role_safe($role) .'-description', '') .'</span>';
+    }
+    $roletitle = variable_get(role_safe($role) .'-title', '') ? variable_get(role_safe($role) .'-title', '') : $role;
+    $output .= '<li>'. l($roletitle, $url) . $roledescription ."<br /><br /></li>\n";
+  }
+  $output .= "</ul>\n";
+  return $output;
+}
+
+function theme_select_role() {
+  $roles = user_roles();
+  $rolename = $roles[$_SESSION['role']];
+  $output = t('<p class="messages role_select">You are registering for the <strong>'. $rolename .'</strong> account type.<br />');
+  $output .= l(t('Select a different account type'), 'user/register/role');
+  $output .= '</p>';
+  return $output;
+}
+
+/**
+ * Implementation of hook_admin_settings()
+ */
+function rolesignup_admin_settings() {
+  $roles = user_roles();
+  drupal_set_title(t('Role descriptions'));
+  $form['rolesignup-desc'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Enter text to be shown above the list of roles on the registration page'),
+    '#default_value' => variable_get('rolesignup-desc', '<p>Please select what type of account you would like:</p>'),
+    '#weight' => -6,
+  );
+  $form['rolesignup-intro'] = array(
+    '#value' => t('You may enter a description for each of the available roles. The description will be displayed on the role selection page. You can leave the description blank if you want to.'),
+    '#weight' => -4,
+  );
+
+  foreach ($roles as $roleid => $role) {
+
+    $form['rolesignup'. role_safe($role) .'-fs'] = array(
+      '#type' => 'fieldset',
+      '#title' => $role,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#weight' => -2,
+    );
+    $form['rolesignup'. role_safe($role) .'-fs'][role_safe($role) .'-title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Enter the title you want displayed for the !rolename role', array('!rolename' => $role)),
+      '#size' => 60,
+      '#maxlength' => 128,
+      '#attributes' => array(
+        'class' => 'role-title',
+      ),
+      '#default_value' => variable_get(role_safe($role) .'-title', ''),
+    );
+    $form['rolesignup'. role_safe($role) .'-fs'][role_safe($role) .'-description'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Enter description for the %rolename role', array('%rolename' => $role)),
+      '#attributes' => array(
+        'class' => 'role-description',
+      ),
+      '#default_value' => variable_get(role_safe($role) .'-description', ''),
+    );
+    $form['rolesignup-sort'] = array(
+      '#type' => 'radios',
+      '#title' => t('Choose the sort order of the roles'),
+      '#options' => array(
+        '0' => t('None'),
+        '1' => t('Ascending role ID numbers (1, 2, 3)'),
+        '2' => t('Descending role ID numbers (3, 2, 1)'),
+        '3' => t('Alphabetical (A-Z)'),
+        '4' => t('Reverse alphabetical (Z-A)'),
+      ),
+      '#default_value' => variable_get('rolesignup-sort', 0),
+      '#weight' => -1,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
+ *  Replaces spaces and other non-standard characters with underscores for role names
+ **/
+function role_safe($role) {
+  $role_safe = strtolower(preg_replace('/[^a-zA-Z0-9_-]+/', '_', $role));;
+  return $role_safe;
+}

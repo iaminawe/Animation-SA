@@ -1,0 +1,17 @@
+Index: comment.module
+===================================================================
+RCS file: /cvs/drupal/drupal/modules/comment/comment.module,v
+retrieving revision 1.520.2.12
+diff -u -p -r1.520.2.12 comment.module
+--- comment.module	7 Nov 2007 08:03:30 -0000	1.520.2.12
++++ comment.module	19 Jan 2008 13:13:33 -0000
+@@ -803,6 +803,9 @@ function comment_save($edit) {
+       if ($edit['status'] == COMMENT_NOT_PUBLISHED) {
+         drupal_set_message(t('Your comment has been queued for moderation by site administrators and will be published after approval.'));
+       }
++      else {
++	comment_invoke_comment($edit, 'publish');
++      }
+       return $edit['cid'];
+     }
+     else {

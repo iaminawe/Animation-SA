@@ -1,0 +1,11 @@
+; $Id: simplenews_roles.info,v 1.1.2.1 2007/06/18 23:07:03 dww Exp $
+name = Simplenews Roles
+description = "Automatically subscribe users in designated roles to a newsletter list."
+package = Mail
+dependencies = simplenews
+
+; Information added by drupal.org packaging script on 2007-10-18
+version = "5.x-1.x-dev"
+project = "simplenews_roles"
+datestamp = "1192709448"
+

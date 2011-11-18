@@ -1,0 +1,30 @@
+$Id: INSTALL.TXT,v 1.2.2.1 2008/10/12 00:17:59 greggles Exp $
+
+INSTALLATION
+------------
+
+1. Patch the comment.module at modules/comment/comment.module with the 
+   file comment_notify_patch_to_comment.patch.  If you are unsure how to
+   apply patch files please read http://drupal.org/patch/apply or simply 
+   open the file and manually take the actions that it shows.  For Drupal6.x
+   the patch was accepted and this is no longer necessary.
+
+   Note: When you upgrade Drupal core you will need to re-apply that patch 
+     to keep this module working.
+
+2. Enable module on the Administer > Site Building > Modules
+
+3. Grant permission to use this module:
+
+http://example.com/admin/user/permissions#module-comment_notify
+
+4. Configure the settings for comments, especially
+    -comment moderation on/off
+    -users must leave their contact info (set to yes, or how shall we mail them?)
+
+5. Configure this module at Administer > Site configuraiton > Comment Notify
+
+  -Determine which content types to activate it for
+  -Determine which subscription modes are allowed
+  -Configure the templates for the e-mails
+

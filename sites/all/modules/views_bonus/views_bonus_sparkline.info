@@ -1,0 +1,10 @@
+name = "Bonus: Sparkline view"
+description = "View type that outputs a each field as a sparkline graph, with one data point for each node. Each field MUST contain a numeric value, not a text value."
+dependencies = views sparkline
+package = Views
+
+; Information added by drupal.org packaging script on 2008-05-10
+version = "5.x-1.2-alpha2"
+project = "views_bonus"
+datestamp = "1210435225"
+

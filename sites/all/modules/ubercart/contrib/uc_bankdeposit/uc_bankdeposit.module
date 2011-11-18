@@ -1,0 +1,72 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Purpose: adds a bank deposit payment method to Ubercart (www.ubercart.org)
+ *
+ * Author: Oliver Coleman, oliver@e-geek.com.au
+ */
+
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_bankdeposit_payment_method() {
+  $methods[] = array(
+    'id' => 'bankdeposit',
+    'name' => t('Bank deposit'),
+    'title' => t('Bank deposit'),
+    'desc' => t('Pay by transferring or depositing funds to our bank account.'),
+    'callback' => 'uc_payment_method_bankdeposit',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'backend' => TRUE,
+  );
+  return $methods;
+}
+
+/**
+ * Handle the bank deposit payment method.
+ */
+function uc_payment_method_bankdeposit($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+    case 'customer-view':
+      $details = t('Account details:') . '<br /><br />'
+                 . variable_get('uc_bankdeposit_account', t('Couldn\'t retrieve account details, please contact store owner.'));
+      return $details;
+    case 'cart-review': 
+      $review[] = array('title' => t('Account details'), 'data' => variable_get('uc_bankdeposit_account', t('Couldn\'t retrieve account details, please contact store owner.')));
+      return $review;
+    case 'order-view':
+      return '';
+    case 'settings':
+      $form['uc_bankdeposit_account'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Bank deposit account details'),
+        '#description' => t('Bank account details for receiving account (eg account name, account number, bank name).'),
+        '#default_value' => variable_get('uc_bankdeposit_account', FALSE),
+        '#rows' => 4,
+      );
+      return $form;
+  }
+}
+
+/**
+ * Implementation of hook_token_values(). (token.module)
+ */
+function uc_bankdeposit_token_values($type, $object = NULL) {
+  if ($type == 'global'){
+    $values['bank-deposit-account'] = variable_get('uc_bankdeposit_account', t('Couldn\'t retrieve account details, please contact store owner.'));
+    return $values;
+  }
+}
+
+/**
+ * Implementation of hook_token_list(). (token.module)
+ */
+function uc_bankdeposit_token_list($type = 'all') {
+  $tokens['global']['bank-deposit-account'] = t('The account details for the bank deposit payment method.');
+  return $tokens;
+}

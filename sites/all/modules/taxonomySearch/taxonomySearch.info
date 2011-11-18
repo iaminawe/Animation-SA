@@ -1,0 +1,13 @@
+; $Id: taxonomySearch.info,v 1.1.2.1 2007/06/18 23:07:07 dww Exp $
+name = Taxonomy Search Widget
+description = "Allows a user to use a taxonomy heirarchy to pre-select a list to be used as a select list (e.g. drop down)"
+dependencies = content
+package = CCK
+
+
+
+; Information added by drupal.org packaging script on 2010-07-11
+version = "5.x-1.x-dev"
+project = "taxonomySearch"
+datestamp = "1278835884"
+

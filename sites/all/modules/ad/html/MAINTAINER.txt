@@ -1,0 +1,4 @@
+ad_html.module:
+ Written by Jeremy Andrews (10/2007)
+ Sponsored by Connie at WebsitesForTheArts.com.
+ Maintained by Jeremy Andrews <jeremy@kerneltrap.org>

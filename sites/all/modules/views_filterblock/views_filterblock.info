@@ -1,0 +1,5 @@
+; $Id: views_filterblock.info,v 1.1.2.3 2007/08/07 13:15:27 douggreen Exp $
+name = Views FilterBlock
+description = Move the views filter form to a block.
+dependencies = views
+package = "Views"

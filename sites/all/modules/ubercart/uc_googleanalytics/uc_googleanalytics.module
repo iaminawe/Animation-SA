@@ -1,0 +1,207 @@
+<?php
+// $Id: uc_googleanalytics.module,v 1.5.2.8 2009/09/23 19:14:42 rszrama Exp $
+
+/**
+ * @file
+ * Adds the required HTML and Javascript to the checkout complete page to allow
+ * e-commerce statistics tracking through Google Analytics.
+ *
+ * Originally by Erlend Stromsvik : erlend@nymedia.no / Quaoar at ubercart.org
+ *
+ * Updated by Ryan; patch for new GA JS courtesy of AntoineSolutions.
+ */
+
+
+/**
+ * Implementation of hook_footer().
+ */
+function uc_googleanalytics_footer($main = 0) {
+  // Check to see if we are at the order completion page.
+  if (uc_googleanalytics_display()) {
+    // If we can load the order...
+    if ($order = uc_order_load($_SESSION['uc_googleanalytics_order_id'])) {
+      // Check for which GA version is being used.
+      if (variable_get('googleanalytics_legacy_version', TRUE)) {
+        // Add the legacy script.
+        $output = _uc_googleanalytics_ecommerce_legacy_script($order);
+        uc_add_js('$(document).ready(function() { __utmSetTrans(); });', 'inline', 'footer');
+      }
+      else {
+        // Add the updated script.
+        $output = _uc_googleanalytics_ecommerce_script($order);
+      }
+    }
+
+    // Clean out the session variable.
+    unset($_SESSION['uc_googleanalytics_order_id']);
+  }
+
+  return $output;
+}
+
+/**
+ * Implementation of hook_order().
+ */
+function uc_googleanalytics_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'new':
+      // Store the order ID for later use.
+      $_SESSION['uc_googleanalytics_order_id'] = $arg1->order_id;
+      break;
+  }
+}
+
+/**
+ * Determines whether or not to display the e-commerce related JS through GA on
+ * the current page.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not to display the GA e-commerce JS.
+ */
+function uc_googleanalytics_display() {
+  // Display the GA e-commerce JS if the URL is cart/checkout/complete...
+  if (arg(0) == 'cart' && arg(1) == 'checkout' && arg(2) == 'complete') {
+    return TRUE;
+  }
+
+  // Or if the URL is the custom completion page.
+  $completion_page = variable_get('uc_cart_checkout_complete_page', '');
+
+  if (!empty($completion_page) && $completion_page == $_GET['q']) {
+    return TRUE;
+  }
+
+  // Or if another module says this is the page through hook_ucga_display().
+  foreach (module_invoke_all('ucga_display') as $result) {
+    if ($result === TRUE) {
+      return TRUE;
+    }
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
+// Creates the script for the legacy GA code.
+function _uc_googleanalytics_ecommerce_legacy_script($order) {
+  $script = '';
+  $UTM_T = '';
+  $UTM_I = '';
+  $tax = 0;
+  $shipping_cost = 0;
+
+  // Finding name of country; if not found, use the country code.
+  if ($country_data = uc_get_country_data(array('country_id' => $order->billing_country))) {
+    $country = $country_data[0]['country_name'];
+  }
+  else {
+    $country = $order->billing_country;
+  }
+
+  foreach ($order->products as $product) {
+    $category = '';
+
+    // Try to find a category (term) for the product. Since products most often
+    // only have one category, the first one returned (based on tid) is chosen.
+    if (module_exists('taxonomy')) {
+      $terms = taxonomy_node_get_terms($product->nid);
+      if (count($terms)) {
+        $term = array_shift($terms);
+        $category = $term->name;
+      }
+    }
+    if (empty($category)) {
+      $category = t('No category');
+    }
+
+    // using the model field as SKU
+    $UTM_I .= 'UTM:I|'. drupal_to_js($product->order_id) .'|'. drupal_to_js($product->model) .'|'
+            . drupal_to_js($product->title) .'|'. drupal_to_js($category) .'|'. drupal_to_js($product->price) .'|'
+            . drupal_to_js($product->qty) ." \n";
+  }
+
+  foreach ($order->line_items as $line_item) {
+    if ($line_item['type'] == 'tax') {
+      $tax += $line_item['amount'];
+    }
+    if ($line_item['type'] == 'shipping') {
+      $shipping_cost += $line_item['amount'];
+    }
+  }
+
+  $UTM_T = 'UTM:T|'. drupal_to_js($order->order_id) .'|'
+         . drupal_to_js(variable_get('uc_store_name', 'Ubercart')) .'|'. drupal_to_js($order->order_total)
+          .'|'. drupal_to_js($tax) .'|'. drupal_to_js($shipping_cost) .'|'. drupal_to_js($order->billing_city)
+          .'|'. drupal_to_js($order->billing_postal_code) .'|'. drupal_to_js($country) ." \n";
+
+  $script .= "<form style=\"display:none;\" name=\"utmform\">\n";
+  $script .= "<textarea id=\"utmtrans\">\n";
+  $script .= $UTM_T;
+  $script .= $UTM_I;
+  $script .= "</textarea>\n";
+  $script .= "</form>\n";
+
+  return $script;
+}
+
+// Creates the script for the updated GA code.
+function _uc_googleanalytics_ecommerce_script($order) {
+  $script = '';
+  $transaction = '';
+  $items = '';
+  $tax = 0;
+  $shipping_cost = 0;
+
+  // Finding name of country, if not use the country code from ubercart
+  if ($country_data = uc_get_country_data(array('country_id' => $order->billing_country))) {
+    $country = $country_data[0]['country_name'];
+  }
+  else {
+    $country = $order->billing_country;
+  }
+
+  foreach ($order->products as $product) {
+    $category = '';
+
+    // Try to find a category (term) for the product. Since products most often
+    // only have one category, the first one returned (based on tid) is chosen.
+    if (module_exists('taxonomy')) {
+      $terms = taxonomy_node_get_terms($product->nid);
+      if (count($terms)) {
+        $term = array_shift($terms);
+        $category = $term->name;
+      }
+    }
+    if (empty($category)) {
+      $category = t('No category');
+    }
+
+    // using the model field as SKU
+    $items .= 'pageTracker._addItem("'. $order->order_id .'", '
+            . drupal_to_js($product->model) .', '. drupal_to_js($product->title) .', '. drupal_to_js($category)
+             .', "'. $product->price .'", "'. $product->qty .'");';
+  }
+
+  foreach ($order->line_items as $line_item) {
+    if ($line_item['type'] == 'tax') {
+      $tax += $line_item['amount'];
+    }
+    if ($line_item['type'] == 'shipping') {
+      $shipping_cost += $line_item['amount'];
+    }
+  }
+
+  $transaction = 'pageTracker._addTrans("'. $order->order_id .'", '
+               . drupal_to_js(variable_get('uc_store_name', 'Ubercart')) .', "'
+               . $order->order_total .'", "'. $tax .'", "'. $shipping_cost
+                .'", '. drupal_to_js($order->billing_city) .', '
+               . drupal_to_js($order->billing_postal_code) .', '
+               . drupal_to_js($country) .');';
+
+  $script .= $transaction;
+  $script .= $items;
+  $script .= 'pageTracker._trackTrans();';
+
+  uc_add_js($script, 'inline', 'footer');
+}
+

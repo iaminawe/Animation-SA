@@ -1,0 +1,13 @@
+CHANGELOG for uc_bank_deposit 5.x
+
+5.x-1.3
+ - Removed extraneous code and table
+
+5.x-1.2
+ - Reinstated token
+ 
+5.x-1.1
+ - ?
+
+5.x-1.0
+ - Initial release

@@ -1,0 +1,8 @@
+name = Job
+description = "Allows recruiters to post jobs."
+
+; Information added by drupal.org packaging script on 2008-03-08
+version = "5.x-2.0"
+project = "jobsearch"
+datestamp = "1205004610"
+

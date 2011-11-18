@@ -1,0 +1,35 @@
+<?php
+// $Id: views_fastsearch.install,v 1.1.2.3 2008/01/21 20:55:07 douggreen Exp $
+
+/**
+ * Implementation of hook_uninstall
+ */
+function views_fastsearch_uninstall() {
+  variable_del('search_index_unique');
+  variable_del('search_node_links');
+  if ($ranking = module_invoke_all('search_ranking')) {
+    // Ignore the standard node_rankings
+    $ignore = array('node_rank_relevance', 'node_rank_recent', 'node_rank_comments', 'node_rank_views');
+    foreach (array_diff(array_keys($ranking), $ignore) as $rank) {
+      variable_del($rank);
+    }
+  }
+}
+
+function views_fastsearch_update_1() {
+  $ret = array();
+  if (db_table_exists('search_node_links')) {
+    switch($GLOBALS['db_type']) {
+      case 'mysql':
+      case 'mysqli':
+        $ret[] = update_sql("CREATE INDEX {search_index}_vfs_idx ON {search_index} (fromsid, word)");
+        $ret[] = update_sql("ALTER IGNORE TABLE {search_index} ADD UNIQUE INDEX {search_index}_unique_idx (sid, word, type, fromsid)");
+      break;
+      case 'pgsql':
+        $ret[] = update_sql("CREATE INDEX {search_index}_vfs_idx ON {search_index} (fromsid, word)");
+        $ret[] = update_sql("CREATE UNIQUE INDEX {search_index}_unique_idx (sid, word, type, fromsid)");
+        break;
+    }
+  }
+  return $ret;
+}

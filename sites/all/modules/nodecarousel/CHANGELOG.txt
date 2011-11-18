@@ -1,0 +1,21 @@
+Development:
+ * Fixed problem with having javascript load at the bottom of the page - a non-drupal_add_js'd jquery
+    call was causing it to crash in some instances.  Now that is handled using old school js.
+ * Added ability for late-loading of carousels.  Instead of having to load on document.ready, there's
+    a javascript function that you can call when you know that nodecarousel will be visible.
+ * Made the jquery selectors that had shown the Loading... and switched on the <ul> more specific,
+    which was needed when some nodecarousels would load on document.ready and others wouldn't.
+ * Created a surrounding div, with an id of 'nc_wrapper_'.name of the carousel, to make theming easier.
+ * Nodecarousel default theming now tries to find an image in the result of a node_load operation, 
+    and displays that in the default theme.  Still overrideable with theme_nodecarousel_node.
+ * Added various db_rewrite_sql calls throughout for better security.
+ * Unpublished nodes are not displayed in carousels.
+ * Now, if you have views installed, nodecarousel allows you to use a view you've established as a
+    node source.
+ * No longer depends on nodequeue to be used - instead, if nodequeue is not loaded, it will not
+    be presented as an option.
+ * #231461: Fixed problem with not all SQL table names being surrounded by {}.
+
+NodeCarousel-5.x-1.0
+ * This is the initial release of NodeCarousel.  Although this is a fully functional module, there are various improvements I intend to make to the code to widen it's
+     functionality - and I'm sure there's a few bugs that will be found and need to be fixed.

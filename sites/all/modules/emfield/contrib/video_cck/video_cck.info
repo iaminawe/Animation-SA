@@ -1,0 +1,5 @@
+; $Id: video_cck.info,v 1.1 2007/06/26 01:15:27 aaron Exp $
+name = Embedded Video Field
+description = Defines a field type for displaying third party videos, such as YouTube and Google Video.
+dependencies = emfield
+package = CCK

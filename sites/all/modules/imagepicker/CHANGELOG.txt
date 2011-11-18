@@ -1,0 +1,63 @@
+// $Id: CHANGELOG.txt,v 1.1.2.15 2008/10/26 10:46:58 hutch Exp $
+// $Name: DRUPAL-5--1-4 $
+
+Image Picker 5.x-1.x-dev, 2008-10-25
+------------------------------------
+by hutch, #321162 cleaned up css
+added the ability to use imagepicker.tpl.php
+if found in the default theme directory
+
+Image Picker 5.x-1.x-dev, 2008-09-07
+------------------------------------
+by hutch, added order select box to browser
+
+Image Picker 5.x-1.x-dev, 2008-09-05
+------------------------------------
+by hutch, added Use full url feature
+
+Image Picker 5.x-1.x-dev, 2008-09-03
+------------------------------------
+by hutch, #302210 patch supplied by Joshua Hesketh
+improved admin settings and improved the javascript
+insertion method. ported from D6
+
+Image Picker 5.x-1.x-dev, 2008-08-25
+------------------------------------
+by hutch, improved menuing
+added admin mode to image browser
+added drupal paging to image browser
+added groups
+
+Image Picker 5.x-1.x-dev, 2008-07-11
+------------------------------------
+by hutch, #281241 fixed excessive messages on install.
+
+Image Picker 5.x-1.x-dev, 2008-07-01
+------------------------------------
+by hutch, added imagepicker to My Account
+added paging to browse images
+
+Image Picker 5.x-1.x-dev, 2008-06-06
+------------------------------------
+by hutch, #266621 fixed bug in support for comments
+
+Image Picker 5.x-1.x-dev, 2008-06-04
+------------------------------------
+by hutch, #266621 added support for comments
+
+Image Picker 5.x-1.x-dev, 2008-05-31
+------------------------------------
+by hutch, brought module up to drupal coding standards
+
+Image Picker 5.x-1.x-dev, 2008-05-30
+------------------------------------
+By hutch, numerous changes by new maintainer
+fixed module path finding
+removed .htaccess file creation on install, not required
+fixed permissions
+added admin settings
+lots of cleanup and code comments
+
+Image Picker 5.x-1.x-dev, 2007-12-15
+------------------------------------
+Initial release of imagepicker module to HEAD
